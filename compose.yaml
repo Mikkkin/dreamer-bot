@@ -44,7 +44,8 @@ services:
       ALLOWED_USER_IDS: ${ALLOWED_USER_IDS:-}
       WEBAPP_URL: ${WEBAPP_URL:-}
       # Used only when WEBAPP_URL is empty: discover the quick tunnel hostname.
-      QUICK_TUNNEL_METRICS_URL: ${QUICK_TUNNEL_METRICS_URL:-http://quicktunnel:20241}
+      # "-" (not ":-"): an explicitly empty value in .env switches discovery off.
+      QUICK_TUNNEL_METRICS_URL: ${QUICK_TUNNEL_METRICS_URL-http://quicktunnel:20241}
       DEFAULT_CURRENCY: ${DEFAULT_CURRENCY:-EUR}
       INITDATA_MAX_AGE: ${INITDATA_MAX_AGE:-24h}
       MAX_IMAGE_MB: ${MAX_IMAGE_MB:-10}

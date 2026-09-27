@@ -21,6 +21,23 @@ A private Telegram bot and Mini App where two people keep a shared list of wishe
 - **Partner notifications.** When one of you adds a wish or a recipe, or marks a wish as fulfilled, the other gets a message with the photo and an "Открыть ✨" button.
 - **Statistics.** Totals per category and per currency (currencies are never mixed or converted), plus how many dreams came true this year.
 
+## One-command VDS setup
+
+[`deploy/setup-vds.sh`](deploy/setup-vds.sh) turns a fresh Ubuntu 22.04/24.04 or Debian 12/13 server (amd64 or arm64) into a ready deployment. It asks only what it needs and does the following:
+- updates the system and adds swap on small servers;
+- creates an admin user with your SSH key, then switches SSH to key-only login with root login disabled (it checks that your key works before applying this);
+- sets up UFW (SSH, 80 and 443 only), fail2ban and automatic security updates;
+- installs Docker;
+- clones the repo, using a read-only deploy key if the repo is private;
+- fills in `.env`, checks that DNS points at the server, deploys, and waits until the **Let's Encrypt** certificate is live. Caddy renews it automatically.
+
+```bash
+scp deploy/setup-vds.sh root@<server-ip>:
+ssh -t root@<server-ip> 'bash setup-vds.sh'   # -t: the script asks questions
+```
+
+It then installs itself as `dreamer-vds`: `sudo dreamer-vds update | ids | env | status`.
+
 ## Quick start (VPS + free domain)
 
 You need:

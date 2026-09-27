@@ -136,8 +136,11 @@ apt_get() {
   done
 }
 
-as_admin() { sudo -H -u "$ADMIN_USER" -- "$@"; }
-compose()  { (cd "$APP_DIR" && as_admin docker compose "$@"); }
+# Commands for the admin user start in a directory it can read: sudo keeps the
+# caller's working directory, and /root (where the script is often started)
+# is not accessible to the admin, which makes git fail with "failed to stat".
+as_admin() { (cd / && sudo -H -u "$ADMIN_USER" -- "$@"); }
+compose()  { (cd "$APP_DIR" && sudo -H -u "$ADMIN_USER" -- docker compose "$@"); }
 public_ip() { curl -4 -fsS --max-time 10 https://api.ipify.org 2>/dev/null || curl -4 -fsS --max-time 10 https://ifconfig.me 2>/dev/null || true; }
 
 env_get() { # env_get KEY — value from the app's .env (empty if absent)

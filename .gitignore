@@ -1,0 +1,41 @@
+# Secrets — never commit real credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Runtime data (SQLite database, uploaded images)
+/data/
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# Go build output
+/bin/
+/dist/
+/dreamer
+*.exe
+*.test
+*.out
+coverage.*
+
+# Frontend
+web/node_modules/
+web/dist/
+web/.vite/
+*.tsbuildinfo
+
+# Built frontend embedded into the binary (produced by `make web` / Docker)
+internal/webapp/dist/*
+!internal/webapp/dist/.gitkeep
+
+# Editors & OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db

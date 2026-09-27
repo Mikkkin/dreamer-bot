@@ -1,0 +1,119 @@
+// Package service implements the use cases of the wishlist. The bot and the
+// HTTP API are thin adapters over the interfaces declared here, so every
+// business rule lives exactly once.
+package service
+
+import (
+	"context"
+	"io"
+	"time"
+
+	"github.com/Mikkkin/dreamer-bot/internal/domain"
+)
+
+// Wishes is the use-case API for wishes. Every mutating method takes the
+// acting user so that notifications and authorship are attributed correctly.
+type Wishes interface {
+	Create(ctx context.Context, actor domain.UserID, d domain.WishDraft) (domain.Wish, error)
+	Get(ctx context.Context, id domain.WishID) (domain.Wish, error)
+	// List returns wishes newest first, including their images.
+	List(ctx context.Context, f domain.WishFilter) ([]domain.Wish, error)
+	Update(ctx context.Context, actor domain.UserID, id domain.WishID, p domain.WishPatch) (domain.Wish, error)
+	SetStatus(ctx context.Context, actor domain.UserID, id domain.WishID, s domain.Status) (domain.Wish, error)
+	// Delete removes the wish together with its image files.
+	Delete(ctx context.Context, actor domain.UserID, id domain.WishID) error
+	// AddImage validates, re-encodes and stores an image read from src.
+	AddImage(ctx context.Context, actor domain.UserID, id domain.WishID, src io.Reader) (domain.Image, error)
+	RemoveImage(ctx context.Context, actor domain.UserID, id domain.WishID, img domain.ImageID) error
+}
+
+// Recipes is the use-case API for the flat «Что приготовить» list.
+type Recipes interface {
+	Create(ctx context.Context, actor domain.UserID, d domain.RecipeDraft) (domain.Recipe, error)
+	Get(ctx context.Context, id domain.RecipeID) (domain.Recipe, error)
+	// List returns recipes newest first, including their images.
+	List(ctx context.Context, f domain.RecipeFilter) ([]domain.Recipe, error)
+	// Random picks one recipe for «что приготовить?»; ErrNotFound when empty.
+	Random(ctx context.Context) (domain.Recipe, error)
+	Update(ctx context.Context, actor domain.UserID, id domain.RecipeID, p domain.RecipePatch) (domain.Recipe, error)
+	// Delete removes the recipe together with its image files.
+	Delete(ctx context.Context, actor domain.UserID, id domain.RecipeID) error
+	AddImage(ctx context.Context, actor domain.UserID, id domain.RecipeID, src io.Reader) (domain.Image, error)
+	RemoveImage(ctx context.Context, actor domain.UserID, id domain.RecipeID, img domain.ImageID) error
+}
+
+// Images serves stored images regardless of whether a wish or a recipe owns them.
+type Images interface {
+	// Open returns the stored bytes of one image variant.
+	Open(ctx context.Context, id domain.ImageID, v ImageVariant) (ImageFile, error)
+}
+
+// Categories is the use-case API for categories.
+type Categories interface {
+	List(ctx context.Context) ([]domain.Category, error)
+	Get(ctx context.Context, id domain.CategoryID) (domain.Category, error)
+	Create(ctx context.Context, actor domain.UserID, name, emoji string) (domain.Category, error)
+	// Update applies a partial change atomically (no lost update when both
+	// partners edit the same category at once).
+	Update(ctx context.Context, actor domain.UserID, id domain.CategoryID, p domain.CategoryPatch) (domain.Category, error)
+	// Delete removes the category; its wishes stay and become uncategorized.
+	Delete(ctx context.Context, actor domain.UserID, id domain.CategoryID) error
+}
+
+// Stats computes the per-category summary.
+type Stats interface {
+	Compute(ctx context.Context) (domain.Stats, error)
+}
+
+// Users keeps the profiles of whitelisted users seen by the bot or the API.
+type Users interface {
+	// Touch upserts the profile. HasChat is sticky: once true it stays true.
+	Touch(ctx context.Context, u domain.User) error
+	Get(ctx context.Context, id domain.UserID) (domain.User, error)
+	// List returns every known whitelisted user (used to render author names).
+	List(ctx context.Context) ([]domain.User, error)
+	// Partners returns the other whitelisted users the bot can message.
+	Partners(ctx context.Context, of domain.UserID) ([]domain.User, error)
+}
+
+// Recipients names who acted and who should be told about it.
+type Recipients struct {
+	Actor domain.User
+	To    []domain.User
+}
+
+// Notifier tells partners about changes. The service resolves recipients
+// (whitelisted partners with an open chat) and calls the notifier only when
+// To is non-empty. Implementations must return quickly (deliver
+// asynchronously) and must never fail the originating use case.
+type Notifier interface {
+	WishCreated(ctx context.Context, r Recipients, w domain.Wish)
+	WishFulfilled(ctx context.Context, r Recipients, w domain.Wish)
+	RecipeCreated(ctx context.Context, r Recipients, rec domain.Recipe)
+}
+
+// ImageVariant selects the stored rendition of an image.
+type ImageVariant string
+
+const (
+	VariantThumb ImageVariant = "thumb" // 480×600 (4:5) cover crop, for cards
+	VariantFull  ImageVariant = "full"  // width ≤ 1600 px and ≤ 12 MP, so tall recipe screenshots stay readable
+)
+
+// ParseImageVariant validates a variant name coming from a URL.
+func ParseImageVariant(raw string) (ImageVariant, bool) {
+	switch v := ImageVariant(raw); v {
+	case VariantThumb, VariantFull:
+		return v, true
+	default:
+		return "", false
+	}
+}
+
+// ImageFile is an opened stored image ready to be served.
+type ImageFile struct {
+	Content     io.ReadSeekCloser
+	ContentType string
+	ModTime     time.Time
+	Size        int64
+}

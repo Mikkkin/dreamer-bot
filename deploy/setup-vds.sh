@@ -25,7 +25,9 @@
 # The valid_* functions are called indirectly through ask_valid.
 # shellcheck disable=SC2329
 set -Eeuo pipefail
-umask 027
+# Regular files 644: containers read some of them without capabilities (see
+# deploy). Secrets (.env, keys, sudoers, swap) get explicit 600/440 below.
+umask 022
 
 # ---------------------------------------------------------------- settings --
 REPO_URL="${REPO_URL:-https://github.com/Mikkkin/dreamer-bot.git}"
@@ -233,6 +235,7 @@ kernel.dmesg_restrict = 1
 fs.protected_hardlinks = 1
 fs.protected_symlinks = 1
 EOF
+  chmod 644 /etc/sysctl.d/90-dreamer-hardening.conf
   sysctl --system >/dev/null 2>&1 || warn "Часть параметров sysctl не применилась (бывает на VPS с общим ядром)"
   ok "sysctl"
 }
@@ -375,6 +378,7 @@ findtime = 10m
 bantime  = 1h
 bantime.increment = true
 EOF
+  chmod 644 /etc/fail2ban/jail.d/dreamer-sshd.local
   systemctl enable fail2ban >/dev/null 2>&1 || true
   if systemctl restart fail2ban; then
     ok "Бан IP после 5 неудачных входов по SSH"
@@ -394,6 +398,7 @@ EOF
 Unattended-Upgrade::Remove-Unused-Dependencies "true";
 Unattended-Upgrade::Automatic-Reboot "false";
 EOF
+  chmod 644 /etc/apt/apt.conf.d/20auto-upgrades /etc/apt/apt.conf.d/52dreamer-unattended
   systemctl enable --now unattended-upgrades >/dev/null 2>&1 || true
   ok "Включены"
 }
@@ -447,7 +452,7 @@ clone_repo() {
     as_admin git -C "$APP_DIR" pull --ff-only --quiet && ok "Обновлён ($APP_DIR)"
     return
   fi
-  install -d -m 750 -o "$ADMIN_USER" -g "$ADMIN_USER" "$APP_DIR"
+  install -d -m 755 -o "$ADMIN_USER" -g "$ADMIN_USER" "$APP_DIR"
   # sudo resets the environment, so pass the no-prompt flag explicitly:
   # without it git would wait for a GitHub login on a private repository.
   if as_admin env GIT_TERMINAL_PROMPT=0 git ls-remote "$REPO_URL" >/dev/null 2>&1; then
@@ -630,6 +635,11 @@ check_dns() {
 
 deploy() {
   step "Сборка и запуск (первый раз — несколько минут)"
+  # Caddy runs with all capabilities dropped, so root inside its container can
+  # read the bind-mounted Caddyfile only if it is world-readable (it holds no
+  # secrets). Also repairs installs cloned by older versions with umask 027.
+  chmod 755 "$APP_DIR" "$APP_DIR/deploy"
+  chmod 644 "$APP_DIR/deploy/Caddyfile"
   compose up -d --build --remove-orphans
   local status=''
   for _ in $(seq 1 60); do

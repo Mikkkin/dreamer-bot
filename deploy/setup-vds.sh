@@ -20,7 +20,7 @@
 # Every question can be answered in advance with an environment variable of
 # the same name (BOT_TOKEN, ALLOWED_USER_IDS, DOMAIN_MODE=domain|duckdns|none,
 # DOMAIN, ACME_EMAIL, DUCKDNS_SUBDOMAIN, DUCKDNS_TOKEN, ADMIN_USER,
-# ADMIN_PUBKEY, REPO_URL, ...); ASSUME_YES=1 accepts the defaults.
+# ADMIN_PUBKEY, REPO_URL, UPGRADE_SYSTEM=1|0, ...); ASSUME_YES=1 accepts the defaults.
 
 # The valid_* functions are called indirectly through ask_valid.
 # shellcheck disable=SC2329
@@ -116,6 +116,24 @@ ask_valid() {
 }
 
 # ------------------------------------------------------------------ helpers --
+# A fresh VDS often runs apt-daily / unattended-upgrades right after boot and
+# holds the apt locks for minutes; wait for it instead of failing.
+wait_apt() {
+  local waited=0
+  while pgrep -x 'apt|apt-get|dpkg|aptitude|unattended-upgr' >/dev/null 2>&1 \
+     || fuser /var/lib/dpkg/lock-frontend /var/lib/apt/lists/lock >/dev/null 2>&1; do
+    (( waited == 0 )) && info "apt занят автообновлением системы — жду, пока закончит…"
+    sleep 5; waited=$((waited + 5))
+    (( waited < 1200 )) || die "apt занят больше 20 минут. Проверьте: ps aux | grep -E 'apt|dpkg'"
+  done
+}
+
+# apt_get: apt-get that waits for other package managers to finish first.
+apt_get() {
+  wait_apt
+  apt-get -o DPkg::Lock::Timeout=600 "$@"
+}
+
 as_admin() { sudo -H -u "$ADMIN_USER" -- "$@"; }
 compose()  { (cd "$APP_DIR" && as_admin docker compose "$@"); }
 public_ip() { curl -4 -fsS --max-time 10 https://api.ipify.org 2>/dev/null || curl -4 -fsS --max-time 10 https://ifconfig.me 2>/dev/null || true; }
@@ -148,7 +166,7 @@ preflight() {
   command -v systemctl >/dev/null || die "Нужен systemd"
   ARCH=$(dpkg --print-architecture)
   [[ $ARCH == amd64 || $ARCH == arm64 ]] || die "Поддерживаются amd64 и arm64 (найдено: $ARCH)"
-  command -v curl >/dev/null || { apt-get update -qq && apt-get install -y -qq curl ca-certificates >/dev/null; }
+  command -v curl >/dev/null || { apt_get update -qq && apt_get install -y -qq curl ca-certificates >/dev/null; }
   curl -fsS --max-time 15 -o /dev/null https://api.github.com || die "Нет доступа в интернет (api.github.com)"
   ok "${PRETTY_NAME}, $ARCH"
 }
@@ -156,11 +174,21 @@ preflight() {
 install_packages() {
   step "Обновление системы и пакеты"
   export DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a
-  apt-get update -qq
-  apt-get -y -qq -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold upgrade >/dev/null
-  apt-get install -y -qq ca-certificates curl git gnupg sudo ufw fail2ban python3-systemd \
-    unattended-upgrades dnsutils openssl tzdata iproute2 >/dev/null
-  ok "Система обновлена"
+  apt_get update -qq
+  # UPGRADE_SYSTEM=1/0 answers the question in advance.
+  local upgrade=${UPGRADE_SYSTEM:-}
+  if [[ -z $upgrade ]]; then
+    if confirm "Обновить установленные пакеты системы (apt upgrade, несколько минут)?" y; then upgrade=1; else upgrade=0; fi
+  fi
+  if [[ $upgrade == 1 ]]; then
+    apt_get -y -qq -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold upgrade >/dev/null
+    ok "Система обновлена"
+  else
+    info "Обновление пакетов пропущено (обновления безопасности всё равно будут ставиться автоматически)"
+  fi
+  apt_get install -y -qq ca-certificates curl git gnupg sudo ufw fail2ban python3-systemd \
+    unattended-upgrades dnsutils openssl tzdata iproute2 psmisc >/dev/null
+  ok "Нужные пакеты установлены"
 }
 
 setup_swap() {
@@ -375,8 +403,8 @@ install_docker() {
     chmod a+r /etc/apt/keyrings/docker.asc
     printf 'deb [arch=%s signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/%s %s stable\n' \
       "$ARCH" "$OS_ID" "$OS_CODENAME" > /etc/apt/sources.list.d/docker.list
-    apt-get update -qq
-    apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin >/dev/null
+    apt_get update -qq
+    apt_get install -y -qq docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin >/dev/null
     ok "Установлен $(docker --version | cut -d, -f1)"
   fi
   if [[ ! -f /etc/docker/daemon.json ]]; then

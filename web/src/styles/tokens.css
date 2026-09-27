@@ -1,0 +1,238 @@
+/* Design tokens. Telegram injects --tg-theme-* (and keeps them live on
+   themeChanged); the --fb-* fallbacks apply outside Telegram or when a key is
+   missing. data-scheme is set only when Telegram provides a theme, so a plain
+   browser follows prefers-color-scheme.
+
+   "Golden Hour": every neutral comes from the Telegram theme; the brand layer
+   (rose, gold, the duo gradient) sits on top as accents only. All dark-mode
+   differences live in the two dark blocks below, never in component rules. */
+
+:root {
+  --fb-page: #efeff4;
+  --fb-surface: #fff;
+  --fb-text: #000;
+  --fb-hint: #707579;
+  --fb-link: #2481cc;
+  --fb-accent: #2481cc;
+  --fb-on-accent: #fff;
+  --fb-destructive: #e53935;
+  color-scheme: light;
+}
+
+:root[data-scheme='dark'] {
+  --fb-page: #0f0f0f;
+  --fb-surface: #212121;
+  --fb-text: #fff;
+  --fb-hint: #aaa;
+  --fb-link: #2990ff;
+  --fb-accent: #2990ff;
+  --fb-on-accent: #fff;
+  --fb-destructive: #ff5c5c;
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-scheme]) {
+    --fb-page: #0f0f0f;
+    --fb-surface: #212121;
+    --fb-text: #fff;
+    --fb-hint: #aaa;
+    --fb-link: #2990ff;
+    --fb-accent: #2990ff;
+    --fb-destructive: #ff5c5c;
+    color-scheme: dark;
+  }
+}
+
+:root {
+  /* Theme-driven neutrals */
+  --c-page: var(--tg-theme-secondary-bg-color, var(--fb-page));
+  --c-surface: var(--tg-theme-section-bg-color, var(--tg-theme-bg-color, var(--fb-surface)));
+  --c-text: var(--tg-theme-text-color, var(--fb-text));
+  --c-hint: var(--tg-theme-hint-color, var(--fb-hint));
+  --c-subtitle: var(--tg-theme-subtitle-text-color, var(--c-hint));
+  --c-link: var(--tg-theme-link-color, var(--fb-link));
+  --c-accent: var(--tg-theme-button-color, var(--fb-accent));
+  --c-on-accent: var(--tg-theme-button-text-color, var(--fb-on-accent));
+  --c-accent-text: var(--tg-theme-accent-text-color, var(--c-link));
+  --c-section-header: var(--tg-theme-section-header-text-color, var(--c-hint-strong));
+  --c-separator: var(--tg-theme-section-separator-color, color-mix(in srgb, var(--c-text) 12%, transparent));
+  --c-destructive: var(--tg-theme-destructive-text-color, var(--fb-destructive));
+
+  /* Small text that sits on --c-page (the raw hint is 4.06:1 there). */
+  --c-hint-strong: color-mix(in srgb, var(--c-hint) 78%, var(--c-text));
+
+  --c-fill: color-mix(in srgb, var(--c-text) 6%, transparent);
+  --c-fill-strong: color-mix(in srgb, var(--c-text) 11%, transparent);
+  --c-accent-soft: color-mix(in srgb, var(--c-accent) 14%, transparent);
+  --c-accent-tint: color-mix(in srgb, var(--c-accent) 14%, var(--c-surface));
+  --c-accent-deep: color-mix(in oklab, var(--c-accent) 82%, black);
+
+  /* Brand: "two of us". Decorative; never text except white on the -deep fills. */
+  --c-rose: #ff5e8a;
+  --c-rose-deep: #d62e68;
+  --c-gold: #ffc83d;
+  --c-amber: #f5a524;
+  --c-flame: #ff6b3d;
+  --c-success: #34c759;
+  --duo-a: var(--c-accent);
+  --duo-b: var(--c-rose);
+  --grad-duo: linear-gradient(120deg, var(--duo-a), color-mix(in oklab, var(--duo-a) 45%, var(--duo-b)) 55%, var(--duo-b));
+  --grad-duo-deep: linear-gradient(120deg, var(--c-accent-deep), var(--c-rose-deep));
+  --grad-brand: var(--grad-duo);
+  --avatar-a: var(--c-accent-deep);
+  --avatar-b: var(--c-rose-deep);
+  --st-want: var(--c-rose);
+  --st-progress: var(--c-amber);
+  --st-done: var(--c-gold);
+
+  /* Glass: the floating layer only */
+  --glass-bar: color-mix(in srgb, var(--c-page) 76%, transparent);
+  --glass-filter: blur(20px) saturate(180%);
+  --glass-hi: inset 0 1px 0 rgb(255 255 255 / 0.55);
+  --media-pill: rgb(0 0 0 / 0.56);
+  --media-badge: rgb(0 0 0 / 0.45);
+  --media-edge: inset 0 0 0 0.5px rgb(255 255 255 / 0.18);
+
+  /* Scheme-dependent knobs (overridden in the dark blocks) */
+  --seg-thumb: var(--c-surface);
+  --seg-thumb-shadow: 0 0 0 0.5px rgb(0 0 0 / 0.04), 0 1px 2px rgb(0 0 0 / 0.08), 0 3px 8px rgb(0 0 0 / 0.08);
+  --bd-dim: 0;
+  --glow-a: 13%;
+  --glow-b: 15%;
+  --pattern-opacity: 0.24;
+  --sticker-outline: #fff;
+  --dice-shadow: 0 14px 30px -14px rgb(200 56 95 / 0.6);
+  --warm-light: color-mix(in srgb, var(--c-rose) 14%, transparent);
+
+  /* Type */
+  --font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif,
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji';
+  --font-emoji: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+  --t-display: 800 34px/40px var(--font);
+  --t-title1: 700 28px/34px var(--font);
+  --t-title2: 700 22px/28px var(--font);
+  --t-title3: 600 20px/25px var(--font);
+  --t-headline: 600 17px/22px var(--font);
+  --t-body: 400 17px/22px var(--font); /* inputs >= 17px: no iOS focus zoom */
+  --t-prose: 400 17px/25px var(--font);
+  --t-callout: 400 16px/21px var(--font);
+  --t-subhead: 600 15px/20px var(--font);
+  --t-footnote: 400 13px/18px var(--font);
+  --t-caption: 600 12px/16px var(--font);
+  --t-overline: 600 12px/16px var(--font);
+  --ls-tight: -0.012em;
+
+  /* Space */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 20px;
+  --s6: 24px;
+  --s8: 32px;
+  --s10: 40px;
+  --gutter: 16px;
+  --section-gap: var(--s6);
+
+  /* Radii: concentric (inner = outer − padding) */
+  --r-xs: 8px;
+  --r-sm: 12px;
+  --r-md: 16px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+  --r-pill: 999px;
+  --card-pad: 6px;
+  --r-cover: calc(var(--r-lg) - var(--card-pad));
+
+  /* Elevation */
+  --shadow-card: 0 0.5px 0 rgb(0 0 0 / 0.03), 0 1px 2px rgb(0 0 0 / 0.05), 0 8px 20px -6px rgb(0 0 0 / 0.08);
+  --border-card: 0.5px solid transparent;
+  --shadow-float: 0 10px 30px rgb(0 0 0 / 0.16);
+  --shadow-sheet: 0 -8px 24px rgb(0 0 0 / 0.12);
+
+  /* Motion: Material 3 Expressive springs (published cubic-bezier approximations) */
+  --d1: 120ms;
+  --d2: 200ms;
+  --d3: 350ms;
+  --d4: 500ms;
+  --d5: 650ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-io: cubic-bezier(0.4, 0, 0.2, 1);
+  --spring-fast: cubic-bezier(0.42, 1.67, 0.21, 0.9);
+  --spring: cubic-bezier(0.38, 1.21, 0.22, 1);
+  --spring-calm: cubic-bezier(0.27, 1.06, 0.18, 1);
+  --effects: cubic-bezier(0.34, 0.8, 0.34, 1);
+  --ease-spring: var(--spring-fast);
+
+  --safe-top: calc(var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px));
+  --safe-bottom: max(var(--tg-safe-area-inset-bottom, 0px), env(safe-area-inset-bottom, 0px));
+}
+
+/* Dark knobs: identical in BOTH blocks. */
+:root[data-scheme='dark'] {
+  --shadow-card: none;
+  --border-card: 0.5px solid color-mix(in srgb, var(--c-text) 9%, transparent);
+  --c-accent-tint: color-mix(in srgb, var(--c-accent) 22%, var(--c-surface));
+  --seg-thumb: color-mix(in srgb, var(--c-text) 32%, var(--c-surface));
+  --seg-thumb-shadow: none;
+  --glass-hi: inset 0 1px 0 rgb(255 255 255 / 0.08);
+  --bd-dim: 0.12;
+  --glow-a: 20%;
+  --glow-b: 22%;
+  --pattern-opacity: 0.16;
+  --dice-shadow: 0 12px 32px -16px rgb(200 56 95 / 0.55);
+  --warm-light: color-mix(in srgb, var(--c-rose) 12%, transparent);
+  --c-fill: color-mix(in srgb, var(--c-text) 8%, transparent);
+  --shadow-float: 0 10px 30px rgb(0 0 0 / 0.5);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-scheme]) {
+    --shadow-card: none;
+    --border-card: 0.5px solid color-mix(in srgb, var(--c-text) 9%, transparent);
+    --c-accent-tint: color-mix(in srgb, var(--c-accent) 22%, var(--c-surface));
+    --seg-thumb: color-mix(in srgb, var(--c-text) 32%, var(--c-surface));
+    --seg-thumb-shadow: none;
+    --glass-hi: inset 0 1px 0 rgb(255 255 255 / 0.08);
+    --bd-dim: 0.12;
+    --glow-a: 20%;
+    --glow-b: 22%;
+    --pattern-opacity: 0.16;
+    --dice-shadow: 0 12px 32px -16px rgb(200 56 95 / 0.55);
+    --warm-light: color-mix(in srgb, var(--c-rose) 12%, transparent);
+    --c-fill: color-mix(in srgb, var(--c-text) 8%, transparent);
+    --shadow-float: 0 10px 30px rgb(0 0 0 / 0.5);
+  }
+}
+
+/* Animatable glow colours for the home header cross-fade. */
+@property --glow-1 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --glow-2 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+
+:root[data-perf='low'] * {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-delay: 0s !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -116,22 +116,24 @@ ask_valid() {
 }
 
 # ------------------------------------------------------------------ helpers --
-# A fresh VDS often runs apt-daily / unattended-upgrades right after boot and
-# holds the apt locks for minutes; wait for it instead of failing.
-wait_apt() {
-  local waited=0
-  while pgrep -x 'apt|apt-get|dpkg|aptitude|unattended-upgr' >/dev/null 2>&1 \
-     || fuser /var/lib/dpkg/lock-frontend /var/lib/apt/lists/lock >/dev/null 2>&1; do
-    (( waited == 0 )) && info "apt занят автообновлением системы — жду, пока закончит…"
-    sleep 5; waited=$((waited + 5))
-    (( waited < 1200 )) || die "apt занят больше 20 минут. Проверьте: ps aux | grep -E 'apt|dpkg'"
-  done
-}
-
-# apt_get: apt-get that waits for other package managers to finish first.
+# apt_get: apt-get that waits while another package manager holds the apt
+# locks (a fresh VDS runs apt-daily / unattended-upgrades right after boot).
+# It retries only on lock errors, so real failures still stop the script.
 apt_get() {
-  wait_apt
-  apt-get -o DPkg::Lock::Timeout=600 "$@"
+  local out rc tries=0
+  while :; do
+    out=$(apt-get -o DPkg::Lock::Timeout=600 "$@" 2>&1) && rc=0 || rc=$?
+    if (( rc == 0 )); then
+      [[ -z $out ]] || printf '%s\n' "$out"
+      return 0
+    fi
+    if grep -qE 'Could not get lock|Unable to lock|is held by process' <<<"$out" && (( tries < 90 )); then
+      (( tries == 0 )) && info "apt занят автообновлением системы — жду (до 15 минут)…"
+      tries=$((tries + 1)); sleep 10; continue
+    fi
+    printf '%s\n' "$out" >&2
+    return "$rc"
+  done
 }
 
 as_admin() { sudo -H -u "$ADMIN_USER" -- "$@"; }
@@ -429,7 +431,11 @@ github_known_hosts() { # pin GitHub's host keys from its HTTPS API (no TOFU)
   local file=$1 keys key
   keys=$(curl -fsS --max-time 15 https://api.github.com/meta | grep -oE '"(ssh-ed25519|ecdsa-sha2-nistp256|ssh-rsa) [A-Za-z0-9+/=]+"' | tr -d '"')
   [[ -n $keys ]] || die "Не удалось получить ключи GitHub"
-  while IFS= read -r key; do printf 'github.com %s\n' "$key"; done <<<"$keys" > "$file"
+  # ssh.github.com:443 serves the same host keys and works where port 22 is blocked.
+  while IFS= read -r key; do
+    printf 'github.com %s\n[ssh.github.com]:443 %s\n' "$key" "$key"
+  done <<<"$keys" > "$file"
+
 }
 
 clone_repo() {
@@ -457,27 +463,42 @@ clone_repo() {
   fi
   github_known_hosts "$home/.ssh/known_hosts_github"
   chown "$ADMIN_USER:$ADMIN_USER" "$home/.ssh/known_hosts_github"
-  if ! grep -q '^Host github-dreamer$' "$cfg" 2>/dev/null; then
-    cat >> "$cfg" <<EOF
-
+  # (Re)write our Host block: an earlier run may have left one for port 22.
+  local tmp; tmp=$(mktemp)
+  if [[ -f $cfg ]]; then
+    awk '/^Host github-dreamer$/ {skip=1; next} skip && /^(Host|Match) / {skip=0} !skip' "$cfg" > "$tmp"
+  fi
+  cat >> "$tmp" <<EOF
 Host github-dreamer
-  HostName github.com
+  HostName ssh.github.com
+  Port 443
   User git
   IdentityFile $key
   IdentitiesOnly yes
   UserKnownHostsFile $home/.ssh/known_hosts_github
   StrictHostKeyChecking yes
+  BatchMode yes
+  ConnectTimeout 15
 EOF
-    chown "$ADMIN_USER:$ADMIN_USER" "$cfg"; chmod 600 "$cfg"
-  fi
+  install -m 600 -o "$ADMIN_USER" -g "$ADMIN_USER" "$tmp" "$cfg"
+  rm -f "$tmp"
   local url=${REPO_SSH/git@github.com:/github-dreamer:}
   printf '\n  %sДобавьте этот ключ в GitHub:%s %s\n' "$C_B" "$C_0" "$REPO_SETTINGS_KEYS"
   printf '  (Add deploy key → вставьте строку ниже → галочку «write access» НЕ ставьте)\n\n  %s\n\n' "$(cat "$key.pub")"
-  until as_admin env GIT_TERMINAL_PROMPT=0 git ls-remote "$url" >/dev/null 2>&1; do
-    interactive || die "Нет доступа к репозиторию: добавьте deploy key и запустите снова."
+  local err
+  while :; do
     pause "Нажмите Enter, когда ключ добавлен… "
+    if err=$(as_admin env GIT_TERMINAL_PROMPT=0 git ls-remote "$url" 2>&1 >/dev/null); then break; fi
+    warn "GitHub не пускает: $(grep -v '^[[:space:]]*$' <<<"$err" | head -n1)"
+    case $err in
+      *"Permission denied"*) info "Ключ не принят: он должен быть в Deploy keys именно репозитория dreamer-bot (Settings → Deploy keys)" ;;
+      *"timed out"*|*"Connection refused"*|*"Could not resolve"*) info "Нет связи с ssh.github.com:443 — проверьте исходящие соединения у хостера" ;;
+      *"Host key verification failed"*) info "Не совпал ключ хоста GitHub — запустите скрипт ещё раз" ;;
+    esac
+    interactive || die "Нет доступа к репозиторию: добавьте deploy key и запустите снова."
   done
   as_admin git clone --quiet "$url" "$APP_DIR"
+
   ok "Склонирован (deploy key)"
 }
 

@@ -1,0 +1,17 @@
+# Keep secrets, local data and build output out of the build context.
+.env
+.env.*
+!.env.example
+.git
+.github
+data
+*.db
+*.db-*
+bin
+dist
+web/node_modules
+web/dist
+internal/webapp/dist
+**/.DS_Store
+*.md
+!web/**/*.md

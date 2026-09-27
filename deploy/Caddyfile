@@ -1,0 +1,22 @@
+# Caddy terminates HTTPS for the Mini App with automatic Let's Encrypt
+# certificates. DOMAIN comes from .env and must point at this server.
+#
+# No `log` directive on purpose: access logs would record signed media URLs.
+{
+	# Let's Encrypt expiry notices; also enables the ZeroSSL fallback CA, which
+	# matters on shared free domains (FreeDNS, DuckDNS) where Let's Encrypt
+	# rate limits may be used up by other people.
+	email {$ACME_EMAIL}
+	admin off
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+
+	reverse_proxy bot:8080
+}

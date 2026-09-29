@@ -30,6 +30,22 @@ type fakeDB struct {
 	touches    []domain.User
 	removed    []domain.ImageID
 	stats      domain.Stats
+
+	savings  map[domain.WishID][]domain.Saving // newest first
+	cooks    map[domain.RecipeID][]domain.Cook // newest first
+	tags     map[domain.RecipeTagID]domain.RecipeTag
+	shopping map[domain.ShoppingItemID]domain.ShoppingItem
+	// calls records what the adapter passed to the new use cases.
+	calls fakeCalls
+}
+
+type fakeCalls struct {
+	cookRating    *service.RatingInput
+	cooked        bool
+	positions     []int
+	fromRecipe    bool
+	shoppingPatch *domain.ShoppingPatch
+	savingAmount  *domain.Money
 }
 
 func newFakeDB(now time.Time, maxImage int64, whitelist ...domain.UserID) *fakeDB {
@@ -42,6 +58,10 @@ func newFakeDB(now time.Time, maxImage int64, whitelist ...domain.UserID) *fakeD
 		categories: map[domain.CategoryID]domain.Category{},
 		blobs:      map[domain.ImageID][]byte{},
 		users:      map[domain.UserID]domain.User{},
+		savings:    map[domain.WishID][]domain.Saving{},
+		cooks:      map[domain.RecipeID][]domain.Cook{},
+		tags:       map[domain.RecipeTagID]domain.RecipeTag{},
+		shopping:   map[domain.ShoppingItemID]domain.ShoppingItem{},
 	}
 }
 
@@ -49,6 +69,8 @@ func (db *fakeDB) services() *service.Services {
 	return &service.Services{
 		Wishes:     fakeWishes{db},
 		Recipes:    fakeRecipes{db},
+		RecipeTags: fakeRecipeTags{db},
+		Shopping:   fakeShopping{db},
 		Categories: fakeCategories{db},
 		Images:     fakeImages{db},
 		Stats:      fakeStats{db},
@@ -221,6 +243,9 @@ func (f fakeRecipes) Create(_ context.Context, actor domain.UserID, d domain.Rec
 	if err != nil {
 		return domain.Recipe{}, err
 	}
+	if err := f.db.checkTags(r); err != nil {
+		return domain.Recipe{}, err
+	}
 	r.ID = domain.RecipeID(f.db.id())
 	f.db.recipes[r.ID] = r
 	return r, nil
@@ -241,7 +266,11 @@ func (f fakeRecipes) List(_ context.Context, filter domain.RecipeFilter) ([]doma
 	defer f.db.mu.Unlock()
 	var out []domain.Recipe
 	for _, r := range f.db.recipes {
-		if filter.Query == "" || strings.Contains(r.Title+" "+r.Body, filter.Query) {
+		switch {
+		case filter.Query != "" && !strings.Contains(r.Title+" "+r.Body, filter.Query):
+		case filter.CuisineID != 0 && (r.CuisineID == nil || *r.CuisineID != filter.CuisineID):
+		case filter.CourseID != 0 && !slices.Contains(r.CourseIDs, filter.CourseID):
+		default:
 			out = append(out, r)
 		}
 	}
@@ -265,6 +294,9 @@ func (f fakeRecipes) Update(_ context.Context, _ domain.UserID, id domain.Recipe
 		return domain.Recipe{}, domain.ErrNotFound
 	}
 	if err := r.Apply(p, f.db.now); err != nil {
+		return domain.Recipe{}, err
+	}
+	if err := f.db.checkTags(r); err != nil {
 		return domain.Recipe{}, err
 	}
 	f.db.recipes[id] = r

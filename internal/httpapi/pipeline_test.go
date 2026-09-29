@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -301,13 +302,16 @@ func TestNewPanicsWithoutRequiredOptions(t *testing.T) {
 // but non-whitelisted callers (403) before its handler runs. The route list
 // comes from apiRoutes, so a new endpoint is covered automatically.
 func TestEveryAPIRouteRequiresAuthAndWhitelist(t *testing.T) {
-	concrete := strings.NewReplacer("{id}", "1", "{imageId}", "1")
+	param := regexp.MustCompile(`\{[A-Za-z]+\}`)
 	for _, rt := range (&server{}).apiRoutes() {
 		method, path, ok := strings.Cut(rt.pattern, " ")
 		if !ok {
 			t.Fatalf("route %q has no method", rt.pattern)
 		}
-		path = concrete.Replace(path)
+		path = param.ReplaceAllString(path, "1")
+		if strings.ContainsAny(path, "{}") {
+			t.Fatalf("route %q has a parameter the test cannot fill", rt.pattern)
+		}
 		t.Run(rt.pattern, func(t *testing.T) {
 			h := newHarness(t)
 			expectError(t, h.do(method, path, nil, nil), http.StatusUnauthorized, "unauthorized", "")

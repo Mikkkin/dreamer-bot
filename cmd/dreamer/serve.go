@@ -23,6 +23,7 @@ import (
 	"github.com/Mikkkin/dreamer-bot/internal/service"
 	"github.com/Mikkkin/dreamer-bot/internal/storage/sqlite"
 	"github.com/Mikkkin/dreamer-bot/internal/tunnel"
+	"github.com/Mikkkin/dreamer-bot/internal/vkusvill"
 	"github.com/Mikkkin/dreamer-bot/internal/webapp"
 )
 
@@ -107,6 +108,11 @@ func runService(ctx context.Context, cfg config.Config, log *slog.Logger) error 
 	if err != nil {
 		return fmt.Errorf("build services: %w", err)
 	}
+	// A nil interface, not a nil *vkusvill.Client, switches the feature off.
+	var basket httpapi.Vkusvill
+	if cfg.VkusvillEnabled {
+		basket = vkusvill.New(log.With("component", "vkusvill"))
+	}
 
 	srv := &http.Server{
 		Handler: httpapi.New(httpapi.Options{
@@ -119,6 +125,7 @@ func runService(ctx context.Context, cfg config.Config, log *slog.Logger) error 
 			MaxImageBytes:   cfg.MaxImageBytes,
 			Log:             log.With("component", "http"),
 			Health:          db.Ping,
+			Vkusvill:        basket,
 		}),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       60 * time.Second,
@@ -194,6 +201,7 @@ func logStartup(cfg config.Config, log *slog.Logger) {
 		"initdata_max_age", cfg.InitDataMaxAge.String(),
 		"max_image_bytes", cfg.MaxImageBytes,
 		"log_level", cfg.LogLevel.String(),
+		"vkusvill_enabled", cfg.VkusvillEnabled,
 	)
 	if cfg.SetupMode() {
 		log.Warn("setup mode: ALLOWED_USER_IDS is empty; the bot only tells /start senders their Telegram ID and the Mini App refuses everyone")

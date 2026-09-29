@@ -32,17 +32,18 @@ func TestWishCreateShape(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &raw); err != nil {
 		t.Fatal(err)
 	}
-	for _, key := range []string{"id", "title", "note", "category_id", "link", "price", "status", "hot", "author", "images", "created_at", "updated_at", "fulfilled_at"} {
+	for _, key := range []string{"id", "title", "note", "category_id", "link", "price", "status", "hot", "saved", "author", "images", "created_at", "updated_at", "fulfilled_at"} {
 		if _, ok := raw[key]; !ok {
 			t.Errorf("missing key %q in %s", key, rec.Body.String())
 		}
 	}
-	if len(raw) != 13 {
+	if len(raw) != 14 {
 		t.Errorf("unexpected keys in %s", rec.Body.String())
 	}
 	for key, want := range map[string]string{
 		"category_id":  "null",
 		"fulfilled_at": "null",
+		"saved":        "null",
 		"images":       "[]",
 		"price":        mustJSON(t, priceJSON{Amount: "1200.50", Currency: "EUR", Formatted: domain.Money{Minor: 120050, Currency: "EUR"}.Format()}),
 		"author":       `{"id":111,"name":"Алиса"}`,

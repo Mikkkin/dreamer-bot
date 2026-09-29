@@ -1,10 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"io"
 	"log/slog"
+	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -72,17 +75,48 @@ func (r *recordingNotifier) RecipeCreated(context.Context, service.Recipients, d
 	r.kinds = append(r.kinds, "recipe_created")
 }
 
+func (r *recordingNotifier) RecipeUpdated(context.Context, service.Recipients, domain.Recipe) {
+	r.kinds = append(r.kinds, "recipe_updated")
+}
+
+func (r *recordingNotifier) RecipeCooked(context.Context, service.Recipients, domain.Recipe, domain.Cook) {
+	r.kinds = append(r.kinds, "recipe_cooked")
+}
+
+func (r *recordingNotifier) RecipeRated(context.Context, service.Recipients, domain.Recipe, domain.Cook, domain.Rating) {
+	r.kinds = append(r.kinds, "recipe_rated")
+}
+
+func (r *recordingNotifier) WishSaved(context.Context, service.Recipients, domain.Wish, domain.Saving) {
+	r.kinds = append(r.kinds, "wish_saved")
+}
+
 func TestLazyNotifierDropsUntilSetThenForwards(t *testing.T) {
-	n := &lazyNotifier{log: discard()}
+	var logs bytes.Buffer
+	n := &lazyNotifier{log: slog.New(slog.NewTextHandler(&logs, nil))}
 	ctx := context.Background()
-	n.WishCreated(ctx, service.Recipients{}, domain.Wish{}) // dropped, must not panic
+	r := service.Recipients{}
+	all := func() {
+		n.WishCreated(ctx, r, domain.Wish{})
+		n.WishFulfilled(ctx, r, domain.Wish{})
+		n.RecipeCreated(ctx, r, domain.Recipe{})
+		n.RecipeUpdated(ctx, r, domain.Recipe{})
+		n.RecipeCooked(ctx, r, domain.Recipe{}, domain.Cook{})
+		n.RecipeRated(ctx, r, domain.Recipe{}, domain.Cook{}, domain.Rating{})
+		n.WishSaved(ctx, r, domain.Wish{}, domain.Saving{})
+	}
+	all() // dropped before the bot exists; must not panic
+	for _, kind := range []string{"recipe_updated", "recipe_cooked", "recipe_rated", "wish_saved"} {
+		if !strings.Contains(logs.String(), "kind="+kind) {
+			t.Errorf("dropped %s notice must be logged: %s", kind, logs.String())
+		}
+	}
 
 	rec := &recordingNotifier{}
 	n.set(rec)
-	n.WishCreated(ctx, service.Recipients{}, domain.Wish{})
-	n.WishFulfilled(ctx, service.Recipients{}, domain.Wish{})
-	n.RecipeCreated(ctx, service.Recipients{}, domain.Recipe{})
-	if len(rec.kinds) != 3 {
-		t.Fatalf("want 3 forwarded notices, got %v", rec.kinds)
+	all()
+	want := []string{"wish_created", "wish_fulfilled", "recipe_created", "recipe_updated", "recipe_cooked", "recipe_rated", "wish_saved"}
+	if !slices.Equal(rec.kinds, want) {
+		t.Fatalf("forwarded %v, want %v", rec.kinds, want)
 	}
 }

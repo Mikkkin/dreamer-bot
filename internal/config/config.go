@@ -36,6 +36,9 @@ type Config struct {
 	InitDataMaxAge  time.Duration
 	MaxImageBytes   int64
 	LogLevel        slog.Level
+	// VkusvillEnabled switches on the ВкусВилл basket, which calls ВкусВилл's
+	// official MCP server.
+	VkusvillEnabled bool
 }
 
 // SetupMode reports whether no user is whitelisted yet.
@@ -109,6 +112,12 @@ func Load(getenv func(string) string) (Config, error) {
 	if err := cfg.LogLevel.UnmarshalText([]byte(orDefault(getenv("LOG_LEVEL"), "info"))); err != nil {
 		fail("LOG_LEVEL must be debug, info, warn or error")
 	}
+
+	vkusvill, err := strconv.ParseBool(orDefault(getenv("VKUSVILL_ENABLED"), "true"))
+	if err != nil {
+		fail("VKUSVILL_ENABLED must be true or false")
+	}
+	cfg.VkusvillEnabled = vkusvill
 
 	if len(errs) > 0 {
 		return Config{}, errors.Join(errs...)

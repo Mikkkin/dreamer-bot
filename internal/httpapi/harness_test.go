@@ -76,6 +76,7 @@ func newHarness(t *testing.T, opts ...option) *harness {
 	tu := defaultTuning()
 	tu.apiRate = rateLimit{every: rate.Inf}
 	tu.uploadRate = rateLimit{every: rate.Inf}
+	tu.externalRate = rateLimit{every: rate.Inf}
 	tu.now = clk.now
 	for _, opt := range opts {
 		opt(&o, &tu)

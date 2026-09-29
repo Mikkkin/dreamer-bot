@@ -32,6 +32,9 @@ type Options struct {
 	// Health reports readiness for /healthz, e.g. a database ping. Nil means
 	// that a running process is healthy.
 	Health func(ctx context.Context) error
+	// Vkusvill builds ВкусВилл baskets. Nil switches the feature off: both
+	// ВкусВилл endpoints answer 503 unavailable.
+	Vkusvill Vkusvill
 }
 
 const (
@@ -45,6 +48,9 @@ type tuning struct {
 	uploadRate  rateLimit
 	limiterIdle time.Duration
 	now         func() time.Time
+
+	// externalRate paces requests that call an external service (ВкусВилл).
+	externalRate rateLimit
 }
 
 func defaultTuning() tuning {
@@ -56,6 +62,10 @@ func defaultTuning() tuning {
 		uploadRate:  rateLimit{every: 1, burst: 10},
 		limiterIdle: 10 * time.Minute,
 		now:         time.Now,
+
+		// One basket takes a match and a cart call or two; the burst absorbs
+		// retries, then a call every two seconds keeps ВкусВилл calm.
+		externalRate: rateLimit{every: 0.5, burst: 6},
 	}
 }
 
@@ -80,6 +90,9 @@ type server struct {
 	apiLimit    *limiter
 	uploadLimit *limiter
 	now         func() time.Time
+
+	vkusvill      Vkusvill // nil when the feature is off
+	externalLimit *limiter
 }
 
 func newServer(o Options, t tuning) *server {
@@ -104,6 +117,9 @@ func newServer(o Options, t tuning) *server {
 		apiLimit:    newLimiter(t.apiRate, t.limiterIdle, t.now),
 		uploadLimit: newLimiter(t.uploadRate, t.limiterIdle, t.now),
 		now:         t.now,
+
+		vkusvill:      o.Vkusvill,
+		externalLimit: newLimiter(t.externalRate, t.limiterIdle, t.now),
 	}
 	if s.currency == "" {
 		s.currency = domain.Currencies[0]
@@ -125,6 +141,9 @@ func (s *server) routes() http.Handler {
 		limits := []*limiter{s.apiLimit}
 		if rt.upload {
 			limits = append(limits, s.uploadLimit)
+		}
+		if rt.external {
+			limits = append(limits, s.externalLimit)
 		}
 		mux.Handle(rt.pattern, s.api(rt.handler, limits...))
 	}
@@ -164,6 +183,9 @@ type apiRoute struct {
 	pattern string
 	handler apiFunc
 	upload  bool // also subject to the stricter upload rate limit
+	// external: also subject to the rate limit for calls to an external
+	// service.
+	external bool
 }
 
 func (s *server) apiRoutes() []apiRoute {
@@ -179,6 +201,9 @@ func (s *server) apiRoutes() []apiRoute {
 		{pattern: "DELETE /api/wishes/{id}", handler: s.deleteWish},
 		{pattern: "POST /api/wishes/{id}/images", handler: s.addWishImage, upload: true},
 		{pattern: "DELETE /api/wishes/{id}/images/{imageId}", handler: s.removeWishImage},
+		{pattern: "GET /api/wishes/{id}/savings", handler: s.listSavings},
+		{pattern: "POST /api/wishes/{id}/savings", handler: s.addSaving},
+		{pattern: "DELETE /api/wishes/{id}/savings/{savingId}", handler: s.removeSaving},
 
 		{pattern: "GET /api/categories", handler: s.listCategories},
 		{pattern: "POST /api/categories", handler: s.createCategory},
@@ -193,5 +218,24 @@ func (s *server) apiRoutes() []apiRoute {
 		{pattern: "DELETE /api/recipes/{id}", handler: s.deleteRecipe},
 		{pattern: "POST /api/recipes/{id}/images", handler: s.addRecipeImage, upload: true},
 		{pattern: "DELETE /api/recipes/{id}/images/{imageId}", handler: s.removeRecipeImage},
+		{pattern: "POST /api/recipes/{id}/cooks", handler: s.cookRecipe},
+		{pattern: "GET /api/recipes/{id}/cooks", handler: s.listCooks},
+		{pattern: "PUT /api/recipes/{id}/cooks/{cookId}/rating", handler: s.rateCook},
+		{pattern: "DELETE /api/recipes/{id}/cooks/{cookId}", handler: s.removeCook},
+		{pattern: "POST /api/recipes/{id}/shopping", handler: s.addRecipeToShopping},
+
+		{pattern: "GET /api/recipe-tags", handler: s.listRecipeTags},
+		{pattern: "POST /api/recipe-tags", handler: s.createRecipeTag},
+		{pattern: "PATCH /api/recipe-tags/{id}", handler: s.patchRecipeTag},
+		{pattern: "DELETE /api/recipe-tags/{id}", handler: s.deleteRecipeTag},
+
+		{pattern: "GET /api/shopping", handler: s.listShopping},
+		{pattern: "POST /api/shopping", handler: s.addShopping},
+		{pattern: "PATCH /api/shopping/{id}", handler: s.patchShopping},
+		{pattern: "DELETE /api/shopping/{id}", handler: s.deleteShopping},
+		{pattern: "POST /api/shopping/clear-checked", handler: s.clearChecked},
+		{pattern: "GET /api/stores", handler: s.listStores},
+		{pattern: "POST /api/shopping/vkusvill/match", handler: s.vkusvillMatch, external: true},
+		{pattern: "POST /api/shopping/vkusvill/cart", handler: s.vkusvillCart, external: true},
 	}
 }

@@ -96,6 +96,8 @@ type lazyNotifier struct {
 	log    *slog.Logger
 }
 
+var _ service.Notifier = (*lazyNotifier)(nil)
+
 func (n *lazyNotifier) set(target service.Notifier) { n.target.Store(&target) }
 
 func (n *lazyNotifier) get(kind string) service.Notifier {
@@ -121,6 +123,30 @@ func (n *lazyNotifier) WishFulfilled(ctx context.Context, r service.Recipients, 
 func (n *lazyNotifier) RecipeCreated(ctx context.Context, r service.Recipients, rec domain.Recipe) {
 	if t := n.get("recipe_created"); t != nil {
 		t.RecipeCreated(ctx, r, rec)
+	}
+}
+
+func (n *lazyNotifier) RecipeUpdated(ctx context.Context, r service.Recipients, rec domain.Recipe) {
+	if t := n.get("recipe_updated"); t != nil {
+		t.RecipeUpdated(ctx, r, rec)
+	}
+}
+
+func (n *lazyNotifier) RecipeCooked(ctx context.Context, r service.Recipients, rec domain.Recipe, cook domain.Cook) {
+	if t := n.get("recipe_cooked"); t != nil {
+		t.RecipeCooked(ctx, r, rec, cook)
+	}
+}
+
+func (n *lazyNotifier) RecipeRated(ctx context.Context, r service.Recipients, rec domain.Recipe, cook domain.Cook, rating domain.Rating) {
+	if t := n.get("recipe_rated"); t != nil {
+		t.RecipeRated(ctx, r, rec, cook, rating)
+	}
+}
+
+func (n *lazyNotifier) WishSaved(ctx context.Context, r service.Recipients, w domain.Wish, s domain.Saving) {
+	if t := n.get("wish_saved"); t != nil {
+		t.WishSaved(ctx, r, w, s)
 	}
 }
 

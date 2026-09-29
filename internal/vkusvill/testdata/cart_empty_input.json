@@ -1,0 +1,1 @@
+{"jsonrpc":"2.0","id":9,"result":{"content":[{"type":"text","text":"{\n    \"ok\": false,\n    \"error\": {\n        \"code\": \"empty_input\",\n        \"message\": \"Пустой массив товаров\",\n        \"http_status\": 400,\n        \"retryable\": false\n    }\n}"}],"isError":false}}

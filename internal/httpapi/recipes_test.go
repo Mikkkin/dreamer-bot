@@ -19,8 +19,19 @@ func TestRecipeLifecycle(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &raw); err != nil {
 		t.Fatal(err)
 	}
-	if len(raw) != 8 || string(raw["images"]) != "[]" || string(raw["author"]) != `{"id":111,"name":"Алиса"}` {
+	if len(raw) != 13 || string(raw["images"]) != "[]" || string(raw["author"]) != `{"id":111,"name":"Алиса"}` {
 		t.Fatalf("unexpected recipe shape %s", rec.Body.String())
+	}
+	for key, want := range map[string]string{
+		"cuisine_id":  "null",
+		"course_ids":  "[]",
+		"ingredients": "[]",
+		"nutrition":   "null",
+		"cooking":     `{"count":0,"last_cooked_at":null,"rating_avg":null,"rating_count":0}`,
+	} {
+		if got := string(raw[key]); got != want {
+			t.Errorf("%s = %s, want %s", key, got, want)
+		}
 	}
 	created := decode[recipeJSON](t, rec)
 	path := "/api/recipes/" + strconv.FormatInt(created.ID, 10)

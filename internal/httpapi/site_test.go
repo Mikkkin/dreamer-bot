@@ -104,7 +104,10 @@ func TestMe(t *testing.T) {
 	want := `{"user":{"id":111,"name":"Алиса"},"partners":[{"id":222,"name":"Боб"}],` +
 		`"currencies":[{"code":"EUR","symbol":"€"},{"code":"USD","symbol":"$"},{"code":"RUB","symbol":"₽"},{"code":"GBP","symbol":"£"}],` +
 		`"default_currency":"EUR","limits":{"title_max":120,"note_max":2000,"link_max":2048,"images_per_wish":10,` +
-		`"image_max_bytes":1024,"category_name_max":32,"recipe_body_max":10000,"images_per_recipe":10}}`
+		`"image_max_bytes":1024,"category_name_max":32,"recipe_body_max":10000,"images_per_recipe":10,` +
+		`"ingredients_per_recipe":50,"courses_per_recipe":8,"shopping_items_max":300,"item_name_max":80,` +
+		`"rating_comment_max":280,"saving_note_max":140,"dish_weight_max_g":20000,"servings_max":50},` +
+		`"units":["г","кг","мл","л","шт","ст. л.","ч. л.","стакан","щепотка","зубчик","пучок","упаковка","по вкусу"]}`
 	if got := strings.TrimSpace(rec.Body.String()); got != want {
 		t.Fatalf("me =\n%s\nwant\n%s", got, want)
 	}
@@ -132,6 +135,8 @@ func TestStatsShape(t *testing.T) {
 			{Category: nil, ByStatus: nil},
 		},
 		Recipes:           12,
+		RecipesCooked:     9,
+		Saved:             []domain.Money{{Minor: 1_700_000, Currency: "RUB"}},
 		FulfilledThisYear: 5,
 	}
 	rec := h.call(http.MethodGet, "/api/stats", alice, nil)
@@ -143,8 +148,10 @@ func TestStatsShape(t *testing.T) {
 			Category json.RawMessage            `json:"category"`
 			ByStatus map[string]json.RawMessage `json:"by_status"`
 		} `json:"categories"`
-		FulfilledThisYear int `json:"fulfilled_this_year"`
-		Recipes           int `json:"recipes"`
+		FulfilledThisYear int             `json:"fulfilled_this_year"`
+		Recipes           int             `json:"recipes"`
+		RecipesCooked     int             `json:"recipes_cooked"`
+		Saved             json.RawMessage `json:"saved"`
 	}
 	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
 		t.Fatal(err)
@@ -177,7 +184,22 @@ func TestStatsShape(t *testing.T) {
 	if string(got.Categories[0].Category) != `{"id":2,"name":"Путешествия","emoji":"✈️","position":1}` || string(got.Categories[1].Category) != "null" {
 		t.Errorf("categories: %s", rec.Body.String())
 	}
-	if got.FulfilledThisYear != 5 || got.Recipes != 12 {
+	if got.FulfilledThisYear != 5 || got.Recipes != 12 || got.RecipesCooked != 9 {
 		t.Errorf("counters: %+v", got)
+	}
+	wantSaved := "[" + mustJSON(t, priceJSON{Amount: "17000", Currency: "RUB", Formatted: domain.Money{Minor: 1_700_000, Currency: "RUB"}.Format()}) + "]"
+	if string(got.Saved) != wantSaved {
+		t.Errorf("saved = %s, want %s", got.Saved, wantSaved)
+	}
+}
+
+func TestStatsEmptyListsAreArrays(t *testing.T) {
+	h := newHarness(t)
+	rec := h.call(http.MethodGet, "/api/stats", alice, nil)
+	expectStatus(t, rec, http.StatusOK)
+	for _, want := range []string{`"categories":[]`, `"saved":[]`, `"recipes_cooked":0`} {
+		if !strings.Contains(rec.Body.String(), want) {
+			t.Errorf("stats must contain %s: %s", want, rec.Body.String())
+		}
 	}
 }

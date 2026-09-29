@@ -218,12 +218,27 @@ func (s *server) removeWishImage(w http.ResponseWriter, r *http.Request, u auth.
 	return nil
 }
 
+// writeWish renders a single wish. Unlike lists, it also fills saved.count:
+// the wish carries only the aggregated total, so the contributions are
+// counted with one extra query. The count is best effort: a failure is
+// logged and leaves it null, because a mutation has already been committed
+// when its response is written.
 func (s *server) writeWish(w http.ResponseWriter, r *http.Request, status int, wish domain.Wish) error {
 	p, err := s.presenter(r.Context())
 	if err != nil {
 		return err
 	}
-	writeJSON(w, status, p.wish(wish))
+	out := p.wish(wish)
+	if out.Saved != nil {
+		savings, err := s.svc.Wishes.ListSavings(r.Context(), wish.ID)
+		if err != nil {
+			s.log.ErrorContext(r.Context(), "count savings", "wish_id", int64(wish.ID), "err", err)
+		} else {
+			n := len(savings)
+			out.Saved.Count = &n
+		}
+	}
+	writeJSON(w, status, out)
 	return nil
 }
 

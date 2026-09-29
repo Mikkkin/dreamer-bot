@@ -20,7 +20,7 @@ func TestLoadDefaults(t *testing.T) {
 	if len(cfg.AllowedUsers) != 2 || cfg.AllowedUsers[0] != 111 || cfg.AllowedUsers[1] != 222 {
 		t.Errorf("unexpected users %v", cfg.AllowedUsers)
 	}
-	if cfg.SetupMode() || cfg.DefaultCurrency != "EUR" || cfg.InitDataMaxAge != 24*time.Hour || cfg.MaxImageBytes != 10<<20 {
+	if cfg.SetupMode() || cfg.DefaultCurrency != "EUR" || cfg.InitDataMaxAge != 24*time.Hour || cfg.MaxImageBytes != 10<<20 || !cfg.VkusvillEnabled {
 		t.Errorf("unexpected defaults %+v", cfg)
 	}
 }
@@ -44,6 +44,7 @@ func TestLoadRejectsInvalid(t *testing.T) {
 		"max age":         {"BOT_TOKEN": testToken, "INITDATA_MAX_AGE": "10s"},
 		"image size":      {"BOT_TOKEN": testToken, "MAX_IMAGE_MB": "500"},
 		"log level":       {"BOT_TOKEN": testToken, "LOG_LEVEL": "loud"},
+		"vkusvill flag":   {"BOT_TOKEN": testToken, "VKUSVILL_ENABLED": "maybe"},
 	}
 	for name, m := range cases {
 		if _, err := Load(env(m)); err == nil {
@@ -63,5 +64,15 @@ func TestWebAppURLNormalized(t *testing.T) {
 	cfg, err := Load(env(map[string]string{"BOT_TOKEN": testToken, "WEBAPP_URL": "https://dreams.example.com"}))
 	if err != nil || cfg.WebAppURL != "https://dreams.example.com/" {
 		t.Fatalf("got %q, %v", cfg.WebAppURL, err)
+	}
+}
+
+func TestVkusvillFlag(t *testing.T) {
+	cases := map[string]bool{"": true, " ": true, "true": true, "1": true, "TRUE": true, "false": false, "0": false, " false ": false}
+	for raw, want := range cases {
+		cfg, err := Load(env(map[string]string{"BOT_TOKEN": testToken, "VKUSVILL_ENABLED": raw}))
+		if err != nil || cfg.VkusvillEnabled != want {
+			t.Errorf("VKUSVILL_ENABLED=%q: enabled = %v, %v; want %v", raw, cfg.VkusvillEnabled, err, want)
+		}
 	}
 }

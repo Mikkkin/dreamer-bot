@@ -9,6 +9,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/Mikkkin/dreamer-bot/internal/domain"
+	"github.com/Mikkkin/dreamer-bot/internal/vkusvill"
 )
 
 // apiError is a response-ready error. Message is Russian and safe to show to
@@ -36,6 +37,10 @@ var (
 	errLimit            = apiError{status: http.StatusUnprocessableEntity, code: "limit", message: "Достигнут лимит."}
 	errRateLimited      = apiError{status: http.StatusTooManyRequests, code: "rate_limited", message: "Слишком много запросов. Подождите немного."}
 	errInternal         = apiError{status: http.StatusInternalServerError, code: "internal", message: "Что-то пошло не так. Попробуйте ещё раз."}
+	// An external service (ВкусВилл) failed or is switched off; the client
+	// falls back to plain search links.
+	errVkusvillDown = apiError{status: http.StatusServiceUnavailable, code: "unavailable", message: "ВкусВилл сейчас не отвечает. Попробуйте чуть позже."}
+	errVkusvillOff  = apiError{status: http.StatusServiceUnavailable, code: "unavailable", message: "Корзина во ВкусВилле сейчас выключена."}
 )
 
 // badRequest is a 400 validation error. field may be empty when the whole
@@ -69,6 +74,10 @@ func classify(err error) apiError {
 		return errBodyTooLarge
 	case errors.Is(err, domain.ErrImageUnsupported):
 		return errImageUnsupported
+	case errors.Is(err, vkusvill.ErrUnavailable):
+		return errVkusvillDown
+	case errors.Is(err, vkusvill.ErrInvalidCart):
+		return badRequest("lines", "Одного товара можно положить от 0,01 до 40.")
 	default:
 		return errInternal
 	}
@@ -77,12 +86,15 @@ func classify(err error) apiError {
 // fail writes the response for err and logs it when it is unexpected.
 func (s *server) fail(w http.ResponseWriter, r *http.Request, err error) {
 	e := classify(err)
-	if e.status >= http.StatusInternalServerError {
-		if errors.Is(err, context.Canceled) && r.Context().Err() != nil {
-			s.log.DebugContext(r.Context(), "client went away", "route", r.Pattern)
-		} else {
-			s.log.ErrorContext(r.Context(), "request failed", "route", r.Pattern, "err", err)
-		}
+	switch {
+	case e.status < http.StatusInternalServerError:
+	case errors.Is(err, context.Canceled) && r.Context().Err() != nil:
+		s.log.DebugContext(r.Context(), "client went away", "route", r.Pattern)
+	case e.status == http.StatusServiceUnavailable:
+		// An outage of an external service is expected now and then.
+		s.log.WarnContext(r.Context(), "external service unavailable", "route", r.Pattern, "err", err)
+	default:
+		s.log.ErrorContext(r.Context(), "request failed", "route", r.Pattern, "err", err)
 	}
 	writeError(w, e)
 }

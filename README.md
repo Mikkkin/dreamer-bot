@@ -14,12 +14,27 @@ A private Telegram bot and Mini App where two people keep a shared list of wishe
 
 ## What it does
 
-- **Wishes.** Each wish gets categories, photos and one of three statuses: *Хотим* (want), *Копим* (saving up), *Сбылось ✨* (came true). Price and link are **optional**: switches in the form reveal them only when you want them.
-- **Recipes («Что приготовить»).** A flat list, no categories or statuses. Add a link to a recipe, write it yourself, attach screenshots, or combine all three. When you can't decide, «🎲 Что приготовить?» picks a random recipe.
+- **Wishes.** Each wish gets categories, photos and one of three statuses: *Хотим* (want), *Копим* (saving up), *Сбылось ✨* (came true). Price and link are **optional**: switches in the form reveal them only when you want them. In *Копим* you log what each of you put aside, and a progress bar shows how much of the price is saved.
+- **Recipes («Что приготовить»).**
+  - Add a link, write the recipe yourself, attach screenshots, or combine them.
+  - Group recipes by cuisine (Русская, Азиатская…) and by meal or course (Завтрак, Ужин, Первое…). Both lists come with defaults, and you can add your own.
+  - List ingredients and enter КБЖУ per 100 g; the values for the whole dish and per serving are calculated.
+  - After cooking, tap «🍳 Приготовили» and each of you rates the dish from 1 to 5 stars. The recipe stays in the list with its history, average rating and how many times you've cooked it.
+  - «🎲 Что приготовить?» picks a random recipe.
 - **Mini App.** The main interface. It follows each person's Telegram theme (light or dark) and uses the native Telegram buttons and haptic feedback.
-- **Chat bot.** Send it text, a link or photos and a draft card appears: choose wish or recipe, a category, a price or link, then save. `/list`, `/recipes`, `/cook` and `/stats` work right in the chat.
-- **Partner notifications.** When one of you adds a wish or a recipe, or marks a wish as fulfilled, the other gets a message with the photo and an "Открыть ✨" button.
-- **Statistics.** Totals per category and per currency (currencies are never mixed or converted), plus how many dreams came true this year.
+- **Chat bot.** Send it text, a link or photos and a draft card appears: choose wish or recipe, a category, a price or link, then save. `/list`, `/recipes`, `/cook`, `/shop` and `/stats` work right in the chat.
+- **Shopping list.**
+  - Add a recipe's ingredients in one tap. Same products merge: 500 мл + 250 мл becomes 750 мл, and 200 мл + 0,5 л becomes 700 мл.
+  - Tick items off as you buy them.
+  - Search any item in ВкусВилл, Перекрёсток, Магнит, Пятёрочка, Лавка, Самокат, Купер, Лента, Ашан, METRO or Азбука вкуса.
+  - **«Собрать корзину во ВкусВилле»** matches the whole list to real products with prices, using ВкусВилл's official MCP server, and opens a ready cart. The other stores protect their sites against bots, so for them the bot offers search links only.
+- **Partner notifications.** The other person gets a message with the photo and an «Открыть ✨» button when one of you:
+  - adds a wish or a recipe;
+  - edits a recipe (a burst of edits becomes one message);
+  - cooks and rates something, with star buttons to rate it too;
+  - puts money aside;
+  - marks a wish as fulfilled.
+- **Statistics.** Totals per category and per currency (currencies are never mixed or converted), how much is saved, how many dreams came true this year, and how often you cook.
 
 ## One-command VDS setup
 
@@ -36,7 +51,7 @@ scp deploy/setup-vds.sh root@<server-ip>:
 ssh -t root@<server-ip> 'bash setup-vds.sh'   # -t: the script asks questions
 ```
 
-It then installs itself as `dreamer-vds`: `sudo dreamer-vds update | ids | env | status`.
+It then installs itself as `dreamer-vds`: `sudo dreamer-vds update | ids | env | status | backup | restore`.
 
 ## Quick start (VPS + free domain)
 
@@ -117,6 +132,7 @@ Every setting is an environment variable, read from `.env` by Docker Compose. [`
 | `INITDATA_MAX_AGE` | `24h` | How long one Mini App launch stays valid (`1m`–`168h`) |
 | `MAX_IMAGE_MB` | `10` | Upload limit for a single photo (1–50) |
 | `TZ` | `UTC` | Time zone for dates and the "this year" statistic, for example `Europe/Amsterdam` |
+| `VKUSVILL_ENABLED` | `true` | «Собрать корзину во ВкусВилле». Set `false` to keep the server from contacting ВкусВилл at all; the search links still work |
 | `LOG_LEVEL` | `info` | `debug`, `info`, `warn` or `error` |
 | `HTTP_PORT` | `8080` | Host port on `127.0.0.1` where the Mini App is also reachable |
 | `COMPOSE_PROFILES` | — | Profiles to run, e.g. `caddy` or `caddy,duckdns` |
@@ -132,6 +148,7 @@ Every setting is an environment variable, read from `.env` by Docker Compose. [`
 | `/list` | Wishes by status, with pages. Tap one to see its card |
 | `/recipes` | All recipes |
 | `/cook` | A random recipe for today |
+| `/shop` | The shopping list: tick items off or clear the bought ones |
 | `/stats` | Totals per category and currency |
 | `/help` | How to use the bot |
 | `/cancel` | Cancel the current input or draft |
@@ -150,7 +167,7 @@ You can also send the bot plain text, a link, a photo or an album without any co
 
   There are no cookies and no sessions.
 - **Images.** Uploads are size-limited. The format is checked from the file contents (JPEG, PNG or WebP only), and huge dimensions are rejected before decoding. Every image is re-encoded, which removes EXIF and GPS metadata. Files are stored under random server-generated names. They are served only through HMAC-signed URLs that expire.
-- **No server-side fetching.** Links are validated (http/https only) and shown to you, but the server never downloads them, so there is nothing to exploit with SSRF.
+- **No fetching of user links.** Links are validated (http/https only) and shown to you, but the server never downloads them, so there is nothing to exploit with SSRF. The only outbound call the server makes, besides Telegram, goes to ВкусВилл's official MCP server for the cart. The address is fixed in the code, redirects are not followed, and replies are capped in size and time. Only product names from your shopping list are sent, never who you are. `VKUSVILL_ENABLED=false` turns it off.
 - **Web hardening.**
   - A strict Content-Security-Policy. The only external script is Telegram's `telegram-web-app.js`, and only `web.telegram.org` may frame the app.
   - `nosniff` and `no-referrer` headers.
@@ -160,18 +177,23 @@ You can also send the bot plain text, a link, a photo or an album without any co
 
 Want to report a vulnerability? Please open a private security advisory on GitHub rather than a public issue.
 
-## Backup and restore
+## Updating without losing data
 
-All data lives in the `dreamer-data` Docker volume: the SQLite database and the processed images.
+All data lives in the `dreamer-data` Docker volume: the SQLite database and the processed images. The volume survives rebuilds and container re-creation. Schema changes ship as new migrations, which run automatically on start, each in its own transaction.
 
 ```bash
-docker compose stop bot
-docker run --rm -v dreamer_dreamer-data:/data -v "$PWD":/backup alpine \
-  tar czf /backup/dreamer-backup.tgz -C /data .
-docker compose start bot
+sudo dreamer-vds update     # git pull → build the new version → back up the data → restart
 ```
 
-To restore, extract the archive into the volume with the bot stopped. Use `tar xzf` in place of `tar czf`. Because `/data` must stay owned by UID 65532, add `--user 65532:65532` to the `docker run` command.
+The update builds the new version while the old one keeps running. It then archives the data to `/var/backups/dreamer/`, which stops the bot for a few seconds, keeps the last 10 archives, and restarts the bot. If something goes wrong, restoring takes one command:
+
+```bash
+sudo dreamer-vds backup                                  # an archive right now
+sudo dreamer-vds restore                                 # list the archives
+sudo dreamer-vds restore /var/backups/dreamer/<file>     # restore one (the current data is archived first)
+```
+
+Never run `docker compose down -v`: `-v` deletes the data volume. A newer schema cannot be opened by an older binary, so going back to an old version means restoring the backup made before the update.
 
 ## How it is built
 

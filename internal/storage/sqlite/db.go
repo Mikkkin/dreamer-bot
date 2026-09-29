@@ -7,6 +7,7 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -166,9 +167,43 @@ func requireAffected(res sql.Result, what string, id int64) error {
 	return nil
 }
 
+// requireRow fails with domain.ErrNotFound when query (a "SELECT 1 … WHERE
+// id = ?" statement) finds no row for id.
+func requireRow(ctx context.Context, q querier, query, what string, id int64) error {
+	var one int
+	if err := q.QueryRowContext(ctx, query, id).Scan(&one); err != nil {
+		return notFound(err, what, id)
+	}
+	return nil
+}
+
+// idList encodes ids as a JSON array for "IN (SELECT value FROM
+// json_each(?))", which loads the children of many rows with one static
+// statement.
+func idList(ids []int64) (string, error) {
+	b, err := json.Marshal(ids)
+	if err != nil {
+		return "", fmt.Errorf("sqlite: encode ids: %w", err)
+	}
+	return string(b), nil
+}
+
+// nullableInt stores 0 ("unknown") as NULL.
+func nullableInt[T ~int | ~int64](v T) any {
+	if v == 0 {
+		return nil
+	}
+	return int64(v)
+}
+
 func isUniqueViolation(err error) bool {
 	var se *modernc.Error
 	return errors.As(err, &se) && se.Code() == sqlite3.SQLITE_CONSTRAINT_UNIQUE
+}
+
+func isForeignKeyViolation(err error) bool {
+	var se *modernc.Error
+	return errors.As(err, &se) && se.Code() == sqlite3.SQLITE_CONSTRAINT_FOREIGNKEY
 }
 
 func toMillis(t time.Time) int64 { return t.UnixMilli() }

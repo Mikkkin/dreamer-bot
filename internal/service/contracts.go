@@ -25,6 +25,12 @@ type Wishes interface {
 	// AddImage validates, re-encodes and stores an image read from src.
 	AddImage(ctx context.Context, actor domain.UserID, id domain.WishID, src io.Reader) (domain.Image, error)
 	RemoveImage(ctx context.Context, actor domain.UserID, id domain.WishID, img domain.ImageID) error
+	// AddSaving records money put aside for the wish («Копим»). A wish that is
+	// still «Хотим» moves to «Копим». Partners are notified.
+	AddSaving(ctx context.Context, actor domain.UserID, id domain.WishID, amount domain.Money, note string) (domain.Saving, error)
+	// ListSavings returns the wish's contributions, newest first.
+	ListSavings(ctx context.Context, id domain.WishID) ([]domain.Saving, error)
+	RemoveSaving(ctx context.Context, actor domain.UserID, id domain.WishID, saving domain.SavingID) error
 }
 
 // Recipes is the use-case API for the flat «Что приготовить» list.
@@ -40,6 +46,46 @@ type Recipes interface {
 	Delete(ctx context.Context, actor domain.UserID, id domain.RecipeID) error
 	AddImage(ctx context.Context, actor domain.UserID, id domain.RecipeID, src io.Reader) (domain.Image, error)
 	RemoveImage(ctx context.Context, actor domain.UserID, id domain.RecipeID, img domain.ImageID) error
+	// Cook records that the recipe was cooked now, optionally with the
+	// actor's rating. The recipe stays in the list. Partners are notified.
+	Cook(ctx context.Context, actor domain.UserID, id domain.RecipeID, rating *RatingInput) (domain.Cook, error)
+	// Rate sets (or replaces) the actor's rating of one cooking.
+	Rate(ctx context.Context, actor domain.UserID, id domain.RecipeID, cook domain.CookID, in RatingInput) (domain.Cook, error)
+	// ListCooks returns the cooking history, newest first, with ratings.
+	ListCooks(ctx context.Context, id domain.RecipeID) ([]domain.Cook, error)
+	RemoveCook(ctx context.Context, actor domain.UserID, id domain.RecipeID, cook domain.CookID) error
+}
+
+// RatingInput is a person's stars (1..5) and optional comment.
+type RatingInput struct {
+	Stars   int
+	Comment string
+}
+
+// RecipeTags manages the cuisine and course tags of recipes.
+type RecipeTags interface {
+	// List returns all tags ordered by kind, then position.
+	List(ctx context.Context) ([]domain.RecipeTag, error)
+	Create(ctx context.Context, actor domain.UserID, kind domain.TagKind, name, emoji string) (domain.RecipeTag, error)
+	Update(ctx context.Context, actor domain.UserID, id domain.RecipeTagID, p domain.RecipeTagPatch) (domain.RecipeTag, error)
+	// Delete removes the tag; recipes keep existing without it.
+	Delete(ctx context.Context, actor domain.UserID, id domain.RecipeTagID) error
+}
+
+// Shopping manages the couple's shared shopping list.
+type Shopping interface {
+	// List returns unchecked items first, then checked, oldest first.
+	List(ctx context.Context) ([]domain.ShoppingItem, error)
+	// Add appends items, merging each into an unchecked item with the same
+	// name and unit when possible.
+	Add(ctx context.Context, actor domain.UserID, drafts []domain.ShoppingDraft) ([]domain.ShoppingItem, error)
+	// AddFromRecipe adds the recipe's ingredients at the given positions
+	// (nil = all) and returns the added or merged items.
+	AddFromRecipe(ctx context.Context, actor domain.UserID, id domain.RecipeID, positions []int) ([]domain.ShoppingItem, error)
+	Update(ctx context.Context, actor domain.UserID, id domain.ShoppingItemID, p domain.ShoppingPatch) (domain.ShoppingItem, error)
+	Delete(ctx context.Context, actor domain.UserID, id domain.ShoppingItemID) error
+	// ClearChecked removes every checked item and reports how many.
+	ClearChecked(ctx context.Context, actor domain.UserID) (int, error)
 }
 
 // Images serves stored images regardless of whether a wish or a recipe owns them.
@@ -90,6 +136,13 @@ type Notifier interface {
 	WishCreated(ctx context.Context, r Recipients, w domain.Wish)
 	WishFulfilled(ctx context.Context, r Recipients, w domain.Wish)
 	RecipeCreated(ctx context.Context, r Recipients, rec domain.Recipe)
+	// RecipeUpdated fires on every change of a recipe's content (fields,
+	// tags, ingredients, КБЖУ, photos). Implementations coalesce bursts (an
+	// edit is several API calls) into one message per recipe.
+	RecipeUpdated(ctx context.Context, r Recipients, rec domain.Recipe)
+	RecipeCooked(ctx context.Context, r Recipients, rec domain.Recipe, cook domain.Cook)
+	RecipeRated(ctx context.Context, r Recipients, rec domain.Recipe, cook domain.Cook, rating domain.Rating)
+	WishSaved(ctx context.Context, r Recipients, w domain.Wish, s domain.Saving)
 }
 
 // ImageVariant selects the stored rendition of an image.

@@ -54,6 +54,9 @@ type event struct {
 	r      service.Recipients
 	wish   domain.Wish
 	recipe domain.Recipe
+	cook   domain.Cook
+	rating domain.Rating
+	saving domain.Saving
 	ctx    context.Context
 }
 
@@ -82,6 +85,31 @@ func (n *recordingNotifier) WishFulfilled(ctx context.Context, r service.Recipie
 
 func (n *recordingNotifier) RecipeCreated(ctx context.Context, r service.Recipients, rec domain.Recipe) {
 	n.record(event{kind: "recipe_created", r: r, recipe: rec, ctx: ctx})
+}
+
+func (n *recordingNotifier) RecipeUpdated(ctx context.Context, r service.Recipients, rec domain.Recipe) {
+	n.record(event{kind: "recipe_updated", r: r, recipe: rec, ctx: ctx})
+}
+
+func (n *recordingNotifier) RecipeCooked(ctx context.Context, r service.Recipients, rec domain.Recipe, c domain.Cook) {
+	n.record(event{kind: "recipe_cooked", r: r, recipe: rec, cook: c, ctx: ctx})
+}
+
+func (n *recordingNotifier) RecipeRated(ctx context.Context, r service.Recipients, rec domain.Recipe, c domain.Cook, rating domain.Rating) {
+	n.record(event{kind: "recipe_rated", r: r, recipe: rec, cook: c, rating: rating, ctx: ctx})
+}
+
+func (n *recordingNotifier) WishSaved(ctx context.Context, r service.Recipients, w domain.Wish, s domain.Saving) {
+	n.record(event{kind: "wish_saved", r: r, wish: w, saving: s, ctx: ctx})
+}
+
+// kinds lists the kinds of the recorded events in order.
+func (n *recordingNotifier) kinds() []string {
+	var out []string
+	for _, e := range n.all() {
+		out = append(out, e.kind)
+	}
+	return out
 }
 
 func (n *recordingNotifier) all() []event {

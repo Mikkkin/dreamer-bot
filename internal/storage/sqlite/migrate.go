@@ -29,12 +29,13 @@ type migration struct {
 	seed    func(ctx context.Context, tx *sql.Tx) error
 }
 
-// seeds attaches data changes to schema versions. The default categories
-// belong to the first migration only, so categories the users delete never
-// come back on a restart.
+// seeds attaches data changes to schema versions. Default categories belong
+// to the first migration and default recipe tags to the second only, so
+// entries the users delete never come back on a restart.
 func seeds() map[int]func(context.Context, *sql.Tx) error {
 	return map[int]func(context.Context, *sql.Tx) error{
 		1: seedDefaultCategories,
+		2: seedDefaultRecipeTags,
 	}
 }
 
@@ -76,6 +77,13 @@ func (db *DB) migrate(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	return db.applyMigrations(ctx, migrations)
+}
+
+// applyMigrations brings the schema up to the last of migrations, which
+// must be contiguous from version 1. Tests pass a prefix to build a database
+// at an older schema version.
+func (db *DB) applyMigrations(ctx context.Context, migrations []migration) error {
 	if _, err := db.sql.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS schema_migrations (
 		version    INTEGER PRIMARY KEY,
 		applied_at INTEGER NOT NULL
@@ -141,6 +149,18 @@ func seedDefaultCategories(ctx context.Context, tx *sql.Tx) error {
 			`INSERT INTO categories (name, name_key, emoji, position, created_at) VALUES (?, ?, ?, ?, ?)`,
 			c.Name, searchKey(c.Name), c.Emoji, c.Position, now); err != nil {
 			return fmt.Errorf("seed category %q: %w", c.Name, err)
+		}
+	}
+	return nil
+}
+
+func seedDefaultRecipeTags(ctx context.Context, tx *sql.Tx) error {
+	now := toMillis(time.Now())
+	for _, t := range domain.DefaultRecipeTags() {
+		if _, err := tx.ExecContext(ctx,
+			`INSERT INTO recipe_tags (kind, name, name_key, emoji, position, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
+			string(t.Kind), t.Name, searchKey(t.Name), t.Emoji, t.Position, now); err != nil {
+			return fmt.Errorf("seed recipe tag %q: %w", t.Name, err)
 		}
 	}
 	return nil

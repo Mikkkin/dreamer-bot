@@ -136,6 +136,11 @@ type Stats struct {
 	Overall    map[Status]StatusTotals
 	// Recipes is the number of saved recipes.
 	Recipes int
+	// RecipesCooked counts every time any recipe was cooked.
+	RecipesCooked int
+	// Saved is the money put aside for wishes that have not come true yet,
+	// one entry per currency.
+	Saved []Money
 	// FulfilledThisYear counts wishes fulfilled since January 1st (local time).
 	FulfilledThisYear int
 }

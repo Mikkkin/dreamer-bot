@@ -15,14 +15,18 @@ import (
 // violations to domain.ErrConflict.
 type Repositories interface {
 	WishRepository
+	SavingRepository
 	RecipeRepository
+	RecipeTagRepository
+	CookRepository
+	ShoppingRepository
 	CategoryRepository
 	ImageRepository
 	UserRepository
 }
 
 // WishRepository persists wishes. Every returned wish carries its images
-// ordered by position.
+// ordered by position and, in Saved, the sum of its savings.
 type WishRepository interface {
 	// InsertWish stores a new wish and returns it with its ID.
 	InsertWish(ctx context.Context, w domain.Wish) (domain.Wish, error)
@@ -40,13 +44,36 @@ type WishRepository interface {
 	DeleteWish(ctx context.Context, id domain.WishID) (imageKeys []string, err error)
 }
 
+// SavingRepository persists the savings of wishes («Копим»).
+type SavingRepository interface {
+	// InsertSaving loads the wish (with Saved), lets fn build the saving and
+	// change the wish, then stores both in one transaction, so concurrent
+	// savings cannot bypass the one-currency rule. It returns the wish as
+	// stored afterwards (Saved includes the new saving) and the saving with
+	// its ID. An error from fn aborts everything and is returned unchanged;
+	// fn must not keep the pointer or touch storage.
+	InsertSaving(ctx context.Context, id domain.WishID, fn func(*domain.Wish) (domain.Saving, error)) (domain.Wish, domain.Saving, error)
+	// ListSavings returns the savings of the wish, newest first, or
+	// domain.ErrNotFound when the wish does not exist.
+	ListSavings(ctx context.Context, id domain.WishID) ([]domain.Saving, error)
+	// DeleteSaving removes the saving only if it belongs to the wish;
+	// otherwise it fails with domain.ErrNotFound.
+	DeleteSaving(ctx context.Context, wish domain.WishID, id domain.SavingID) error
+}
+
 // RecipeRepository persists recipes. Every returned recipe carries its
-// images ordered by position.
+// images ordered by position, its course tags and ingredients in their
+// order (empty, never nil), its КБЖУ and its cooking summary.
 type RecipeRepository interface {
+	// InsertRecipe stores the recipe with its course tags and ingredients.
+	// InsertRecipe and ModifyRecipe fail with domain.ErrConflict when the
+	// recipe refers to a tag that no longer exists (deleted after the use
+	// case checked it).
 	InsertRecipe(ctx context.Context, r domain.Recipe) (domain.Recipe, error)
 	GetRecipe(ctx context.Context, id domain.RecipeID) (domain.Recipe, error)
 	// ListRecipes returns the recipes matching f, newest first. Query is a
-	// Unicode-aware case-insensitive substring of the title or the body.
+	// Unicode-aware case-insensitive substring of the title or the body;
+	// CuisineID and CourseID select recipes carrying that tag.
 	ListRecipes(ctx context.Context, f domain.RecipeFilter) ([]domain.Recipe, error)
 	// RandomRecipe returns a uniformly random recipe, or domain.ErrNotFound
 	// when there are none.
@@ -55,6 +82,67 @@ type RecipeRepository interface {
 	ModifyRecipe(ctx context.Context, id domain.RecipeID, fn func(*domain.Recipe) error) (domain.Recipe, error)
 	DeleteRecipe(ctx context.Context, id domain.RecipeID) (imageKeys []string, err error)
 	CountRecipes(ctx context.Context) (int, error)
+}
+
+// RecipeTagRepository persists the cuisine and course tags of recipes.
+// Names are unique per kind ignoring case (Unicode-aware); a clash is
+// reported as domain.ErrConflict.
+type RecipeTagRepository interface {
+	// ListRecipeTags returns every tag: cuisines first, then courses, each
+	// in display order.
+	ListRecipeTags(ctx context.Context) ([]domain.RecipeTag, error)
+	// InsertRecipeTag stores t at the end of its kind's display order.
+	InsertRecipeTag(ctx context.Context, t domain.RecipeTag) (domain.RecipeTag, error)
+	// ModifyRecipeTag loads the tag, applies fn and saves the name and the
+	// emoji in one transaction.
+	ModifyRecipeTag(ctx context.Context, id domain.RecipeTagID, fn func(*domain.RecipeTag) error) (domain.RecipeTag, error)
+	// DeleteRecipeTag removes the tag; recipes lose it and stay.
+	DeleteRecipeTag(ctx context.Context, id domain.RecipeTagID) error
+}
+
+// CookRepository persists the cooking history of recipes and its ratings.
+// Every returned cook carries its ratings, oldest first.
+type CookRepository interface {
+	// InsertCook stores a cooking of c.RecipeID together with c.Ratings, or
+	// fails with domain.ErrNotFound when the recipe does not exist.
+	InsertCook(ctx context.Context, c domain.Cook) (domain.Cook, error)
+	// UpsertRating sets (or replaces) r.UserID's rating of the cooking and
+	// returns the cooking. It fails with domain.ErrNotFound unless the
+	// cooking exists and belongs to the recipe.
+	UpsertRating(ctx context.Context, recipe domain.RecipeID, cook domain.CookID, r domain.Rating) (domain.Cook, error)
+	// ListCooks returns the cooking history of the recipe, newest first, or
+	// domain.ErrNotFound when the recipe does not exist.
+	ListCooks(ctx context.Context, recipe domain.RecipeID) ([]domain.Cook, error)
+	// DeleteCook removes the cooking with its ratings only if it belongs to
+	// the recipe; otherwise it fails with domain.ErrNotFound.
+	DeleteCook(ctx context.Context, recipe domain.RecipeID, cook domain.CookID) error
+	// CountCooks returns how many times any recipe was cooked.
+	CountCooks(ctx context.Context) (int, error)
+}
+
+// ShoppingRepository persists the shared shopping list.
+type ShoppingRepository interface {
+	// ListShoppingItems returns unchecked items first, then checked ones,
+	// each oldest first.
+	ListShoppingItems(ctx context.Context) ([]domain.ShoppingItem, error)
+	// AddShoppingItems stores items in one transaction. For every item,
+	// merge is offered each unchecked stored item with the same case-folded
+	// name and the same unit, oldest first; when merge reports true, that
+	// stored item is saved instead of inserting a new one. Items added
+	// earlier in the same call are candidates too. It fails with
+	// domain.ErrLimitExceeded when an insert would grow the list beyond
+	// limit, and with domain.ErrNotFound when an item names a recipe that
+	// does not exist. It returns every added or merged item once, in the
+	// order they were first touched, in their final state.
+	AddShoppingItems(ctx context.Context, items []domain.ShoppingItem, limit int,
+		merge func(stored *domain.ShoppingItem, added domain.ShoppingItem) bool) ([]domain.ShoppingItem, error)
+	// ModifyShoppingItem loads the item, applies fn and saves it in one
+	// transaction.
+	ModifyShoppingItem(ctx context.Context, id domain.ShoppingItemID, fn func(*domain.ShoppingItem) error) (domain.ShoppingItem, error)
+	DeleteShoppingItem(ctx context.Context, id domain.ShoppingItemID) error
+	// DeleteCheckedShoppingItems removes every checked item and reports how
+	// many were removed.
+	DeleteCheckedShoppingItems(ctx context.Context) (int, error)
 }
 
 // CategoryRepository persists categories. Names are unique ignoring case

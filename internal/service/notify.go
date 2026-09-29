@@ -11,9 +11,14 @@ import (
 // noopNotifier is used when no Notifier is configured.
 type noopNotifier struct{}
 
-func (noopNotifier) WishCreated(context.Context, Recipients, domain.Wish)     {}
-func (noopNotifier) WishFulfilled(context.Context, Recipients, domain.Wish)   {}
-func (noopNotifier) RecipeCreated(context.Context, Recipients, domain.Recipe) {}
+func (noopNotifier) WishCreated(context.Context, Recipients, domain.Wish)                 {}
+func (noopNotifier) WishFulfilled(context.Context, Recipients, domain.Wish)               {}
+func (noopNotifier) WishSaved(context.Context, Recipients, domain.Wish, domain.Saving)    {}
+func (noopNotifier) RecipeCreated(context.Context, Recipients, domain.Recipe)             {}
+func (noopNotifier) RecipeUpdated(context.Context, Recipients, domain.Recipe)             {}
+func (noopNotifier) RecipeCooked(context.Context, Recipients, domain.Recipe, domain.Cook) {}
+func (noopNotifier) RecipeRated(context.Context, Recipients, domain.Recipe, domain.Cook, domain.Rating) {
+}
 
 // notify resolves the recipients of an event caused by actor and hands them
 // to send. Notifications are best effort: every failure is logged and never

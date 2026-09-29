@@ -8,8 +8,14 @@ import (
 	"github.com/Mikkkin/dreamer-bot/internal/domain"
 )
 
+// wishColumns selects from `wishes` (unaliased). The last two columns are
+// the sum and the currency of the wish's savings, aggregated in the same
+// statement so that listing wishes never runs a query per wish. All savings
+// of a wish share one currency (see InsertSaving).
 const wishColumns = `id, title, note, category_id, link, price_minor, price_currency,
-	status, hot, author_id, created_at, updated_at, fulfilled_at`
+	status, hot, author_id, created_at, updated_at, fulfilled_at,
+	(SELECT SUM(s.amount_minor) FROM wish_savings s WHERE s.wish_id = wishes.id),
+	(SELECT MIN(s.currency) FROM wish_savings s WHERE s.wish_id = wishes.id)`
 
 // listWishesQuery is static: every filter is a parameter that disables
 // itself when unset (?1 status, ?2 category, ?3 uncategorized flag, ?4 folded
@@ -27,10 +33,12 @@ func scanWish(s scanner) (domain.Wish, error) {
 		category         sql.Null[domain.CategoryID]
 		link, currency   sql.Null[string]
 		minor, fulfilled sql.Null[int64]
+		savedMinor       sql.Null[int64]
+		savedCurrency    sql.Null[string]
 		created, updated int64
 	)
 	if err := s.Scan(&w.ID, &w.Title, &w.Note, &category, &link, &minor, &currency,
-		&w.Status, &w.Hot, &w.AuthorID, &created, &updated, &fulfilled); err != nil {
+		&w.Status, &w.Hot, &w.AuthorID, &created, &updated, &fulfilled, &savedMinor, &savedCurrency); err != nil {
 		return domain.Wish{}, err
 	}
 	if category.Valid {
@@ -39,6 +47,9 @@ func scanWish(s scanner) (domain.Wish, error) {
 	w.Link = stringPtr(link)
 	if minor.Valid && currency.Valid {
 		w.Price = &domain.Money{Minor: minor.V, Currency: domain.Currency(currency.V)}
+	}
+	if savedMinor.Valid && savedCurrency.Valid {
+		w.Saved = &domain.Money{Minor: savedMinor.V, Currency: domain.Currency(savedCurrency.V)}
 	}
 	w.CreatedAt = fromMillis(created)
 	w.UpdatedAt = fromMillis(updated)
@@ -79,6 +90,7 @@ func (db *DB) InsertWish(ctx context.Context, w domain.Wish) (domain.Wish, error
 	}
 	w.ID = domain.WishID(id)
 	w.Images = nil
+	w.Saved = nil
 	return w, nil
 }
 
@@ -157,14 +169,7 @@ func (db *DB) ModifyWish(ctx context.Context, id domain.WishID, fn func(*domain.
 		if err := fn(&w); err != nil {
 			return err
 		}
-		res, err := tx.ExecContext(ctx, `
-			UPDATE wishes SET title = ?, title_key = ?, note = ?, category_id = ?, link = ?,
-				price_minor = ?, price_currency = ?, status = ?, hot = ?, updated_at = ?, fulfilled_at = ?
-			WHERE id = ?`, append(wishArgs(w), int64(id))...)
-		if err != nil {
-			return fmt.Errorf("sqlite: update wish %d: %w", id, err)
-		}
-		return requireAffected(res, "wish", int64(id))
+		return updateWish(ctx, tx, id, w)
 	})
 	if err != nil {
 		return domain.Wish{}, err
@@ -172,8 +177,22 @@ func (db *DB) ModifyWish(ctx context.Context, id domain.WishID, fn func(*domain.
 	return w, nil
 }
 
-// DeleteWish removes a wish; its image rows go with it through the foreign
-// key cascade. The keys are read first so that the files can be removed.
+// updateWish saves the mutable columns of w. Images and Saved are derived
+// from other tables and are never written here.
+func updateWish(ctx context.Context, tx *sql.Tx, id domain.WishID, w domain.Wish) error {
+	res, err := tx.ExecContext(ctx, `
+		UPDATE wishes SET title = ?, title_key = ?, note = ?, category_id = ?, link = ?,
+			price_minor = ?, price_currency = ?, status = ?, hot = ?, updated_at = ?, fulfilled_at = ?
+		WHERE id = ?`, append(wishArgs(w), int64(id))...)
+	if err != nil {
+		return fmt.Errorf("sqlite: update wish %d: %w", id, err)
+	}
+	return requireAffected(res, "wish", int64(id))
+}
+
+// DeleteWish removes a wish; its image and saving rows go with it through
+// the foreign key cascade. The keys are read first so that the files can be
+// removed.
 func (db *DB) DeleteWish(ctx context.Context, id domain.WishID) ([]string, error) {
 	var keys []string
 	err := db.withTx(ctx, func(tx *sql.Tx) error {

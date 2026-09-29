@@ -3,7 +3,6 @@ package sqlite
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 
 	"github.com/Mikkkin/dreamer-bot/internal/domain"
@@ -46,11 +45,11 @@ func loadImages(ctx context.Context, q querier, query string, ids []int64) (map[
 	if len(ids) == 0 {
 		return out, nil
 	}
-	list, err := json.Marshal(ids)
+	list, err := idList(ids)
 	if err != nil {
-		return nil, fmt.Errorf("sqlite: encode ids: %w", err)
+		return nil, err
 	}
-	rows, err := q.QueryContext(ctx, query, string(list))
+	rows, err := q.QueryContext(ctx, query, list)
 	if err != nil {
 		return nil, fmt.Errorf("sqlite: load images: %w", err)
 	}

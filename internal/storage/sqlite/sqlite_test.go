@@ -150,8 +150,12 @@ func TestMigrationsAreIdempotentAndSeedOnce(t *testing.T) {
 	if err := db.sql.QueryRowContext(ctx, `SELECT COUNT(*) FROM schema_migrations`).Scan(&versions); err != nil {
 		t.Fatal(err)
 	}
-	if versions != 1 {
-		t.Errorf("schema_migrations has %d rows, want 1", versions)
+	migrations, err := loadMigrations()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if versions != len(migrations) {
+		t.Errorf("schema_migrations has %d rows, want one per migration (%d)", versions, len(migrations))
 	}
 }
 

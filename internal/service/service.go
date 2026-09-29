@@ -25,6 +25,8 @@ type Deps struct {
 type Services struct {
 	Wishes     Wishes
 	Recipes    Recipes
+	RecipeTags RecipeTags
+	Shopping   Shopping
 	Categories Categories
 	Images     Images
 	Stats      Stats
@@ -66,6 +68,8 @@ func New(d Deps) (*Services, error) {
 	return &Services{
 		Wishes:     wishService{c},
 		Recipes:    recipeService{c},
+		RecipeTags: recipeTagService{c},
+		Shopping:   shoppingService{c},
 		Categories: categoryService{c},
 		Images:     imageService{c},
 		Stats:      statsService{c},

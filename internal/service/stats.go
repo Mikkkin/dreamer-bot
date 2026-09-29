@@ -22,7 +22,13 @@ func (s statsService) Compute(ctx context.Context) (domain.Stats, error) {
 	if err != nil {
 		return domain.Stats{}, err
 	}
-	return summarize(categories, wishes, recipes, s.yearStart()), nil
+	cooked, err := s.repos.CountCooks(ctx)
+	if err != nil {
+		return domain.Stats{}, err
+	}
+	out := summarize(categories, wishes, recipes, s.yearStart())
+	out.RecipesCooked = cooked
+	return out, nil
 }
 
 // yearStart is January 1st of the current year in the service location.
@@ -32,7 +38,8 @@ func (s statsService) yearStart() time.Time {
 }
 
 // summarize aggregates wishes per category (in category order, followed by
-// an uncategorized bucket when it has wishes) and overall.
+// an uncategorized bucket when it has wishes) and overall, and totals the
+// money saved for wishes that have not come true yet.
 func summarize(categories []domain.Category, wishes []domain.Wish, recipes int, yearStart time.Time) domain.Stats {
 	overall := newTally()
 	uncategorized := newTally()
@@ -42,7 +49,11 @@ func summarize(categories []domain.Category, wishes []domain.Wish, recipes int, 
 	}
 
 	fulfilledThisYear := 0
+	var saved []domain.Money
 	for _, w := range wishes {
+		if w.Saved != nil && w.Status != domain.StatusDone {
+			saved = append(saved, *w.Saved)
+		}
 		overall.add(w)
 		bucket := uncategorized
 		if w.CategoryID != nil {
@@ -60,6 +71,7 @@ func summarize(categories []domain.Category, wishes []domain.Wish, recipes int, 
 		Categories:        make([]domain.CategoryStats, 0, len(categories)+1),
 		Overall:           overall.totals(),
 		Recipes:           recipes,
+		Saved:             domain.SumByCurrency(saved),
 		FulfilledThisYear: fulfilledThisYear,
 	}
 	for _, c := range categories {

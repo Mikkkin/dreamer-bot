@@ -16,16 +16,19 @@ const MaxImagesPerWish = 10
 // Wish is a single shared dream. Link and Price are optional by design:
 // the author decides whether to specify them.
 type Wish struct {
-	ID          WishID
-	Title       string
-	Note        string
-	CategoryID  *CategoryID
-	Link        *string
-	Price       *Money
-	Status      Status
-	Hot         bool // «очень хочу 🔥»
-	AuthorID    UserID
-	Images      []Image
+	ID         WishID
+	Title      string
+	Note       string
+	CategoryID *CategoryID
+	Link       *string
+	Price      *Money
+	Status     Status
+	Hot        bool // «очень хочу 🔥»
+	AuthorID   UserID
+	Images     []Image
+	// Saved is the sum of the wish's savings (nil = nothing saved yet); it is
+	// filled by storage and never set by callers.
+	Saved       *Money
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	FulfilledAt *time.Time
@@ -127,6 +130,9 @@ func (w *Wish) Apply(p WishPatch, now time.Time) error {
 		price, err := validateOptionalPrice(p.Price.Value)
 		if err != nil {
 			return err
+		}
+		if price != nil && w.Saved != nil && price.Currency != w.Saved.Currency {
+			return invalid("price", "накопления уже в "+string(w.Saved.Currency)+" — укажите цену в той же валюте")
 		}
 		next.Price = price
 	}

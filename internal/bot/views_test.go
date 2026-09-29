@@ -153,6 +153,9 @@ func TestEveryCallbackIsAnswered(t *testing.T) {
 	payloads := []string{
 		"garbage", "x", "w:o:404", "w:s:404:done", "w:d:404", "w:y:404", "w:n:404",
 		"r:o:404", "r:y:404", "k:404", "l:w:want:0", "l:r:0", "d:99:ok",
+		"w:m:404", "r:c:404", "r:c:404:3", "r:c:404:0", "r:b:404", "r:s:404", "r:v:404:1:3",
+		"s:l:0", "s:k:404:0", "s:u:404:0", "s:x", "d:99:cu", "d:99:cu:3", "d:99:co", "d:99:co:9",
+		"r:v:1:2:9", "s:k:1", "w:m:x",
 	}
 	for _, data := range payloads {
 		e.api.reset()

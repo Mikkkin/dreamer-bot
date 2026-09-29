@@ -48,6 +48,11 @@ func (w *webApp) recipeLink(id domain.RecipeID) string {
 	return w.deepLink("recipe", int64(id))
 }
 
+// shoppingLink opens the shopping list (WEBAPP_URL?shopping=1).
+func (w *webApp) shoppingLink() string {
+	return w.deepLink("shopping", 1)
+}
+
 func (w *webApp) deepLink(key string, id int64) string {
 	base := w.url()
 	if base == "" {

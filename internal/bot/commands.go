@@ -16,6 +16,7 @@ const (
 	cmdList    = "list"
 	cmdRecipes = "recipes"
 	cmdCook    = "cook"
+	cmdShop    = "shop"
 	cmdStats   = "stats"
 	cmdCancel  = "cancel"
 )
@@ -30,6 +31,7 @@ func botCommands(setupMode bool) []models.BotCommand {
 		{Command: cmdList, Description: "Наши желания"},
 		{Command: cmdRecipes, Description: "Что приготовить: все рецепты"},
 		{Command: cmdCook, Description: "Случайный рецепт на сегодня"},
+		{Command: cmdShop, Description: "Список покупок"},
 		{Command: cmdStats, Description: "Статистика"},
 		{Command: cmdHelp, Description: "Как пользоваться"},
 		{Command: cmdCancel, Description: "Отменить ввод или черновик"},
@@ -74,7 +76,7 @@ func (a *app) onCommand(ctx context.Context, m *models.Message, cmd string) {
 	chatID := m.Chat.ID
 	user := domain.UserID(m.From.ID)
 	if cmd != cmdCancel {
-		a.dropAwaiting(ctx, user)
+		a.dropPrompts(ctx, user)
 	}
 	switch cmd {
 	case cmdStart:
@@ -87,6 +89,8 @@ func (a *app) onCommand(ctx context.Context, m *models.Message, cmd string) {
 		a.sendRecipeList(ctx, chatID)
 	case cmdCook:
 		a.sendRandomRecipe(ctx, chatID, 0)
+	case cmdShop:
+		a.sendShopping(ctx, chatID)
 	case cmdStats:
 		a.cmdStats(ctx, chatID)
 	case cmdCancel:
@@ -106,7 +110,8 @@ func (a *app) cmdStart(ctx context.Context, m *models.Message) {
 	h.Text("Чтобы добавить желание, просто пришлите мне текст, ссылку или фото, например: ")
 	h.Italic("Поездка в Токио 1200€").Text(". Я соберу карточку, а вы проверите её и нажмёте «✅ Сохранить».").NL().NL()
 	h.Text("/list — желания · /recipes — рецепты").NL()
-	h.Text("/cook — что приготовить · /stats — статистика").NL()
+	h.Text("/cook — что приготовить · /shop — покупки").NL()
+	h.Text("/stats — статистика").NL()
 	h.Text("/help — подробнее")
 	if _, err := sendHTML(ctx, a.api, m.Chat.ID, h.String(), openKeyboard("Открыть ✨", a.web.url())); err != nil {
 		a.log.Warn("bot: send welcome failed", "err", err)
@@ -119,11 +124,14 @@ func (a *app) cmdHelp(ctx context.Context, chatID int64) {
 	h.Text("➕ ").Bold("Добавить").Text(": пришлите текст, ссылку или фото (можно альбомом). ")
 	h.Text("Первая строка станет названием, остальное — заметкой. Цену с валютой я узнаю сам: ")
 	h.Code("1200€").Text(", ").Code("$50").Text(", ").Code("15 000 ₽").Text(".").NL()
-	h.Text("🍳 Рецепт: в карточке черновика нажмите «🍳 Рецепт».").NL()
+	h.Text("🍳 Рецепт: в карточке черновика нажмите «🍳 Рецепт», там же — кухня и тип блюда.").NL()
 	h.Text("✅ Проверьте карточку и нажмите «Сохранить».").NL().NL()
+	h.Text("💰 На карточке желания в статусе «Копим» есть «Отложить» — так копится сумма.").NL()
+	h.Text("🍳 «Приготовили» на карточке рецепта сохраняет историю и оценку, «🛒 В покупки» — ингредиенты.").NL().NL()
 	h.Text("/list — наши желания по статусам").NL()
 	h.Text("/recipes — все рецепты").NL()
 	h.Text("/cook — случайный рецепт на сегодня").NL()
+	h.Text("/shop — список покупок").NL()
 	h.Text("/stats — статистика").NL()
 	h.Text("/cancel — отменить ввод или черновик").NL().NL()
 	h.Text("Всё остальное — в приложении ✨")
@@ -143,9 +151,9 @@ func (a *app) cmdStats(ctx context.Context, chatID int64) {
 	}
 }
 
-// cmdCancel steps back one level: an awaited field first, then the draft.
+// cmdCancel steps back one level: an awaited answer first, then the draft.
 func (a *app) cmdCancel(ctx context.Context, chatID int64, user domain.UserID) {
-	if a.dropAwaiting(ctx, user) {
+	if a.dropPrompts(ctx, user) {
 		a.say(ctx, chatID, "Хорошо, оставил как было 👌")
 		return
 	}

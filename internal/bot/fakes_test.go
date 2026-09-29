@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"slices"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -281,6 +282,8 @@ func (c *clock) Advance(d time.Duration) {
 type fakeServices struct {
 	wishes     *fakeWishes
 	recipes    *fakeRecipes
+	tags       *fakeRecipeTags
+	shopping   *fakeShopping
 	categories *fakeCategories
 	images     *fakeImages
 	stats      *fakeStats
@@ -288,9 +291,12 @@ type fakeServices struct {
 }
 
 func newFakeServices(now func() time.Time) *fakeServices {
+	recipes := &fakeRecipes{now: now, items: map[domain.RecipeID]domain.Recipe{}, cooks: map[domain.CookID]domain.Cook{}}
 	return &fakeServices{
 		wishes:     &fakeWishes{now: now, items: map[domain.WishID]domain.Wish{}},
-		recipes:    &fakeRecipes{now: now, items: map[domain.RecipeID]domain.Recipe{}},
+		recipes:    recipes,
+		tags:       newFakeRecipeTags(),
+		shopping:   &fakeShopping{now: now, recipes: recipes},
 		categories: newFakeCategories(),
 		images:     &fakeImages{data: map[domain.ImageID][]byte{}},
 		stats:      &fakeStats{},
@@ -302,6 +308,8 @@ func (f *fakeServices) services() *service.Services {
 	return &service.Services{
 		Wishes:     f.wishes,
 		Recipes:    f.recipes,
+		RecipeTags: f.tags,
+		Shopping:   f.shopping,
 		Categories: f.categories,
 		Images:     f.images,
 		Stats:      f.stats,
@@ -312,13 +320,15 @@ func (f *fakeServices) services() *service.Services {
 var errNotImplemented = errors.New("not implemented in fake")
 
 type fakeWishes struct {
-	mu      sync.Mutex
-	now     func() time.Time
-	seq     int64
-	imgSeq  int64
-	items   map[domain.WishID]domain.Wish
-	created []domain.WishDraft
-	added   map[domain.WishID][][]byte
+	mu        sync.Mutex
+	now       func() time.Time
+	seq       int64
+	imgSeq    int64
+	savingSeq int64
+	items     map[domain.WishID]domain.Wish
+	created   []domain.WishDraft
+	added     map[domain.WishID][][]byte
+	savings   []domain.Saving
 }
 
 func (f *fakeWishes) Create(_ context.Context, actor domain.UserID, d domain.WishDraft) (domain.Wish, error) {
@@ -421,11 +431,65 @@ func (f *fakeWishes) RemoveImage(context.Context, domain.UserID, domain.WishID, 
 	return errNotImplemented
 }
 
+// AddSaving behaves like the real use case: the domain validates the
+// amount and currency, the total grows and a «Хотим» wish moves to «Копим».
+func (f *fakeWishes) AddSaving(_ context.Context, actor domain.UserID, id domain.WishID, amount domain.Money, note string) (domain.Saving, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	w, ok := f.items[id]
+	if !ok {
+		return domain.Saving{}, domain.ErrNotFound
+	}
+	s, err := domain.NewSaving(w, amount, actor, note, f.now())
+	if err != nil {
+		return domain.Saving{}, err
+	}
+	f.savingSeq++
+	s.ID = domain.SavingID(f.savingSeq)
+	f.savings = append(f.savings, s)
+	total := s.Amount
+	if w.Saved != nil {
+		total.Minor += w.Saved.Minor
+	}
+	w.Saved = &total
+	if w.Status == domain.StatusWant {
+		if _, err := w.SetStatus(domain.StatusProgress, f.now()); err != nil {
+			return domain.Saving{}, err
+		}
+	}
+	f.items[id] = w
+	return s, nil
+}
+
+func (f *fakeWishes) ListSavings(_ context.Context, id domain.WishID) ([]domain.Saving, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	var out []domain.Saving
+	for _, s := range f.savings {
+		if s.WishID == id {
+			out = append(out, s)
+		}
+	}
+	return out, nil
+}
+
+func (f *fakeWishes) RemoveSaving(context.Context, domain.UserID, domain.WishID, domain.SavingID) error {
+	return errNotImplemented
+}
+
+func (f *fakeWishes) savingsCount() int {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return len(f.savings)
+}
+
 type fakeRecipes struct {
 	mu      sync.Mutex
 	now     func() time.Time
 	seq     int64
+	cookSeq int64
 	items   map[domain.RecipeID]domain.Recipe
+	cooks   map[domain.CookID]domain.Cook
 	created []domain.RecipeDraft
 	random  []domain.RecipeID // IDs returned by Random in order (cycled)
 	rolls   int
@@ -494,6 +558,257 @@ func (f *fakeRecipes) AddImage(context.Context, domain.UserID, domain.RecipeID, 
 
 func (f *fakeRecipes) RemoveImage(context.Context, domain.UserID, domain.RecipeID, domain.ImageID) error {
 	return errNotImplemented
+}
+
+func (f *fakeRecipes) put(r domain.Recipe) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.items[r.ID] = r
+}
+
+func (f *fakeRecipes) Cook(_ context.Context, actor domain.UserID, id domain.RecipeID, in *service.RatingInput) (domain.Cook, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if _, ok := f.items[id]; !ok {
+		return domain.Cook{}, domain.ErrNotFound
+	}
+	c := domain.Cook{RecipeID: id, CookedBy: actor, CookedAt: f.now()}
+	if in != nil {
+		rt, err := domain.NewRating(actor, in.Stars, in.Comment, f.now())
+		if err != nil {
+			return domain.Cook{}, err
+		}
+		c.Ratings = []domain.Rating{rt}
+	}
+	f.cookSeq++
+	c.ID = domain.CookID(f.cookSeq)
+	f.cooks[c.ID] = c
+	f.summarize(id)
+	return c, nil
+}
+
+func (f *fakeRecipes) Rate(_ context.Context, actor domain.UserID, id domain.RecipeID, cookID domain.CookID, in service.RatingInput) (domain.Cook, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	c, ok := f.cooks[cookID]
+	if !ok || c.RecipeID != id {
+		return domain.Cook{}, domain.ErrNotFound
+	}
+	rt, err := domain.NewRating(actor, in.Stars, in.Comment, f.now())
+	if err != nil {
+		return domain.Cook{}, err
+	}
+	c.Ratings = slices.DeleteFunc(slices.Clone(c.Ratings), func(r domain.Rating) bool { return r.UserID == actor })
+	c.Ratings = append(c.Ratings, rt)
+	f.cooks[cookID] = c
+	f.summarize(id)
+	return c, nil
+}
+
+// summarize refreshes the cooking summary of a recipe; f.mu must be held.
+func (f *fakeRecipes) summarize(id domain.RecipeID) {
+	r, ok := f.items[id]
+	if !ok {
+		return
+	}
+	var s domain.CookingSummary
+	for _, c := range f.cooks {
+		if c.RecipeID != id {
+			continue
+		}
+		s.Count++
+		if at := c.CookedAt; s.LastCookedAt == nil || at.After(*s.LastCookedAt) {
+			s.LastCookedAt = &at
+		}
+		for _, rt := range c.Ratings {
+			s.RatingSum += rt.Stars
+			s.RatingCount++
+		}
+	}
+	r.Cooking = s
+	f.items[id] = r
+}
+
+func (f *fakeRecipes) ListCooks(_ context.Context, id domain.RecipeID) ([]domain.Cook, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	var out []domain.Cook
+	for _, c := range f.cooks {
+		if c.RecipeID == id {
+			out = append(out, c)
+		}
+	}
+	slices.SortFunc(out, func(a, b domain.Cook) int { return int(b.ID - a.ID) })
+	return out, nil
+}
+
+func (f *fakeRecipes) RemoveCook(context.Context, domain.UserID, domain.RecipeID, domain.CookID) error {
+	return errNotImplemented
+}
+
+func (f *fakeRecipes) cookList() []domain.Cook {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	var out []domain.Cook
+	for _, c := range f.cooks {
+		out = append(out, c)
+	}
+	slices.SortFunc(out, func(a, b domain.Cook) int { return int(a.ID - b.ID) })
+	return out
+}
+
+// fakeRecipeTags serves the default tags: cuisines get IDs 1–6, courses 7–15.
+type fakeRecipeTags struct {
+	mu    sync.Mutex
+	items []domain.RecipeTag
+	fail  error
+}
+
+func newFakeRecipeTags() *fakeRecipeTags {
+	tags := domain.DefaultRecipeTags()
+	for i := range tags {
+		tags[i].ID = domain.RecipeTagID(i + 1)
+	}
+	return &fakeRecipeTags{items: tags}
+}
+
+func (f *fakeRecipeTags) List(context.Context) ([]domain.RecipeTag, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.fail != nil {
+		return nil, f.fail
+	}
+	return slices.Clone(f.items), nil
+}
+
+func (f *fakeRecipeTags) Create(context.Context, domain.UserID, domain.TagKind, string, string) (domain.RecipeTag, error) {
+	return domain.RecipeTag{}, errNotImplemented
+}
+
+func (f *fakeRecipeTags) Update(context.Context, domain.UserID, domain.RecipeTagID, domain.RecipeTagPatch) (domain.RecipeTag, error) {
+	return domain.RecipeTag{}, errNotImplemented
+}
+
+func (f *fakeRecipeTags) Delete(_ context.Context, _ domain.UserID, id domain.RecipeTagID) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.items = slices.DeleteFunc(f.items, func(t domain.RecipeTag) bool { return t.ID == id })
+	return nil
+}
+
+// fakeShopping is the shared list with the real merge rule.
+type fakeShopping struct {
+	mu         sync.Mutex
+	now        func() time.Time
+	recipes    *fakeRecipes
+	seq        int64
+	items      []domain.ShoppingItem
+	fromRecipe []domain.RecipeID
+}
+
+func (f *fakeShopping) List(context.Context) ([]domain.ShoppingItem, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	out := slices.Clone(f.items)
+	slices.SortStableFunc(out, func(a, b domain.ShoppingItem) int {
+		if a.Checked != b.Checked {
+			if a.Checked {
+				return 1
+			}
+			return -1
+		}
+		return int(a.ID - b.ID)
+	})
+	return out, nil
+}
+
+func (f *fakeShopping) Add(_ context.Context, actor domain.UserID, drafts []domain.ShoppingDraft) ([]domain.ShoppingItem, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.add(actor, drafts)
+}
+
+// add merges or appends every draft; f.mu must be held.
+func (f *fakeShopping) add(actor domain.UserID, drafts []domain.ShoppingDraft) ([]domain.ShoppingItem, error) {
+	var out []domain.ShoppingItem
+	for _, d := range drafts {
+		it, err := domain.NewShoppingItem(d, actor, f.now())
+		if err != nil {
+			return nil, err
+		}
+		merged := false
+		for i := range f.items {
+			if strings.EqualFold(f.items[i].Name, it.Name) && f.items[i].MergeInto(it.Quantity, f.now()) {
+				out, merged = append(out, f.items[i]), true
+				break
+			}
+		}
+		if merged {
+			continue
+		}
+		f.seq++
+		it.ID = domain.ShoppingItemID(f.seq)
+		f.items = append(f.items, it)
+		out = append(out, it)
+	}
+	return out, nil
+}
+
+func (f *fakeShopping) AddFromRecipe(ctx context.Context, actor domain.UserID, id domain.RecipeID, positions []int) ([]domain.ShoppingItem, error) {
+	r, err := f.recipes.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if positions != nil {
+		return nil, errNotImplemented
+	}
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.fromRecipe = append(f.fromRecipe, id)
+	drafts := make([]domain.ShoppingDraft, 0, len(r.Ingredients))
+	for _, ing := range r.Ingredients {
+		drafts = append(drafts, domain.ShoppingDraft{Name: ing.Name, Quantity: ing.Quantity, RecipeID: &id})
+	}
+	return f.add(actor, drafts)
+}
+
+func (f *fakeShopping) Update(_ context.Context, _ domain.UserID, id domain.ShoppingItemID, p domain.ShoppingPatch) (domain.ShoppingItem, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	for i := range f.items {
+		if f.items[i].ID == id {
+			if err := f.items[i].Apply(p, f.now()); err != nil {
+				return domain.ShoppingItem{}, err
+			}
+			return f.items[i], nil
+		}
+	}
+	return domain.ShoppingItem{}, domain.ErrNotFound
+}
+
+func (f *fakeShopping) Delete(_ context.Context, _ domain.UserID, id domain.ShoppingItemID) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	n := len(f.items)
+	f.items = slices.DeleteFunc(f.items, func(it domain.ShoppingItem) bool { return it.ID == id })
+	if len(f.items) == n {
+		return domain.ErrNotFound
+	}
+	return nil
+}
+
+func (f *fakeShopping) ClearChecked(context.Context, domain.UserID) (int, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	n := len(f.items)
+	f.items = slices.DeleteFunc(f.items, func(it domain.ShoppingItem) bool { return it.Checked })
+	return n - len(f.items), nil
+}
+
+func (f *fakeShopping) snapshot() []domain.ShoppingItem {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return slices.Clone(f.items)
 }
 
 type fakeCategories struct{ items []domain.Category }
@@ -614,6 +929,8 @@ func newTestEnv(t *testing.T) *testEnv {
 		files:    newDownloader(api, 10<<20, newRedactor(testToken)),
 		svc:      s,
 		drafts:   newDraftStore(draftTTL, clk.Now),
+		savings:  newSavingPrompts(draftTTL, clk.Now),
+		recent:   newRecentActions(recentActionTTL, clk.Now),
 		locks:    newUserLocks(),
 		toucher:  newToucher(s.Users, clk.Now, log),
 		web:      web,

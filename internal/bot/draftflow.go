@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"strconv"
 	"strings"
 
 	tg "github.com/go-telegram/bot"
@@ -97,9 +98,14 @@ func (a *app) onDraftCallback(ctx context.Context, r *cbReply, user domain.UserI
 		if !a.chooseCategory(ctx, r, &d, domain.CategoryID(c.id)) {
 			return
 		}
+	case opDraftCuisines, opDraftCourses, opDraftCuisine, opDraftCourse:
+		if !a.pickTag(ctx, r, &d, c) {
+			return
+		}
 	case opDraftHot:
 		d.hot = !d.hot
 	case opDraftField:
+		a.dropSaving(ctx, user)
 		if err := a.askField(ctx, &d, c.field); err != nil {
 			r.answer(ctx, a.userError(err, "ask draft field"))
 			return
@@ -131,6 +137,65 @@ func (a *app) chooseCategory(ctx context.Context, r *cbReply, d *draft, id domai
 	}
 	d.setCategory(&c.ID, c.Label())
 	return true
+}
+
+// pickTag handles the cuisine and course pickers of a recipe draft. It
+// reports false when the tap was refused (the answer is already sent).
+func (a *app) pickTag(ctx context.Context, r *cbReply, d *draft, c callback) bool {
+	if d.kind != kindRecipe {
+		d.view = viewMain // a button of an older card
+		return true
+	}
+	id := domain.RecipeTagID(c.id)
+	switch c.op {
+	case opDraftCuisines:
+		d.view = viewCuisines
+	case opDraftCourses:
+		d.view = viewCourses
+	case opDraftCuisine:
+		if id == 0 {
+			d.setCuisine(nil)
+			return true
+		}
+		t, err := a.findTag(ctx, domain.TagCuisine, id)
+		if err != nil {
+			r.answer(ctx, a.userError(err, "get cuisine"))
+			return false
+		}
+		d.setCuisine(&tagRef{id: t.ID, label: t.Label()})
+	case opDraftCourse:
+		switch {
+		case id == 0:
+			d.courses = nil
+		case d.hasCourse(id): // removing needs no lookup, even of a deleted tag
+			d.toggleCourse(tagRef{id: id})
+		default:
+			t, err := a.findTag(ctx, domain.TagCourse, id)
+			if err != nil {
+				r.answer(ctx, a.userError(err, "get course"))
+				return false
+			}
+			if !d.toggleCourse(tagRef{id: t.ID, label: t.Label()}) {
+				r.answer(ctx, "Не больше "+strconv.Itoa(domain.MaxCoursesPerRecipe)+" типов блюда")
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// findTag returns the recipe tag with id if it is of the given kind.
+func (a *app) findTag(ctx context.Context, kind domain.TagKind, id domain.RecipeTagID) (domain.RecipeTag, error) {
+	tags, err := a.svc.RecipeTags.List(ctx)
+	if err != nil {
+		return domain.RecipeTag{}, err
+	}
+	for _, t := range tags {
+		if t.ID == id && t.Kind == kind {
+			return t, nil
+		}
+	}
+	return domain.RecipeTag{}, domain.ErrNotFound
 }
 
 // askField puts the draft into the "awaiting <field>" state and sends a
@@ -196,6 +261,7 @@ func (a *app) prompt(d draft, f draftField) (string, string) {
 func (a *app) saveDraft(ctx context.Context, r *cbReply, user domain.UserID, d draft) {
 	if strings.TrimSpace(d.title) == "" {
 		r.answer(ctx, "Сначала добавьте название ✏️")
+		a.dropSaving(ctx, user)
 		if err := a.askField(ctx, &d, fieldTitle); err != nil {
 			a.log.Warn("bot: ask title failed", "err", err)
 		}
@@ -282,15 +348,24 @@ func (a *app) attachPhotos(ctx context.Context, photos []string, limit int, add 
 
 // showDraft sends the draft card or updates it in place.
 func (a *app) showDraft(ctx context.Context, d *draft) {
-	var categories []domain.Category
-	if d.view == viewCategories {
-		var err error
+	var (
+		categories []domain.Category
+		tags       []domain.RecipeTag
+		err        error
+	)
+	switch d.view {
+	case viewCategories:
 		if categories, err = a.svc.Categories.List(ctx); err != nil {
 			a.log.Error("bot: list categories failed", "err", err)
 			d.view = viewMain
 		}
+	case viewCuisines, viewCourses:
+		if tags, err = a.svc.RecipeTags.List(ctx); err != nil {
+			a.log.Error("bot: list recipe tags failed", "err", err)
+			d.view = viewMain
+		}
 	}
-	text, kb := renderDraft(*d), draftKeyboard(*d, categories)
+	text, kb := renderDraft(*d), draftKeyboard(*d, categories, tags)
 	if d.cardID != 0 {
 		err := editHTML(ctx, a.api, d.chatID, d.cardID, false, text, kb)
 		if err == nil {

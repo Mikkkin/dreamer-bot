@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"slices"
 	"strings"
 	"testing"
 
@@ -44,8 +45,11 @@ func TestConfigureSetsCommandsAndMenus(t *testing.T) {
 		t.Errorf("deleteWebhook calls %+v", hooks)
 	}
 	cmds := api.of("SetMyCommands")
-	if len(cmds) != 1 || len(cmds[0].(*tg.SetMyCommandsParams).Commands) != 7 {
+	if len(cmds) != 1 || len(cmds[0].(*tg.SetMyCommandsParams).Commands) != 8 {
 		t.Fatalf("setMyCommands %+v", cmds)
+	}
+	if !slices.ContainsFunc(cmds[0].(*tg.SetMyCommandsParams).Commands, func(c models.BotCommand) bool { return c.Command == cmdShop }) {
+		t.Error("/shop is not in the command menu")
 	}
 	menus := menuCalls(api)
 	if len(menus) != 3 {

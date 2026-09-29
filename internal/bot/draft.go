@@ -37,7 +37,15 @@ type draftView uint8
 const (
 	viewMain draftView = iota
 	viewCategories
+	viewCuisines
+	viewCourses
 )
+
+// tagRef is a recipe tag chosen on a draft, with the label shown on the card.
+type tagRef struct {
+	id    domain.RecipeTagID
+	label string
+}
 
 const (
 	draftTTL = 30 * time.Minute
@@ -66,6 +74,8 @@ type draft struct {
 	price         *domain.Money
 	category      *domain.CategoryID
 	categoryLabel string
+	cuisine       *tagRef  // recipe only, at most one
+	courses       []tagRef // recipe only, up to domain.MaxCoursesPerRecipe
 	hot           bool
 	photos        []string // Telegram file IDs, largest size
 	albumID       string   // media_group_id of the album being collected
@@ -154,6 +164,39 @@ func (d *draft) setCategory(id *domain.CategoryID, label string) {
 	d.view = viewMain
 }
 
+// setCuisine picks the single cuisine of a recipe (nil = none).
+func (d *draft) setCuisine(t *tagRef) {
+	d.cuisine = t
+	d.view = viewMain
+}
+
+// toggleCourse adds or removes a course. It reports false when the course
+// cannot be added because the recipe already has the maximum.
+func (d *draft) toggleCourse(t tagRef) bool {
+	if i := slices.IndexFunc(d.courses, func(c tagRef) bool { return c.id == t.id }); i >= 0 {
+		d.courses = slices.Delete(d.courses, i, i+1)
+		return true
+	}
+	if len(d.courses) >= domain.MaxCoursesPerRecipe {
+		return false
+	}
+	d.courses = append(d.courses, t)
+	return true
+}
+
+func (d *draft) hasCourse(id domain.RecipeTagID) bool {
+	return slices.ContainsFunc(d.courses, func(c tagRef) bool { return c.id == id })
+}
+
+// courseLabels joins the labels of the chosen courses.
+func (d *draft) courseLabels() string {
+	labels := make([]string, len(d.courses))
+	for i, c := range d.courses {
+		labels[i] = c.label
+	}
+	return strings.Join(labels, " · ")
+}
+
 // fill validates input for the awaited field and stores it. On error the
 // draft is unchanged and still awaiting, so the user can simply retry.
 func (d *draft) fill(input string, entities []models.MessageEntity, fallback domain.Currency) error {
@@ -225,7 +268,15 @@ func (d *draft) wishDraft() domain.WishDraft {
 }
 
 func (d *draft) recipeDraft() domain.RecipeDraft {
-	return domain.RecipeDraft{Title: d.title, Link: d.link, Body: d.text}
+	r := domain.RecipeDraft{Title: d.title, Link: d.link, Body: d.text}
+	if d.cuisine != nil {
+		id := d.cuisine.id
+		r.CuisineID = &id
+	}
+	for _, c := range d.courses {
+		r.CourseIDs = append(r.CourseIDs, c.id)
+	}
+	return r
 }
 
 // photoLimit is the image cap of the entity the draft becomes.
@@ -239,6 +290,11 @@ func (d *draft) photoLimit() int {
 func (d *draft) clone() draft {
 	c := *d
 	c.photos = slices.Clone(d.photos)
+	c.courses = slices.Clone(d.courses)
+	if d.cuisine != nil {
+		cuisine := *d.cuisine
+		c.cuisine = &cuisine
+	}
 	return c
 }
 

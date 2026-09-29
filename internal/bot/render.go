@@ -19,6 +19,12 @@ const (
 	captionBodyExcerpt = 600
 	messageBodyExcerpt = 3000
 	dateLayout         = "02.01.2006"
+	// Ingredients listed on a recipe card sent as a text message; a caption
+	// only has room for their count.
+	messageIngredients = 15
+	ingredientNameLen  = 40
+	commentExcerpt     = 280
+	progressCells      = 10
 )
 
 // card is a message about one wish or recipe: a cover photo with a caption
@@ -42,6 +48,7 @@ func coverOf(images []domain.Image) *domain.ImageID {
 // entityMeta is what a card shows beyond the entity itself.
 type entityMeta struct {
 	category string // category label, "" when uncategorized
+	tags     string // recipe cuisine and course labels, "" when untagged
 	author   string
 }
 
@@ -66,6 +73,14 @@ func renderDraft(d draft) string {
 			h.NL().Text("💰 " + d.price.Format())
 		}
 	}
+	if d.kind == kindRecipe {
+		if d.cuisine != nil {
+			h.NL().Text(d.cuisine.label)
+		}
+		if len(d.courses) > 0 {
+			h.NL().Text(d.courseLabels())
+		}
+	}
 	if d.link != nil {
 		h.NL().Text("🔗 ").Link(*d.link, linkLabel(*d.link))
 	}
@@ -83,9 +98,14 @@ func renderDraft(d draft) string {
 		h.NL().NL().Italic(text)
 	}
 	h.NL().NL()
-	if d.view == viewCategories {
+	switch d.view {
+	case viewCategories:
 		h.Text("Выберите категорию 👇")
-	} else {
+	case viewCuisines:
+		h.Text("Выберите кухню 👇")
+	case viewCourses:
+		h.Text("Выберите тип блюда — можно несколько 👇")
+	default:
 		h.Italic("Проверьте и нажмите «✅ Сохранить»")
 	}
 	return h.String()
@@ -102,6 +122,13 @@ func renderSaved(d draft, failedPhotos int) string {
 		}
 		if d.price != nil {
 			h.Text(" · " + d.price.Format())
+		}
+	} else {
+		if d.cuisine != nil {
+			h.Text(" · " + d.cuisine.label)
+		}
+		if len(d.courses) > 0 {
+			h.Text(" · " + d.courseLabels())
 		}
 	}
 	if saved := len(d.photos) - failedPhotos; saved > 0 {
@@ -136,8 +163,15 @@ func renderWish(w domain.Wish, meta entityMeta, loc *time.Location, limit, noteL
 	if meta.category != "" {
 		h.NL().Text("🏷 " + meta.category)
 	}
-	if w.Price != nil {
+	saved, percent, ofPrice := savings(w)
+	if w.Price != nil && !ofPrice {
 		h.NL().Text("💰 " + w.Price.Format())
+	}
+	if saved != "" {
+		h.NL().Text("💰 " + saved)
+		if ofPrice {
+			h.NL().Text(progressBar(percent))
+		}
 	}
 	if w.Link != nil {
 		h.NL().Text("🔗 ").Link(*w.Link, linkLabel(*w.Link))
@@ -163,11 +197,29 @@ func recipeCard(r domain.Recipe, meta entityMeta, loc *time.Location, openURL st
 	}
 }
 
+// renderRecipe renders a recipe card. Within a caption (limit ≤ 1024) the
+// ingredients are only counted; a text message lists the first of them.
 func renderRecipe(r domain.Recipe, meta entityMeta, loc *time.Location, limit, bodyLimit int) string {
 	h := newHTML(limit)
 	h.Text("🍳 ").Bold(r.Title)
+	if meta.tags != "" {
+		h.NL().Text(meta.tags)
+	}
+	if line := cookingLine(r.Cooking); line != "" {
+		h.NL().Text(line)
+	}
 	if r.Link != nil {
 		h.NL().Text("🔗 ").Link(*r.Link, linkLabel(*r.Link))
+	}
+	if line := nutritionLine(r.Nutrition); line != "" {
+		h.NL().Text(line)
+	}
+	if n := len(r.Ingredients); n > 0 {
+		if limit <= maxCaptionLen {
+			h.NL().Text("🧾 " + strconv.Itoa(n) + " " + plural(n, "ингредиент", "ингредиента", "ингредиентов"))
+		} else {
+			renderIngredients(h, r.Ingredients, messageIngredients)
+		}
 	}
 	if r.Body != "" {
 		body, cut := excerpt(r.Body, bodyLimit)
@@ -237,8 +289,14 @@ func renderStats(s domain.Stats) string {
 			h.NL().Text("💰 Хотим и копим: " + sums)
 		}
 	}
+	if saved := joinMoney(s.Saved); saved != "" {
+		h.NL().Text("🐷 Отложено: " + saved)
+	}
 	h.NL().Text("✨ Сбылось в этом году: " + strconv.Itoa(s.FulfilledThisYear))
 	h.NL().Text("🍳 Рецептов: " + strconv.Itoa(s.Recipes))
+	if n := s.RecipesCooked; n > 0 {
+		h.Text(" · готовили " + timesText(n))
+	}
 	return h.String()
 }
 
@@ -270,7 +328,12 @@ func openSums(by map[domain.Status]domain.StatusTotals) string {
 	var all []domain.Money
 	all = append(all, by[domain.StatusWant].Sums...)
 	all = append(all, by[domain.StatusProgress].Sums...)
-	sums := domain.SumByCurrency(all)
+	return joinMoney(all)
+}
+
+// joinMoney is "3 450 € + 50 $": the amounts summed per currency.
+func joinMoney(amounts []domain.Money) string {
+	sums := domain.SumByCurrency(amounts)
 	parts := make([]string, 0, len(sums))
 	for _, m := range sums {
 		if m.Minor > 0 {
@@ -304,6 +367,193 @@ func renderRecipeCreated(actor string, r domain.Recipe, limit int) string {
 	h.Text("«" + r.Title + "»")
 	return h.String()
 }
+
+// renderRecipeUpdated coalesces a burst of edits into one notice.
+func renderRecipeUpdated(actor string, r domain.Recipe, limit int) string {
+	h := newHTML(limit)
+	h.Text("✏️ ").Bold(actor).Text(" · изменения в рецепте").NL()
+	h.Text("«" + r.Title + "»")
+	return h.String()
+}
+
+// renderRecipeCooked tells a partner about a cooking. authorStars is the
+// cook's own rating (0 = none); yourStars is the partner's rating once given
+// from the notice (0 = not yet, which invites to rate).
+func renderRecipeCooked(actor string, title string, authorStars, yourStars, limit int) string {
+	h := newHTML(limit)
+	h.Text("🍳 ").Bold(actor).Text(" · приготовлено «" + title + "»")
+	if authorStars > 0 {
+		h.Text(" " + starsText(authorStars))
+	}
+	if yourStars > 0 {
+		h.NL().Text("Ваша оценка: " + starsText(yourStars) + " — спасибо!")
+	} else {
+		h.NL().Text("Оцените тоже:")
+	}
+	return h.String()
+}
+
+func renderRecipeRated(actor string, r domain.Recipe, rating domain.Rating, limit int) string {
+	h := newHTML(limit)
+	h.Text("⭐ ").Bold(actor).Text(" · оценка " + strconv.Itoa(rating.Stars) + "/5 — «" + r.Title + "»")
+	if rating.Comment != "" {
+		comment, _ := excerpt(rating.Comment, commentExcerpt)
+		h.NL().Italic(comment)
+	}
+	return h.String()
+}
+
+func renderWishSaved(actor string, w domain.Wish, s domain.Saving, limit int) string {
+	h := newHTML(limit)
+	h.Text("💰 ").Bold(actor).Text(" · отложено " + s.Amount.Format() + " на «" + w.Title + "»")
+	if w.Saved != nil {
+		saved, percent, ofPrice := savings(w)
+		h.NL().Text(saved)
+		if ofPrice && percent >= 100 {
+			h.NL().Text("🎉 Всё накоплено!")
+		}
+	}
+	return h.String()
+}
+
+// renderSavingAdded confirms a contribution made from the chat.
+func renderSavingAdded(w domain.Wish, s domain.Saving) string {
+	h := newHTML(maxMessageLen)
+	h.Text("💰 ").Bold("Отложено " + s.Amount.Format()).Text(" на «" + w.Title + "»")
+	if saved, percent, ofPrice := savings(w); saved != "" {
+		h.NL().Text(saved)
+		if ofPrice {
+			h.NL().Text(progressBar(percent))
+			if percent >= 100 {
+				h.NL().NL().Text("🎉 Всё накоплено! Можно отмечать «Сбылось».")
+			}
+		}
+	}
+	return h.String()
+}
+
+func renderShopping(v shopView) string {
+	h := newHTML(maxMessageLen)
+	h.Text("🛒 ").Bold("Список покупок").NL()
+	switch {
+	case v.total == 0 && len(v.checked) == 0:
+		h.Text("Пока пусто. Добавьте ингредиенты кнопкой «🛒 В покупки» на карточке рецепта или откройте список в приложении.")
+		return h.String()
+	case v.total == 0:
+		h.Text("Всё куплено 🎉")
+	default:
+		h.Text("Нужно купить: " + strconv.Itoa(v.total))
+		if n := len(v.checked); n > 0 {
+			h.Text(" · куплено: " + strconv.Itoa(n))
+		}
+		h.NL().Text("Нажмите на позицию, чтобы отметить её купленной.")
+	}
+	if n := len(v.checked) - shopCheckedShown; n > 0 {
+		h.NL().Italic("Ещё куплено: " + strconv.Itoa(n))
+	}
+	return h.String()
+}
+
+// recipeTagLine is "🍝 Итальянская · 🌙 Ужин · 🍲 Первое": the cuisine, then
+// the courses in the recipe's order. Unknown (deleted) tags are skipped.
+func recipeTagLine(r domain.Recipe, tags []domain.RecipeTag) string {
+	byID := make(map[domain.RecipeTagID]domain.RecipeTag, len(tags))
+	for _, t := range tags {
+		byID[t.ID] = t
+	}
+	var labels []string
+	if r.CuisineID != nil {
+		if t, ok := byID[*r.CuisineID]; ok && t.Kind == domain.TagCuisine {
+			labels = append(labels, t.Label())
+		}
+	}
+	for _, id := range r.CourseIDs {
+		if t, ok := byID[id]; ok && t.Kind == domain.TagCourse {
+			labels = append(labels, t.Label())
+		}
+	}
+	return strings.Join(labels, " · ")
+}
+
+// cookingLine is "⭐ 4,5 · готовили 3 раза", "🍳 Готовили 1 раз" or "".
+func cookingLine(s domain.CookingSummary) string {
+	if s.Count <= 0 {
+		return ""
+	}
+	if avg, ok := s.AverageTenths(); ok {
+		return "⭐ " + domain.FormatTenths(avg) + " · готовили " + timesText(s.Count)
+	}
+	return "🍳 Готовили " + timesText(s.Count)
+}
+
+func timesText(n int) string {
+	return strconv.Itoa(n) + " " + plural(n, "раз", "раза", "раз")
+}
+
+// nutritionLine is the short КБЖУ of a recipe: per serving when known,
+// per 100 g otherwise.
+func nutritionLine(n *domain.Nutrition) string {
+	if n == nil {
+		return ""
+	}
+	m, per := n.Per100(), "на 100 г"
+	if s, ok := n.PerServing(); ok {
+		m, per = s, "на порцию"
+	}
+	return "🔥 " + domain.FormatTenths(m.Kcal) + " ккал · Б " + domain.FormatTenths(m.Protein) +
+		" · Ж " + domain.FormatTenths(m.Fat) + " · У " + domain.FormatTenths(m.Carbs) + " (" + per + ")"
+}
+
+func renderIngredients(h *htmlText, list []domain.Ingredient, shown int) {
+	h.NL().NL().Bold("🧾 Ингредиенты · " + strconv.Itoa(len(list)))
+	for _, ing := range list[:min(len(list), shown)] {
+		name, _ := excerpt(ing.Name, ingredientNameLen)
+		h.NL().Text("• " + name)
+		if ing.Quantity != nil {
+			if q := ing.Quantity.Format(); q != "" {
+				h.Text(" — " + q)
+			}
+		}
+	}
+	if rest := len(list) - shown; rest > 0 {
+		h.NL().Italic("…и ещё " + strconv.Itoa(rest))
+	}
+}
+
+// savings describes the money put aside for w: the text after «💰», the
+// percent of the price, and whether the text is measured against the price.
+func savings(w domain.Wish) (string, int, bool) {
+	sameCurrency := w.Price != nil && w.Saved != nil && w.Price.Currency == w.Saved.Currency
+	switch {
+	case sameCurrency:
+		p, _ := w.SavedPercent()
+		return "Накоплено " + amountDigits(*w.Saved) + " из " + w.Price.Format() + " (" + strconv.Itoa(p) + "%)", p, true
+	case w.Saved != nil:
+		return "Накоплено " + w.Saved.Format(), 0, false
+	case w.Status == domain.StatusProgress && w.Price != nil:
+		return "Накоплено 0 из " + w.Price.Format() + " (0%)", 0, true
+	case w.Status == domain.StatusProgress:
+		return "Пока ничего не отложено", 0, false
+	}
+	return "", 0, false
+}
+
+// amountDigits is the formatted amount without the currency sign.
+func amountDigits(m domain.Money) string {
+	return strings.TrimSuffix(m.Format(), " "+m.Currency.Symbol())
+}
+
+// progressBar draws percent (0..100) as ten cells; any progress shows.
+func progressBar(percent int) string {
+	percent = min(max(percent, 0), 100)
+	filled := percent * progressCells / 100 // rounds down: only 100% fills every cell
+	if filled == 0 && percent > 0 {
+		filled = 1
+	}
+	return strings.Repeat("▰", filled) + strings.Repeat("▱", progressCells-filled)
+}
+
+func starsText(n int) string { return strings.Repeat("⭐", min(max(n, 0), maxStars)) }
 
 // plural picks the Russian plural form for n: 1 рецепт, 2 рецепта, 5 рецептов.
 func plural(n int, one, few, many string) string {

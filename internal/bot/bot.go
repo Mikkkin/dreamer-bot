@@ -184,6 +184,8 @@ func (b *Bot) Attach(s *service.Services) {
 		files:    newDownloader(b.api, b.opts.MaxImageBytes, b.redact),
 		svc:      s,
 		drafts:   newDraftStore(draftTTL, b.now),
+		savings:  newSavingPrompts(draftTTL, b.now),
+		recent:   newRecentActions(recentActionTTL, b.now),
 		locks:    newUserLocks(),
 		toucher:  newToucher(s.Users, b.now, b.log),
 		web:      b.web,

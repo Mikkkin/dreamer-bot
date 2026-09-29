@@ -71,12 +71,16 @@ func (a *app) sendCover(ctx context.Context, chatID int64, img domain.ImageID, c
 // editCard re-renders a card in place, as a caption or as text depending
 // on the kind of message it was sent as.
 func (a *app) editCard(ctx context.Context, msg *models.Message, c card) {
-	isPhoto := len(msg.Photo) > 0
+	a.editCardAt(ctx, msg.Chat.ID, msg.ID, len(msg.Photo) > 0, c)
+}
+
+// editCardAt is editCard for a message known by its IDs.
+func (a *app) editCardAt(ctx context.Context, chatID int64, messageID int, isPhoto bool, c card) {
 	text := c.text
 	if isPhoto {
 		text = c.caption
 	}
-	if err := editHTML(ctx, a.api, msg.Chat.ID, msg.ID, isPhoto, text, c.kb); err != nil {
+	if err := editHTML(ctx, a.api, chatID, messageID, isPhoto, text, c.kb); err != nil {
 		a.log.Warn("bot: edit card failed", "err", err)
 	}
 }

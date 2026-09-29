@@ -22,6 +22,10 @@ const (
 	// notifyCreatedDelay lets the author finish the new item (photos are
 	// uploaded right after it is created) before the partner hears of it.
 	notifyCreatedDelay = 15 * time.Second
+	// notifyUpdatedQuiet is how long a recipe must stay unchanged before its
+	// edits are announced: one edit in the Mini App is several API calls
+	// (fields, then each photo), and the partner should hear of it once.
+	notifyUpdatedQuiet = 60 * time.Second
 	// notifyTimeout bounds the delivery of one notification.
 	notifyTimeout = 30 * time.Second
 	// maxPhotoUpload is the Bot API limit for sendPhoto.
@@ -30,31 +34,55 @@ const (
 
 // notifier implements service.Notifier. Every notice is delivered in its own
 // goroutine, detached from the request that triggered it; drain waits for
-// all of them on shutdown.
+// all of them on shutdown (pending recipe edits are announced right away).
 type notifier struct {
 	api     messenger
 	web     *webApp
 	log     *slog.Logger
 	svc     atomic.Pointer[service.Services]
-	delay   time.Duration
+	delay   time.Duration // before a creation is announced
+	quiet   time.Duration // after the last edit of a recipe
 	timeout time.Duration
+	now     func() time.Time
 
-	mu     sync.Mutex
-	closed bool
-	quit   chan struct{}
-	wg     sync.WaitGroup
+	mu       sync.Mutex
+	closed   bool
+	quit     chan struct{}
+	wg       sync.WaitGroup
+	creating map[domain.RecipeID]int      // RecipeCreated notices not delivered yet
+	updates  map[updateKey]*pendingUpdate // edit bursts waiting for quiet
+}
+
+// updateKey identifies one burst of edits: a recipe changed by one person
+// (whose partners are told). Edits by the other partner form their own burst.
+type updateKey struct {
+	recipe domain.RecipeID
+	actor  domain.UserID
+}
+
+// pendingUpdate is the latest state of an edit burst; guarded by
+// notifier.mu. bump wakes the waiting goroutine when due moves.
+type pendingUpdate struct {
+	r    service.Recipients
+	rec  domain.Recipe
+	due  time.Time
+	bump chan struct{}
 }
 
 var _ service.Notifier = (*notifier)(nil)
 
 func newNotifier(api messenger, web *webApp, log *slog.Logger) *notifier {
 	return &notifier{
-		api:     api,
-		web:     web,
-		log:     log,
-		delay:   notifyCreatedDelay,
-		timeout: notifyTimeout,
-		quit:    make(chan struct{}),
+		api:      api,
+		web:      web,
+		log:      log,
+		delay:    notifyCreatedDelay,
+		quiet:    notifyUpdatedQuiet,
+		timeout:  notifyTimeout,
+		now:      time.Now,
+		quit:     make(chan struct{}),
+		creating: make(map[domain.RecipeID]int),
+		updates:  make(map[updateKey]*pendingUpdate),
 	}
 }
 
@@ -78,7 +106,7 @@ func (n *notifier) WishCreated(ctx context.Context, r service.Recipients, w doma
 			cover:   coverOf(w.Images),
 			caption: renderWishCreated(actor, w, maxCaptionLen),
 			text:    renderWishCreated(actor, w, maxMessageLen),
-			open:    n.web.wishLink(w.ID),
+			kb:      openKeyboard("Открыть ✨", n.web.wishLink(w.ID)),
 		})
 	})
 }
@@ -93,18 +121,25 @@ func (n *notifier) WishFulfilled(ctx context.Context, r service.Recipients, w do
 			cover:   coverOf(w.Images),
 			caption: renderWishFulfilled(actor, w, maxCaptionLen),
 			text:    renderWishFulfilled(actor, w, maxMessageLen),
-			open:    n.web.wishLink(w.ID),
+			kb:      openKeyboard("Открыть ✨", n.web.wishLink(w.ID)),
 		})
 	})
 }
 
-// RecipeCreated announces a new recipe after a short delay.
+// RecipeCreated announces a new recipe after a short delay. Until the notice
+// reloads the recipe, edits of it (the photos uploaded right after creating
+// it) are not announced separately: the notice shows that state. Edits made
+// while it is being delivered are announced as usual.
 func (n *notifier) RecipeCreated(ctx context.Context, r service.Recipients, rec domain.Recipe) {
-	n.spawn(ctx, func(ctx context.Context) {
+	n.mu.Lock()
+	n.creating[rec.ID]++
+	n.mu.Unlock()
+	spawned := n.spawn(ctx, func(ctx context.Context) {
 		n.pause()
 		ctx, cancel := context.WithTimeout(ctx, n.timeout)
 		defer cancel()
 		rec, ok := n.reloadRecipe(ctx, rec)
+		n.created(rec.ID)
 		if !ok {
 			return
 		}
@@ -113,19 +148,156 @@ func (n *notifier) RecipeCreated(ctx context.Context, r service.Recipients, rec 
 			cover:   coverOf(rec.Images),
 			caption: renderRecipeCreated(actor, rec, maxCaptionLen),
 			text:    renderRecipeCreated(actor, rec, maxMessageLen),
-			open:    n.web.recipeLink(rec.ID),
+			kb:      openKeyboard("Открыть ✨", n.web.recipeLink(rec.ID)),
+		})
+	})
+	if !spawned {
+		n.created(rec.ID)
+	}
+}
+
+// created marks a RecipeCreated notice as done.
+func (n *notifier) created(id domain.RecipeID) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	if n.creating[id]--; n.creating[id] <= 0 {
+		delete(n.creating, id)
+	}
+}
+
+func (n *notifier) isCreating(id domain.RecipeID) bool {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	return n.creating[id] > 0
+}
+
+// RecipeUpdated coalesces edits: the partner hears of a recipe once it has
+// stayed unchanged for the quiet period. Edits while the recipe's creation
+// notice is pending are folded into that notice, and a recipe deleted in the
+// meantime is not announced.
+func (n *notifier) RecipeUpdated(ctx context.Context, r service.Recipients, rec domain.Recipe) {
+	key := updateKey{recipe: rec.ID, actor: r.Actor.ID}
+	n.mu.Lock()
+	if n.creating[rec.ID] > 0 {
+		n.mu.Unlock()
+		n.log.Debug("bot: recipe edit folded into its creation notice", "recipe_id", rec.ID)
+		return
+	}
+	due := n.now().Add(n.quiet)
+	if p, ok := n.updates[key]; ok {
+		p.r, p.rec, p.due = r, rec, due
+		n.mu.Unlock()
+		select {
+		case p.bump <- struct{}{}:
+		default: // a wake-up is already pending
+		}
+		return
+	}
+	p := &pendingUpdate{r: r, rec: rec, due: due, bump: make(chan struct{}, 1)}
+	n.updates[key] = p
+	n.mu.Unlock()
+	if !n.spawn(ctx, func(ctx context.Context) { n.announceUpdate(ctx, key, p) }) {
+		n.mu.Lock()
+		delete(n.updates, key)
+		n.mu.Unlock()
+	}
+}
+
+func (n *notifier) announceUpdate(ctx context.Context, key updateKey, p *pendingUpdate) {
+	r, rec := n.awaitQuiet(key, p)
+	ctx, cancel := context.WithTimeout(ctx, n.timeout)
+	defer cancel()
+	if n.isCreating(rec.ID) {
+		return
+	}
+	rec, ok := n.reloadRecipe(ctx, rec)
+	if !ok {
+		return
+	}
+	n.deliver(ctx, r.To, notice{
+		text: renderRecipeUpdated(r.Actor.DisplayName(), rec, maxMessageLen),
+		kb:   openKeyboard("Открыть ✨", n.web.recipeLink(rec.ID)),
+	})
+}
+
+// awaitQuiet waits until the burst has seen no edit for the quiet period
+// (or the notifier shuts down), then removes it from the pending set and
+// returns its latest state. Later edits start a new burst.
+func (n *notifier) awaitQuiet(key updateKey, p *pendingUpdate) (service.Recipients, domain.Recipe) {
+	for {
+		n.mu.Lock()
+		wait := p.due.Sub(n.now())
+		if wait <= 0 || n.closed {
+			delete(n.updates, key)
+			r, rec := p.r, p.rec
+			n.mu.Unlock()
+			return r, rec
+		}
+		n.mu.Unlock()
+		t := time.NewTimer(wait)
+		select {
+		case <-t.C:
+		case <-p.bump:
+		case <-n.quit:
+		}
+		t.Stop()
+	}
+}
+
+// RecipeCooked tells partners right away and lets them rate this cooking
+// from the notice.
+func (n *notifier) RecipeCooked(ctx context.Context, r service.Recipients, rec domain.Recipe, cook domain.Cook) {
+	n.spawn(ctx, func(ctx context.Context) {
+		ctx, cancel := context.WithTimeout(ctx, n.timeout)
+		defer cancel()
+		n.deliver(ctx, r.To, notice{
+			text: renderRecipeCooked(r.Actor.DisplayName(), rec.Title, starsBy(cook, cook.CookedBy), 0, maxMessageLen),
+			kb:   rateKeyboard(rec.ID, cook.ID, n.web.recipeLink(rec.ID), 0),
 		})
 	})
 }
 
+// RecipeRated tells partners about a rating (with its comment) right away.
+func (n *notifier) RecipeRated(ctx context.Context, r service.Recipients, rec domain.Recipe, _ domain.Cook, rating domain.Rating) {
+	n.spawn(ctx, func(ctx context.Context) {
+		ctx, cancel := context.WithTimeout(ctx, n.timeout)
+		defer cancel()
+		n.deliver(ctx, r.To, notice{text: renderRecipeRated(r.Actor.DisplayName(), rec, rating, maxMessageLen)})
+	})
+}
+
+// WishSaved tells partners about money put aside, with the fresh total.
+func (n *notifier) WishSaved(ctx context.Context, r service.Recipients, w domain.Wish, s domain.Saving) {
+	n.spawn(ctx, func(ctx context.Context) {
+		ctx, cancel := context.WithTimeout(ctx, n.timeout)
+		defer cancel()
+		w, ok := n.reloadWish(ctx, w)
+		if !ok {
+			return
+		}
+		n.deliver(ctx, r.To, notice{text: renderWishSaved(r.Actor.DisplayName(), w, s, maxMessageLen)})
+	})
+}
+
+// starsBy returns the stars user gave the cooking, 0 when none.
+func starsBy(c domain.Cook, user domain.UserID) int {
+	for _, rt := range c.Ratings {
+		if rt.UserID == user {
+			return rt.Stars
+		}
+	}
+	return 0
+}
+
 // spawn runs fn in a tracked goroutine with a context that survives the
-// caller's request. After drain has started, notices are dropped.
-func (n *notifier) spawn(ctx context.Context, fn func(context.Context)) {
+// caller's request. After drain has started, notices are dropped and spawn
+// reports false.
+func (n *notifier) spawn(ctx context.Context, fn func(context.Context)) bool {
 	n.mu.Lock()
 	if n.closed {
 		n.mu.Unlock()
 		n.log.Warn("bot: shutting down, notification dropped")
-		return
+		return false
 	}
 	n.wg.Add(1)
 	n.mu.Unlock()
@@ -140,6 +312,7 @@ func (n *notifier) spawn(ctx context.Context, fn func(context.Context)) {
 		}()
 		fn(detached)
 	}()
+	return true
 }
 
 // pause waits for the announcement delay, cut short by shutdown.
@@ -204,13 +377,13 @@ type notice struct {
 	cover   *domain.ImageID
 	caption string
 	text    string
-	open    string // deep link into the Mini App, "" when unknown
+	kb      *models.InlineKeyboardMarkup // nil = no buttons
 }
 
 // deliver sends the notice to every recipient. Failures (e.g. a partner who
 // blocked the bot) are logged and never propagated.
 func (n *notifier) deliver(ctx context.Context, to []domain.User, msg notice) {
-	kb := openKeyboard("Открыть ✨", msg.open)
+	kb := msg.kb
 	var photo []byte
 	if msg.cover != nil {
 		photo = n.loadCover(ctx, *msg.cover)

@@ -16,6 +16,8 @@
 #   bash setup-vds.sh ids        set ALLOWED_USER_IDS and restart
 #   bash setup-vds.sh env        re-enter .env values and redeploy
 #   bash setup-vds.sh status     containers, firewall, fail2ban, certificate
+#   bash setup-vds.sh backup     archive the data (SQLite + photos) now
+#   bash setup-vds.sh restore F  replace the data with backup F (current data saved first)
 #
 # Every question can be answered in advance with an environment variable of
 # the same name (BOT_TOKEN, ALLOWED_USER_IDS, DOMAIN_MODE=domain|duckdns|none,
@@ -50,7 +52,13 @@ step() { printf '\n%s==> %s%s\n' "$C_B$C_C" "$*" "$C_0"; }
 info() { printf '    %s\n' "$*"; }
 ok()   { printf '%s  ✓ %s%s\n' "$C_G" "$*" "$C_0"; }
 warn() { printf '%s  ! %s%s\n' "$C_Y" "$*" "$C_0" >&2; }
-die()  { printf '%s  ✗ %s%s\n' "$C_R" "$*" "$C_0" >&2; exit 1; }
+# FAIL_HINT, when set, is printed after any fatal error (e.g. how to roll back).
+FAIL_HINT=''
+die()  {
+  printf '%s  ✗ %s%s\n' "$C_R" "$*" "$C_0" >&2
+  [[ -z $FAIL_HINT ]] || printf '%s\n' "$FAIL_HINT" >&2
+  exit 1
+}
 trap 'printf "%s  ✗ Ошибка в строке %s: %s%s\n" "$C_R" "$LINENO" "$BASH_COMMAND" "$C_0" >&2' ERR
 
 # ----------------------------------------------------------------- prompts --
@@ -202,7 +210,7 @@ setup_swap() {
   step "Swap"
   local mem_mb
   mem_mb=$(awk '/MemTotal/ {print int($2/1024)}' /proc/meminfo)
-  if swapon --noheadings --show | grep -q .; then ok "Swap уже есть"; return; fi
+  if [[ -n $(swapon --noheadings --show) ]]; then ok "Swap уже есть"; return; fi
   if (( mem_mb >= 3500 )); then ok "RAM ${mem_mb} MB — swap не нужен"; return; fi
   # The image is built on the server (Go + bun); small VDS need swap for it.
   fallocate -l "${SWAP_SIZE_MB}M" /swapfile 2>/dev/null || dd if=/dev/zero of=/swapfile bs=1M count="$SWAP_SIZE_MB" status=none
@@ -627,7 +635,10 @@ check_dns() {
     fi
     confirm "Проверить снова? (n — продолжить без проверки)" y || break
   done
-  if ss -ltnpH '( sport = :80 or sport = :443 )' 2>/dev/null | grep -v docker-proxy | grep -q .; then
+  # Capture first: "producer | grep -q" fails under pipefail when grep exits early.
+  local busy
+  busy=$(ss -ltnpH '( sport = :80 or sport = :443 )' 2>/dev/null | grep -v docker-proxy || true)
+  if [[ -n $busy ]]; then
     warn "Порты 80/443 уже заняты другим сервисом (nginx/apache?) — остановите его, иначе Caddy не получит сертификат:"
     ss -ltnpH '( sport = :80 or sport = :443 )' 2>/dev/null | sed 's/^/      /' >&2 || true
   fi
@@ -641,19 +652,24 @@ deploy() {
   chmod 755 "$APP_DIR" "$APP_DIR/deploy"
   chmod 644 "$APP_DIR/deploy/Caddyfile"
   compose up -d --build --remove-orphans
-  local status=''
-  for _ in $(seq 1 60); do
-    status=$(docker inspect -f '{{.State.Health.Status}}' "$(compose ps -q bot)" 2>/dev/null || true)
-    [[ $status == healthy ]] && break
-    sleep 3
-  done
-  if [[ $status == healthy ]]; then
+  if wait_bot_healthy; then
     ok "Бот запущен"
   else
     compose logs --tail 40 bot >&2 || true
     die "Бот не стал healthy — смотрите логи выше: cd $APP_DIR && docker compose logs bot"
   fi
   docker image prune -f >/dev/null 2>&1 || true
+}
+
+# wait_bot_healthy: up to three minutes for the bot's healthcheck to pass.
+wait_bot_healthy() {
+  local status=''
+  for _ in $(seq 1 60); do
+    status=$(docker inspect -f '{{.State.Health.Status}}' "$(compose ps -q bot)" 2>/dev/null || true)
+    [[ $status == healthy ]] && return 0
+    sleep 3
+  done
+  return 1
 }
 
 wait_certificate() {
@@ -699,7 +715,7 @@ summary() {
     warn "то же сделает партнёр. Затем: sudo $SELF_INSTALL ids"
   fi
   printf '\n'
-  info "Команды: sudo $SELF_INSTALL update | ids | env | status"
+  info "Команды: sudo $SELF_INSTALL update | ids | env | status | backup | restore"
   info "Логи:    cd $APP_DIR && docker compose logs -f bot"
 }
 
@@ -707,6 +723,9 @@ cmd_status() {
   detect_admin_user
   [[ -n $ADMIN_USER ]] || die "Сначала выполните полную установку"
   step "Контейнеры"; compose ps
+  local backups
+  backups=$(list_backups)
+  step "Бэкапы (последние 5)"; sed -n '1,5s/^/    /p' <<<"${backups:-нет}"
   step "Firewall"; ufw status verbose | sed 's/^/    /'
   step "fail2ban"; fail2ban-client status sshd 2>/dev/null | sed 's/^/    /' || warn "fail2ban не запущен"
   local domain; domain=$(env_get DOMAIN)
@@ -730,14 +749,145 @@ cmd_ids() {
   ok "Готово. Напишите боту /start — кнопка «✨ Мечты» откроет приложение."
 }
 
+# ------------------------------------------------------------------ backups --
+BACKUP_DIR="${BACKUP_DIR:-/var/backups/dreamer}"
+BACKUP_KEEP="${BACKUP_KEEP:-10}"
+DATA_VOLUME="${DATA_VOLUME:-dreamer_dreamer-data}"
+
+data_dir() { docker volume inspect -f '{{.Mountpoint}}' "$DATA_VOLUME" 2>/dev/null || true; }
+
+# list_backups: archive paths, newest first (nothing before the first backup).
+list_backups() {
+  [[ -d $BACKUP_DIR ]] || return 0
+  find "$BACKUP_DIR" -maxdepth 1 -name 'dreamer-*.tar.gz' -printf '%T@ %p\n' | sort -rn | cut -d' ' -f2-
+}
+
+# backup_data [keep-all]: a consistent archive of everything the bot stores
+# (SQLite and photos) in LAST_BACKUP. The bot is stopped for the few seconds
+# the archive takes, so the database is never copied mid-write, and started
+# again if it was running. Only the newest BACKUP_KEEP archives are kept,
+# unless keep-all is given (restore must not rotate away its own source).
+LAST_BACKUP=''
+backup_data() {
+  local dir tmp file stamp n=0 was_running=0
+  dir=$(data_dir)
+  if [[ -z $dir || ! -d $dir ]]; then info "Данных ещё нет — бэкап не нужен"; return 0; fi
+  install -d -m 700 "$BACKUP_DIR"
+  tmp=$(mktemp "$BACKUP_DIR/.partial.XXXXXX")
+  if [[ -n $(compose ps -q --status running bot 2>/dev/null) ]]; then
+    was_running=1
+    compose stop bot >/dev/null
+  fi
+  if ! tar -czf "$tmp" -C "$dir" .; then
+    rm -f "$tmp"
+    if (( was_running )); then compose start bot >/dev/null; fi
+    die "Не удалось сделать бэкап — дальше не иду, данные не тронуты"
+  fi
+  if (( was_running )); then compose start bot >/dev/null; fi
+  chmod 600 "$tmp"
+  # Never overwrite an archive, even one made in the same second.
+  stamp=$(date -u +%Y%m%d-%H%M%S)
+  file=$BACKUP_DIR/dreamer-$stamp.tar.gz
+  while [[ -e $file ]]; do n=$((n + 1)); file=$BACKUP_DIR/dreamer-$stamp-$n.tar.gz; done
+  mv -n "$tmp" "$file"
+  LAST_BACKUP=$file
+  ok "Бэкап данных: $file ($(du -h "$file" | cut -f1))"
+  [[ ${1:-} == keep-all ]] || list_backups | tail -n +$((BACKUP_KEEP + 1)) | xargs -r rm -f --
+}
+
+# check_archive FILE: a dreamer backup has ./dreamer.db and nothing but
+# regular files and directories under ./ — no links, devices or paths that
+# could leave the volume when root unpacks it.
+check_archive() {
+  local file=$1 names types
+  # Capture first, then grep: "cmd | grep -q" breaks under pipefail (SIGPIPE).
+  names=$(tar -tzf "$file" 2>/dev/null) || die "Архив повреждён: $file"
+  grep -qx './dreamer.db' <<<"$names" || die "Это не бэкап dreamer-bot (нет dreamer.db): $file"
+  types=$(tar -tvzf "$file" 2>/dev/null | cut -c1) || die "Архив повреждён: $file"
+  if grep -qvE '^\./' <<<"$names" || grep -qE '(^|/)\.\.(/|$)' <<<"$names" || grep -qv '^[-d]$' <<<"$types"; then
+    die "В архиве есть ссылки, устройства или пути вне ./ — восстанавливать его не буду: $file"
+  fi
+}
+
+# move_contents FROM TO: moves every entry of FROM (dotfiles too) into TO.
+# Both live on the volume's filesystem, so each move is a rename.
+move_contents() { find "$1" -mindepth 1 -maxdepth 1 -exec mv -t "$2" -- {} +; }
+
+cmd_backup() {
+  detect_admin_user
+  [[ -n $ADMIN_USER ]] || die "Сначала выполните полную установку"
+  step "Бэкап"
+  backup_data
+}
+
+# cmd_restore FILE: unpack next to the volume, check, swap the contents in,
+# and keep the previous data until the bot is healthy on the restored one;
+# otherwise the previous data goes back. The current data is archived first.
+cmd_restore() {
+  detect_admin_user
+  [[ -n $ADMIN_USER ]] || die "Сначала выполните полную установку"
+  local file=${1:-} dir stage previous
+  step "Восстановление из бэкапа"
+  if [[ -z $file ]]; then
+    info "Бэкапы (новые сверху):"
+    list_backups | sed 's/^/      /'
+    die "Укажите файл: sudo $SELF_INSTALL restore <файл>"
+  fi
+  [[ -f $file ]] || die "Нет файла $file"
+  file=$(readlink -f "$file")
+  check_archive "$file"
+  dir=$(data_dir)
+  [[ -n $dir && -d $dir ]] || die "Не найден том $DATA_VOLUME"
+  confirm "Заменить текущие данные бота содержимым этого бэкапа? Текущие данные сначала тоже сохраню" n || die "Отменено"
+  stage=$(mktemp -d "$(dirname "$dir")/.restore.XXXXXX")
+  if ! tar -xzf "$file" -C "$stage" --no-same-owner --no-same-permissions || [[ ! -s $stage/dreamer.db ]]; then
+    rm -rf "$stage"
+    die "Не удалось распаковать $file — текущие данные не тронуты"
+  fi
+  chown -R 65532:65532 "$stage"
+  backup_data keep-all
+  previous=$(mktemp -d "$(dirname "$dir")/.previous.XXXXXX")
+  compose stop bot >/dev/null
+  move_contents "$dir" "$previous"
+  move_contents "$stage" "$dir"
+  compose up -d bot >/dev/null
+  if wait_bot_healthy; then
+    rm -rf "$stage" "$previous"
+    ok "Данные восстановлены из $file"
+    return 0
+  fi
+  compose logs --tail 40 bot >&2 || true
+  compose stop bot >/dev/null
+  move_contents "$dir" "$stage"
+  move_contents "$previous" "$dir"
+  rm -rf "$stage" "$previous"
+  compose up -d bot >/dev/null
+  die "С данными из $file бот не запустился — вернул прежние данные. Если бэкап сделан до обновления, сначала откатите код (подсказку печатает update)"
+}
+
 cmd_update() {
   detect_admin_user
   [[ -n $ADMIN_USER && -d $APP_DIR/.git ]] || die "Сначала выполните полную установку"
   step "Обновление"
+  local previous
+  previous=$(as_admin git -C "$APP_DIR" rev-parse --short HEAD)
   as_admin git -C "$APP_DIR" pull --ff-only
   install_self
+  # Build first while the old version keeps running, then back up the data:
+  # the new version may migrate the database on its first start.
+  step "Сборка новой версии"
+  compose build
+  step "Бэкап перед обновлением"
+  backup_data
+  FAIL_HINT="    Откат на прежнюю версию — код, затем данные:
+      cd $APP_DIR
+      sudo -H -u $ADMIN_USER git reset --hard $previous
+      sudo docker compose build bot
+      sudo $SELF_INSTALL restore ${LAST_BACKUP:-<файл из $BACKUP_DIR>}"
   deploy
   wait_certificate
+  printf '%s\n' "$FAIL_HINT"
+  FAIL_HINT=''
 }
 
 cmd_setup() {
@@ -770,8 +920,10 @@ main() {
     ids)    cmd_ids ;;
     env)    detect_admin_user; preflight; FORCE_ENV=1 configure_env; check_dns; deploy; wait_certificate; summary ;;
     status) cmd_status ;;
-    -h|--help|help) sed -n '2,24p' "$0" | sed 's/^# \{0,1\}//' ;;
-    *) die "Неизвестная команда: $cmd (setup|update|ids|env|status)" ;;
+    backup) cmd_backup ;;
+    restore) cmd_restore "${2:-}" ;;
+    -h|--help|help) sed -n '2,25p' "$0" | sed 's/^# \{0,1\}//' ;;
+    *) die "Неизвестная команда: $cmd (setup|update|ids|env|status|backup|restore)" ;;
   esac
 }
 

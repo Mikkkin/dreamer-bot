@@ -7,7 +7,7 @@ VERSION  ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev
 PLATFORMS ?= linux/amd64,linux/arm64
 IMAGE    ?= dreamer-bot
 
-.PHONY: all web build run test vet lint vuln check image image-multiarch dev-url clean
+.PHONY: all web build run test vet lint vuln check test-setup image image-multiarch dev-url clean
 
 all: check build
 
@@ -38,6 +38,11 @@ lint:
 
 vuln:
 	$(GO) run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...
+
+## test-setup: shellcheck and container tests for deploy/setup-vds.sh (needs Docker)
+test-setup:
+	shellcheck -s bash deploy/setup-vds.sh deploy/test/*.sh
+	./deploy/test/run.sh
 
 ## check: everything CI runs
 check: vet lint test vuln

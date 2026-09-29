@@ -10,6 +10,9 @@ describe('parseDeepLink', () => {
     ['', 'w_42', { kind: 'wish', id: 42 }],
     ['', 'r_9', { kind: 'recipe', id: 9 }],
     ['?recipe=3', 'w_42', { kind: 'recipe', id: 3 }],
+    ['?shopping=1', null, { kind: 'shopping' }],
+    ['?shopping=1&recipe=4', null, { kind: 'recipe', id: 4 }],
+    ['?shopping=1', 'r_9', { kind: 'shopping' }],
   ] as const)('%p / %p', (search, start, want) => {
     expect(parseDeepLink(search, start)).toEqual(want)
   })
@@ -25,9 +28,14 @@ describe('parseDeepLink', () => {
     ['?wish=0012', null],
     ['?wish=99999999999999999999', null],
     ['?recipe=javascript:alert(1)', null],
+    ['?shopping=0', null],
+    ['?shopping=true', null],
+    ['?shopping=', null],
+    ['?shopping=1x', null],
     ['', 'x_1'],
     ['', 'w_'],
     ['', 'w_1_2'],
+    ['', 'shopping'],
   ])('ignores %p / %p', (search, start) => {
     expect(parseDeepLink(search, start)).toBeNull()
   })

@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEv
 import type { Status } from '../api/types'
 import { cx } from '../lib/cx'
 import { useTelegram } from '../telegram/hooks'
-import { IconClear, IconHeart, IconPiggy, IconSearch, IconSparkles } from './icons'
+import { IconCheck, IconClear, IconHeart, IconPiggy, IconSearch, IconSparkles, IconStar } from './icons'
 
 export interface SegmentOption<T extends string> {
   value: T
@@ -216,9 +216,9 @@ export function StatusStepper({
   )
 }
 
-export function ChipGroup({ label, wrap, children }: { label: string; wrap?: boolean; children: ReactNode }) {
+export function ChipGroup({ label, wrap, multi, children }: { label: string; wrap?: boolean; multi?: boolean; children: ReactNode }) {
   return (
-    <div className={cx('chips', wrap ? 'chips--wrap' : 'chips--scroll')} role="radiogroup" aria-label={label}>
+    <div className={cx('chips', wrap ? 'chips--wrap' : 'chips--scroll')} role={multi ? 'group' : 'radiogroup'} aria-label={label}>
       {children}
     </div>
   )
@@ -233,11 +233,13 @@ interface ChipProps {
   action?: boolean
   /** An icon-only action chip. */
   iconOnly?: boolean
+  /** A checkbox in a multi-select group rather than a radio. */
+  multi?: boolean
   label?: string
   children: ReactNode
 }
 
-export function Chip({ selected = false, count, emoji, onSelect, action, iconOnly, label, children }: ChipProps) {
+export function Chip({ selected = false, count, emoji, onSelect, action, iconOnly, multi, label, children }: ChipProps) {
   const tg = useTelegram()
   const ref = useRef<HTMLButtonElement>(null)
   const mounted = useRef(false)
@@ -250,7 +252,7 @@ export function Chip({ selected = false, count, emoji, onSelect, action, iconOnl
 
   const onClick = () => {
     if (action) tg.haptic.impact('light')
-    else if (!selected) tg.haptic.selection()
+    else if (multi || !selected) tg.haptic.selection()
     onSelect()
   }
   return (
@@ -258,7 +260,7 @@ export function Chip({ selected = false, count, emoji, onSelect, action, iconOnl
       ref={ref}
       type="button"
       className={cx('chip', selected && 'chip--selected', action && 'chip--action', iconOnly && 'chip--icon')}
-      role={action ? undefined : 'radio'}
+      role={action ? undefined : multi ? 'checkbox' : 'radio'}
       aria-checked={action ? undefined : selected}
       aria-label={label}
       onClick={onClick}
@@ -350,5 +352,141 @@ export function SearchField({
         </button>
       )}
     </div>
+  )
+}
+
+/**
+ * A compact single choice with content-sized options (sorting): the capsule
+ * of the segmented control, but each option only as wide as its label.
+ */
+export function ChoicePills<T extends string>({
+  options,
+  value,
+  onChange,
+  label,
+}: {
+  options: readonly { value: T; label: string }[]
+  value: T
+  onChange: (value: T) => void
+  label: string
+}) {
+  const tg = useTelegram()
+  const refs = useRef<(HTMLButtonElement | null)[]>([])
+  const index = Math.max(0, options.findIndex((o) => o.value === value))
+
+  const select = (i: number, fromKeyboard: boolean) => {
+    const option = options[i]
+    if (!option) return
+    if (option.value !== value) {
+      tg.haptic.selection()
+      onChange(option.value)
+    }
+    if (fromKeyboard) refs.current[i]?.focus()
+  }
+  const onKeyDown = useRovingKeys(options.length, index, select)
+
+  return (
+    <div className="pills" role="radiogroup" aria-label={label} onKeyDown={onKeyDown}>
+      {options.map((o, i) => (
+        <button
+          key={o.value}
+          ref={(el) => {
+            refs.current[i] = el
+          }}
+          type="button"
+          role="radio"
+          aria-checked={i === index}
+          tabIndex={i === index ? 0 : -1}
+          className="pill"
+          onClick={() => select(i, false)}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+/** A round checkbox, as in Reminders: a light tap when ticked, a selection tick when cleared. */
+export function RoundCheck({ checked, onChange, label }: { checked: boolean; onChange: (checked: boolean) => void; label: string }) {
+  const tg = useTelegram()
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={checked}
+      aria-label={label}
+      className="round-check"
+      onClick={() => {
+        if (checked) tg.haptic.selection()
+        else tg.haptic.impact('light')
+        onChange(!checked)
+      }}
+    >
+      <span className="round-check__box" aria-hidden="true">
+        {checked && <IconCheck size={14} strokeWidth={3.2} />}
+      </span>
+    </button>
+  )
+}
+
+const STAR_VALUES = [1, 2, 3, 4, 5] as const
+
+/** Five big stars; each tap ticks the selection haptic and pops the chosen star. */
+export function StarRating({ value, onChange, label = 'Оценка' }: { value: number; onChange: (stars: number) => void; label?: string }) {
+  const tg = useTelegram()
+  const refs = useRef<(HTMLButtonElement | null)[]>([])
+  const [popped, setPopped] = useState(0)
+
+  const select = (i: number, fromKeyboard: boolean) => {
+    const stars = STAR_VALUES[i]
+    if (stars === undefined) return
+    tg.haptic.selection()
+    setPopped((n) => n + 1)
+    onChange(stars)
+    if (fromKeyboard) refs.current[i]?.focus()
+  }
+  const current = Math.max(0, value - 1)
+  const onKeyDown = useRovingKeys(STAR_VALUES.length, current, select)
+
+  return (
+    <div className="stars-input" role="radiogroup" aria-label={label} onKeyDown={onKeyDown}>
+      {STAR_VALUES.map((n, i) => (
+        <button
+          key={n}
+          ref={(el) => {
+            refs.current[i] = el
+          }}
+          type="button"
+          role="radio"
+          aria-checked={n === value}
+          aria-label={`${n} из 5`}
+          tabIndex={n === value || (value === 0 && n === 1) ? 0 : -1}
+          className={cx('star-btn', n <= value && 'star-btn--on')}
+          onClick={() => select(i, false)}
+        >
+          <span key={n === value ? popped : 0} className={cx('star-btn__icon', n === value && popped > 0 && 'star-btn__icon--pop')}>
+            <IconStar size={40} strokeWidth={1.6} className={n <= value ? 'icon-fill' : undefined} />
+          </span>
+        </button>
+      ))}
+    </div>
+  )
+}
+
+/** A slim duo-gradient progress bar; value is 0..1. */
+export function ProgressBar({ value, label, size = 'slim' }: { value: number; label: string; size?: 'slim' | 'big' }) {
+  const v = Math.min(1, Math.max(0, value))
+  return (
+    <span
+      className={cx('progress', `progress--${size}`, v >= 1 && 'progress--full')}
+      role="progressbar"
+      aria-label={label}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={Math.round(v * 100)}
+    >
+      <span className="progress__fill" style={{ '--p': v } as CSSProperties} />
+    </span>
   )
 }

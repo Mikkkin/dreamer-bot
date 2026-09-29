@@ -25,6 +25,7 @@ describe('parseErrorEnvelope', () => {
     [422, { error: 'limit' }, 'limit'],
     [429, { error: { code: 42 } }, 'rate_limited'],
     [502, '<html>bad gateway</html>', 'internal'],
+    [503, null, 'unavailable'],
     [500, { error: { code: 'something_new', message: 'Упс' } }, 'internal'],
   ])('status %p with body %p falls back to %p', (status, body, code) => {
     const e = parseErrorEnvelope(status, body)
@@ -56,4 +57,12 @@ test('parseJsonBody is lenient', () => {
 test('capitalize', () => {
   expect(capitalize('ёлка')).toBe('Ёлка')
   expect(capitalize('')).toBe('')
+})
+
+test('an external service outage is its own retryable code', () => {
+  const e = parseErrorEnvelope(503, { error: { code: 'unavailable', message: 'ВкусВилл не отвечает' } })
+  expect(e.code).toBe('unavailable')
+  expect(e.message).toBe('ВкусВилл не отвечает')
+  expect(e.isRetryable).toBe(true)
+  expect(e.isAuth).toBe(false)
 })

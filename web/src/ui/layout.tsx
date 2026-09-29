@@ -118,10 +118,28 @@ export function RetryBanner({ error, onRetry }: { error: ApiError; onRetry: () =
   )
 }
 
-export function IconButton({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {
+export function IconButton({
+  label,
+  onClick,
+  badge,
+  children,
+}: {
+  label: string
+  onClick: () => void
+  /** A count bubble in the corner (hidden at 0). */
+  badge?: number
+  children: ReactNode
+}) {
+  const count = badge !== undefined && badge > 0 ? badge : 0
+  const name = count > 0 ? `${label}: ${count}` : label
   return (
-    <button type="button" className="icon-btn" aria-label={label} title={label} onClick={onClick}>
+    <button type="button" className="icon-btn" aria-label={name} title={name} onClick={onClick}>
       {children}
+      {count > 0 && (
+        <span key={count} className="icon-btn__badge num" aria-hidden="true">
+          {count > 99 ? '99+' : count}
+        </span>
+      )}
     </button>
   )
 }

@@ -11,6 +11,7 @@ export type ErrorCode =
   | 'limit'
   | 'rate_limited'
   | 'internal'
+  | 'unavailable'
   | 'network'
 
 const SERVER_CODES: ReadonlySet<string> = new Set<ErrorCode>([
@@ -24,6 +25,7 @@ const SERVER_CODES: ReadonlySet<string> = new Set<ErrorCode>([
   'limit',
   'rate_limited',
   'internal',
+  'unavailable',
 ])
 
 const FALLBACK_MESSAGES: Record<ErrorCode, string> = {
@@ -37,6 +39,7 @@ const FALLBACK_MESSAGES: Record<ErrorCode, string> = {
   limit: 'Достигнут лимит',
   rate_limited: 'Слишком много запросов, подождите немного',
   internal: 'Что-то пошло не так',
+  unavailable: 'Сервис сейчас не отвечает, попробуйте позже',
   network: 'Нет соединения',
 }
 
@@ -85,6 +88,8 @@ export function codeFromStatus(status: number): ErrorCode {
       return 'limit'
     case 429:
       return 'rate_limited'
+    case 503:
+      return 'unavailable'
     default:
       return status === 0 ? 'network' : 'internal'
   }

@@ -2,9 +2,11 @@ import type { CSSProperties } from 'react'
 import type { Category, Wish } from '../../api/types'
 import { categoryBackdrop, categoryEmoji } from '../../lib/categoryStyle'
 import { cx } from '../../lib/cx'
-import { formatShortDay } from '../../lib/format'
+import { formatMoney, formatShortDay } from '../../lib/format'
+import { formatSavedOfPrice, savingsProgress } from '../../lib/savings'
 import { glueShortWords } from '../../lib/typo'
 import { Backdrop } from '../../ui/art'
+import { ProgressBar } from '../../ui/controls'
 import { IconPiggy } from '../../ui/icons'
 import { Avatar, Img } from '../../ui/media'
 
@@ -24,6 +26,8 @@ export function WishCard({ wish, index, category, showCategory, authorSlot, onOp
   const cover = wish.images[0]
   const done = wish.status === 'done'
   const progress = wish.status === 'progress'
+  // Savings show while the dream is still ahead; a fulfilled wish keeps its price.
+  const savings = done ? null : savingsProgress(wish)
   const backdrop = categoryBackdrop(category)
   const style = { '--i': Math.min(index, 8), '--bd-c': backdrop.center, '--bd-e': backdrop.edge } as CSSProperties
   return (
@@ -53,14 +57,23 @@ export function WishCard({ wish, index, category, showCategory, authorSlot, onOp
       </span>
       <span className="card__body">
         <span className="card__title">{glueShortWords(wish.title)}</span>
-        {progress && (
+        {progress && !savings && (
           <span className="mini-tag mini-tag--progress">
             <IconPiggy size={14} strokeWidth={2.2} />
             Копим
           </span>
         )}
+        {savings && savings.priceMinor !== null && (
+          <ProgressBar value={savings.savedMinor / savings.priceMinor} label={`Накоплено ${savings.percent ?? 0}%`} />
+        )}
         <span className="card__meta">
-          {wish.price ? (
+          {savings ? (
+            <span className="card__price card__price--saved num">
+              {savings.priceMinor !== null
+                ? formatSavedOfPrice(savings.savedMinor, savings.priceMinor, savings.currency)
+                : `🐷 ${formatMoney(savings.savedMinor, savings.currency)}`}
+            </span>
+          ) : wish.price ? (
             <span className={cx('card__price num', done && 'card__price--past')}>{wish.price.formatted}</span>
           ) : showCategory ? (
             <span className="card__category">{category ? category.name : 'Без категории'}</span>

@@ -2007,3 +2007,377 @@ label.cell:active {
 :root:has(.browser-back) #root {
   padding-top: calc(52px + var(--safe-top));
 }
+
+/* ---------- Iteration 2: shared controls ---------- */
+
+/* A Lucide outline icon drawn solid (stars). */
+.icon-fill {
+  fill: currentColor;
+}
+
+.icon-btn {
+  position: relative;
+}
+
+.icon-btn__badge {
+  position: absolute;
+  top: -2px;
+  right: -4px;
+  display: grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: var(--r-pill);
+  background: var(--c-rose-deep);
+  box-shadow: 0 0 0 2px var(--c-page);
+  color: #fff;
+  font: 700 12px/1 var(--font);
+  animation: pop var(--d3) var(--spring-fast) both;
+}
+
+/* A count beside a section header («ИНГРЕДИЕНТЫ  5»). */
+.section__count {
+  margin-left: auto;
+  font: 400 13px/18px var(--font);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--c-hint);
+}
+
+.page__subtitle {
+  padding: 2px var(--gutter) 0;
+  font: var(--t-footnote);
+  color: var(--c-hint-strong);
+}
+
+.text-btn {
+  min-height: 44px;
+  padding: 0 var(--s2);
+  border-radius: var(--r-sm);
+  color: var(--c-accent-text);
+  font: var(--t-subhead);
+}
+
+.empty__action {
+  min-height: 44px;
+  margin-top: var(--s2);
+  padding: 0 18px;
+  border-radius: var(--r-pill);
+  background: var(--c-accent-soft);
+  color: var(--c-accent-text);
+  font: var(--t-subhead);
+  transition: transform var(--d3) var(--spring-fast);
+}
+
+.empty__action:active {
+  transform: scale(0.96);
+  transition-duration: 90ms;
+}
+
+.spinner--on-accent {
+  width: 18px;
+  height: 18px;
+  border-color: rgb(255 255 255 / 0.35);
+  border-top-color: #fff;
+}
+
+/* Choice pills: the segmented capsule with content-sized options. */
+.pills {
+  display: inline-flex;
+  max-width: 100%;
+  gap: 2px;
+  padding: 3px;
+  overflow-x: auto;
+  border-radius: var(--r-pill);
+  background: var(--c-fill);
+  scrollbar-width: none;
+}
+
+.pills::-webkit-scrollbar {
+  display: none;
+}
+
+.pill {
+  position: relative;
+  flex: none;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: var(--r-pill);
+  font: 600 13px/18px var(--font);
+  color: var(--c-hint-strong);
+  white-space: nowrap;
+  transition:
+    background-color var(--d2) var(--effects),
+    color var(--d2) var(--effects),
+    box-shadow var(--d2) var(--effects);
+}
+
+.pill::after {
+  content: '';
+  position: absolute;
+  inset: -6px 0;
+}
+
+.pill[aria-checked='true'] {
+  background: var(--seg-thumb);
+  box-shadow: var(--seg-thumb-shadow);
+  color: var(--c-text);
+}
+
+/* Round checkbox (Reminders). The 44 px button hosts a 24 px circle. */
+.round-check {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin: -10px -6px -10px -10px;
+  border-radius: 50%;
+}
+
+.round-check__box {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1.75px color-mix(in srgb, var(--c-hint) 70%, transparent);
+  color: #fff;
+  transition:
+    background-color var(--d2) var(--effects),
+    box-shadow var(--d2) var(--effects),
+    transform var(--d3) var(--spring-fast);
+}
+
+.round-check[aria-checked='true'] .round-check__box,
+[aria-checked='true'] > .round-check__box {
+  background: var(--c-accent);
+  box-shadow: none;
+  animation: pop var(--d3) var(--spring-fast);
+}
+
+.round-check:active .round-check__box {
+  transform: scale(0.88);
+  transition-duration: 90ms;
+}
+
+/* Five big rating stars. */
+.stars-input {
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+}
+
+.star-btn {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 58px;
+  border-radius: var(--r-sm);
+  color: color-mix(in srgb, var(--c-hint) 55%, transparent);
+  transition: color var(--d2) var(--effects);
+}
+
+.star-btn--on {
+  color: var(--c-gold);
+}
+
+.star-btn__icon {
+  display: grid;
+  transition: transform var(--d3) var(--spring-fast);
+}
+
+.star-btn:active .star-btn__icon {
+  transform: scale(0.86);
+  transition-duration: 90ms;
+}
+
+.star-btn__icon--pop {
+  animation: star-pop var(--d4) var(--spring-fast);
+}
+
+.star-btn--on svg {
+  filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--c-amber) 45%, transparent));
+}
+
+@keyframes star-pop {
+  40% {
+    transform: scale(1.28) rotate(-8deg);
+  }
+}
+
+/* A slim duo-gradient progress bar. */
+.progress {
+  position: relative;
+  display: block;
+  align-self: stretch;
+  height: 6px;
+  overflow: hidden;
+  border-radius: var(--r-pill);
+  background: var(--c-fill-strong);
+}
+
+.progress--big {
+  height: 10px;
+}
+
+.progress__fill {
+  display: block;
+  width: calc(var(--p) * 100%);
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--c-amber), var(--c-rose));
+  transform-origin: left;
+  animation: bar-grow-x var(--d5) var(--spring-calm) both;
+}
+
+.progress--full .progress__fill {
+  background: var(--grad-duo);
+}
+
+:root[data-perf='low'] .progress__fill {
+  animation: none;
+}
+
+/* A native <select> dressed as a pill. */
+.unit-select {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  color: var(--c-hint);
+}
+
+.unit-select select {
+  min-width: 76px;
+  height: 40px;
+  padding: 0 28px 0 12px;
+  border: 0;
+  border-radius: var(--r-sm);
+  outline: none;
+  background: var(--c-surface);
+  color: var(--c-text);
+  font: 400 16px/20px var(--font);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.unit-select select:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--c-accent);
+}
+
+.unit-select > svg {
+  position: absolute;
+  right: 10px;
+  pointer-events: none;
+}
+
+.unit-select--field select {
+  height: 48px;
+  background: var(--c-surface);
+  border-radius: var(--r-md);
+}
+
+/* «＋ Ингредиент»: a dashed row that adds one more. */
+.add-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 44px;
+  border: 1.5px dashed color-mix(in srgb, var(--c-accent) 40%, transparent);
+  border-radius: var(--r-sm);
+  color: var(--c-accent-text);
+  font: var(--t-subhead);
+  transition:
+    background-color var(--d2) var(--effects),
+    transform var(--d3) var(--spring-fast);
+}
+
+.add-row:active {
+  background: var(--c-accent-soft);
+  transform: scale(0.98);
+  transition-duration: 90ms;
+}
+
+/* − 1 + */
+.qty-stepper {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  border-radius: var(--r-pill);
+  background: var(--c-fill);
+}
+
+.qty-stepper__btn {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 36px;
+  border-radius: var(--r-pill);
+  color: var(--c-accent-text);
+  font: 600 20px/1 var(--font);
+}
+
+.qty-stepper__btn:active {
+  background: var(--c-fill-strong);
+}
+
+.qty-stepper__value {
+  width: 48px;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--c-text);
+  font: 600 16px/20px var(--font);
+  text-align: center;
+}
+
+/* Recipe cards: «⭐ 4,5 · ×3» on the cover and the tag line below the title. */
+.stamp--cook {
+  gap: 3px;
+  padding: 0 8px 0 7px;
+}
+
+.stamp__star {
+  color: var(--c-gold);
+}
+
+.stamp__dot {
+  opacity: 0.7;
+}
+
+.card__tags {
+  max-width: 100%;
+  overflow: hidden;
+  font: var(--t-footnote);
+  color: var(--c-hint-strong);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card__price--saved {
+  font: 600 13px/18px var(--font);
+}
+
+.card__body > .progress {
+  margin-top: 2px;
+}
+
+/* The currency of a locked savings amount. */
+.currency-lock {
+  display: grid;
+  flex: none;
+  place-items: center;
+  min-width: 48px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: var(--r-pill);
+  background: var(--c-fill-strong);
+  font: 700 17px/1 var(--font);
+  color: var(--c-text);
+}

@@ -17,6 +17,7 @@ function wish(id: number, patch: Partial<Wish> = {}): Wish {
     created_at: `2026-09-${String(id).padStart(2, '0')}T10:00:00Z`,
     updated_at: `2026-09-${String(id).padStart(2, '0')}T10:00:00Z`,
     fulfilled_at: null,
+    saved: null,
     ...patch,
   }
 }

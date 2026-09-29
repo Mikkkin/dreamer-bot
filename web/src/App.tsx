@@ -6,6 +6,8 @@ import { TelegramFatal, FatalScreen } from './screens/Fatal'
 import { Home, HomeSkeleton, SECTION_PREF } from './screens/Home'
 import { RecipeDetail } from './screens/recipes/RecipeDetail'
 import { RecipeForm } from './screens/recipes/RecipeForm'
+import { RecipeTags } from './screens/recipes/RecipeTags'
+import { ShoppingList } from './screens/shopping/ShoppingList'
 import { Stats } from './screens/Stats'
 import { Viewer } from './screens/Viewer'
 import { WishDetail } from './screens/wishes/WishDetail'
@@ -68,13 +70,20 @@ function Shell() {
   )
 }
 
-/** The home of the right section, plus the deep-linked item on top so Back returns home. */
+/** The home of the right section, plus the deep-linked screen on top so Back returns home. */
 function bootRoutes(startParam: string | undefined): Route[] {
   const link = parseDeepLink(window.location.search, startParam)
   const section: Section = link ? (link.kind === 'wish' ? 'wishes' : 'recipes') : readPref(SECTION_PREF) === 'recipes' ? 'recipes' : 'wishes'
   const home: Route = { name: 'home', section }
   if (!link) return [home]
-  return [home, link.kind === 'wish' ? { name: 'wish', id: link.id } : { name: 'recipe', id: link.id }]
+  switch (link.kind) {
+    case 'wish':
+      return [home, { name: 'wish', id: link.id }]
+    case 'recipe':
+      return [home, { name: 'recipe', id: link.id }]
+    case 'shopping':
+      return [home, { name: 'shopping' }]
+  }
 }
 
 function renderRoute(route: Route): ReactNode {
@@ -95,6 +104,10 @@ function renderRoute(route: Route): ReactNode {
       return <Stats />
     case 'categories':
       return <Categories />
+    case 'recipe-tags':
+      return <RecipeTags />
+    case 'shopping':
+      return <ShoppingList />
   }
 }
 

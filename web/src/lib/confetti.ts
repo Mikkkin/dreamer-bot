@@ -1,11 +1,16 @@
 // Dependency-free confetti on a canvas styled through CSSOM (CSP-safe).
 
-const COLORS = ['#ff4d8d', '#ffc83d', '#7c5cff', '#2ec5ff', '#34c759'] as const
+const COLORS: readonly string[] = ['#ff4d8d', '#ffc83d', '#7c5cff', '#2ec5ff', '#34c759']
+/** Warm gold and rose: a small celebration for a rated dish. */
+export const STAR_COLORS: readonly string[] = ['#ffc83d', '#f5a524', '#ff5e8a', '#ffd97a']
 const DURATION_MS = 1600
 
-export function celebrate(): void {
+/** Confetti from the upper third of the screen; `light` is a third of the particles. */
+export function celebrate(options: { light?: boolean; colors?: readonly string[] } = {}): void {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-  const count = document.documentElement.dataset.perf === 'low' ? 60 : 140
+  const palette = options.colors ?? COLORS
+  const full = document.documentElement.dataset.perf === 'low' ? 60 : 140
+  const count = options.light ? Math.round(full / 3) : full
   const dpr = Math.min(window.devicePixelRatio || 1, 2)
   const w = window.innerWidth
   const h = window.innerHeight
@@ -28,7 +33,7 @@ export function celebrate(): void {
     rot: Math.random() * 6.3,
     vrot: (Math.random() - 0.5) * 0.3,
     size: 5 + Math.random() * 5,
-    color: COLORS[Math.floor(Math.random() * COLORS.length)] ?? COLORS[0],
+    color: palette[Math.floor(Math.random() * palette.length)] ?? '#ffc83d',
   }))
 
   const start = performance.now()

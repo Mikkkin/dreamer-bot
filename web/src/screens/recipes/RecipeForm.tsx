@@ -1,21 +1,27 @@
 import { useMemo, useState } from 'react'
 import { ApiError } from '../../api/errors'
-import type { Recipe, RecipeInput } from '../../api/types'
+import type { Recipe, RecipeInput, RecipeTag, TagKind } from '../../api/types'
+import { checkIngredients, emptyRow, ingredientRows, type IngredientRow, type RowErrors } from '../../lib/ingredients'
 import { linkHost, normalizeLinkInput } from '../../lib/links'
+import { checkNutrition, nutritionDraft, type NutritionDraft, type NutritionErrors } from '../../lib/nutrition'
+import { tagMap, tagsOfKind, toggleCourse } from '../../lib/recipes'
 import { usePhotoDraft } from '../../media/usePhotoDraft'
 import { useData, useMe } from '../../state/data'
 import { useNav } from '../../state/nav'
 import { useStillOnTop } from '../../state/screen'
 import { useToast } from '../../state/toast'
 import { useMainButton, useTelegram } from '../../telegram/hooks'
-import { SwitchRow } from '../../ui/controls'
+import { Chip, ChipGroup, SwitchRow } from '../../ui/controls'
 import { TextArea, TextField, charCount } from '../../ui/fields'
-import { IconLink, IconNotebook } from '../../ui/icons'
+import { IconClipboardList, IconFlame, IconLink, IconNotebook, IconPlus } from '../../ui/icons'
 import { IconTile, Section } from '../../ui/layout'
 import { PhotoEditor } from '../../ui/PhotoEditor'
-import { dismissKeyboard, fieldOf, uploadFailureText, useLeaveGuard, type FieldErrors } from '../shared/forms'
+import { dismissKeyboard, uploadFailureText, useLeaveGuard, type FieldErrors } from '../shared/forms'
 import { LoadState } from '../shared/LoadState'
 import { useEntity } from '../shared/useEntity'
+import { IngredientsEditor } from './IngredientsEditor'
+import { NutritionEditor } from './NutritionEditor'
+import { TagSheet } from './TagSheet'
 
 interface Fields {
   title: string
@@ -23,10 +29,15 @@ interface Fields {
   link: string
   bodyOn: boolean
   body: string
+  cuisineId: number | null
+  courseIds: number[]
+  ingredientsOn: boolean
+  ingredients: IngredientRow[]
+  nutritionOn: boolean
+  nutrition: NutritionDraft
 }
 
-const FIELD_KEYS = ['title', 'link', 'body'] as const
-type FieldKey = (typeof FIELD_KEYS)[number]
+type FieldKey = 'title' | 'link' | 'body' | 'cuisine_id' | 'course_ids' | 'ingredients' | 'nutrition'
 
 const ERROR_OF: Readonly<Record<keyof Fields, FieldKey>> = {
   title: 'title',
@@ -34,6 +45,24 @@ const ERROR_OF: Readonly<Record<keyof Fields, FieldKey>> = {
   link: 'link',
   bodyOn: 'body',
   body: 'body',
+  cuisineId: 'cuisine_id',
+  courseIds: 'course_ids',
+  ingredientsOn: 'ingredients',
+  ingredients: 'ingredients',
+  nutritionOn: 'nutrition',
+  nutrition: 'nutrition',
+}
+
+const NUTRITION_FIELDS = new Set(['nutrition', 'kcal', 'protein', 'fat', 'carbs', 'weight_g', 'servings'])
+const INGREDIENT_FIELDS = new Set(['ingredients', 'name', 'amount', 'unit'])
+
+/** Maps the server's error.field onto a block of the form. */
+function blockOf(field: string | undefined): FieldKey | 'form' {
+  if (field === undefined) return 'form'
+  if (NUTRITION_FIELDS.has(field)) return 'nutrition'
+  if (INGREDIENT_FIELDS.has(field)) return 'ingredients'
+  if (field === 'title' || field === 'link' || field === 'body' || field === 'cuisine_id' || field === 'course_ids') return field
+  return 'form'
 }
 
 function initialFields(recipe: Recipe | null): Fields {
@@ -43,6 +72,12 @@ function initialFields(recipe: Recipe | null): Fields {
     link: recipe?.link ?? '',
     bodyOn: (recipe?.body ?? '') !== '',
     body: recipe?.body ?? '',
+    cuisineId: recipe?.cuisine_id ?? null,
+    courseIds: recipe?.course_ids ?? [],
+    ingredientsOn: (recipe?.ingredients.length ?? 0) > 0,
+    ingredients: ingredientRows(recipe?.ingredients ?? []),
+    nutritionOn: recipe?.nutrition != null,
+    nutrition: nutritionDraft(recipe?.nutrition ?? null),
   }
 }
 
@@ -56,7 +91,8 @@ export function RecipeForm({ id }: { id?: number }) {
 
 function RecipeFormBody({ recipe }: { recipe: Recipe | null }) {
   const data = useData()
-  const { limits } = useMe()
+  const me = useMe()
+  const { limits } = me
   const nav = useNav()
   const tg = useTelegram()
   const toast = useToast()
@@ -64,11 +100,18 @@ function RecipeFormBody({ recipe }: { recipe: Recipe | null }) {
   const [initial] = useState(() => initialFields(recipe))
   const [fields, setFields] = useState(initial)
   const [errors, setErrors] = useState<FieldErrors<FieldKey>>({})
+  const [rowErrors, setRowErrors] = useState<RowErrors>({})
+  const [nutritionErrors, setNutritionErrors] = useState<NutritionErrors>({})
   const [shake, setShake] = useState(0)
   const [saving, setSaving] = useState(false)
   const [savedId, setSavedId] = useState<number | null>(recipe?.id ?? null)
+  const [tagSheet, setTagSheet] = useState<{ open: boolean; kind: TagKind }>({ open: false, kind: 'cuisine' })
   const photos = usePhotoDraft(recipe?.images ?? [], limits.images_per_recipe)
   const stillOnTop = useStillOnTop()
+
+  const byId = useMemo(() => tagMap(data.tags), [data.tags])
+  const cuisines = tagsOfKind(data.tags, 'cuisine')
+  const courses = tagsOfKind(data.tags, 'course')
 
   const set = <K extends keyof Fields>(key: K, value: Fields[K]) => {
     setFields((f) => ({ ...f, [key]: value }))
@@ -100,8 +143,29 @@ function RecipeFormBody({ recipe }: { recipe: Recipe | null }) {
     const body = fields.bodyOn ? fields.body.trim() : ''
     if (charCount(body) > limits.recipe_body_max) errs.body = `Не длиннее ${limits.recipe_body_max} символов`
 
+    // A tag deleted meanwhile (by the partner) is dropped rather than rejected.
+    const cuisineId = fields.cuisineId !== null && byId.get(fields.cuisineId)?.kind === 'cuisine' ? fields.cuisineId : null
+    const courseIds = fields.courseIds.filter((cid) => byId.get(cid)?.kind === 'course')
+    if (courseIds.length > limits.courses_per_recipe) errs.course_ids = `Не больше ${limits.courses_per_recipe} типов блюда`
+
+    let ingredients: RecipeInput['ingredients'] = []
+    if (fields.ingredientsOn) {
+      const r = checkIngredients(fields.ingredients, me.units, { nameMax: limits.item_name_max, max: limits.ingredients_per_recipe })
+      setRowErrors(r.ok ? {} : r.errors)
+      if (r.ok) ingredients = r.ingredients
+      else errs.ingredients = r.message ?? 'Проверьте ингредиенты'
+    } else setRowErrors({})
+
+    let nutrition: RecipeInput['nutrition'] = null
+    if (fields.nutritionOn) {
+      const r = checkNutrition(fields.nutrition, limits)
+      setNutritionErrors(r.ok ? {} : r.errors)
+      if (r.ok) nutrition = r.input
+      else errs.nutrition = 'Проверьте КБЖУ'
+    } else setNutritionErrors({})
+
     if (Object.keys(errs).length > 0) return { errors: errs }
-    return { input: { title, link, body } }
+    return { input: { title, link, body, cuisine_id: cuisineId, course_ids: courseIds, ingredients, nutrition } }
   }
 
   const save = async () => {
@@ -128,7 +192,7 @@ function RecipeFormBody({ recipe }: { recipe: Recipe | null }) {
       toast('Сохранено', { tone: 'success' })
     } catch (err) {
       if (!(err instanceof ApiError) || err.isAuth) return
-      fail({ [fieldOf(err.field, FIELD_KEYS)]: err.message })
+      fail({ [blockOf(err.field)]: err.message })
     } finally {
       setSaving(false)
     }
@@ -138,6 +202,22 @@ function RecipeFormBody({ recipe }: { recipe: Recipe | null }) {
 
   const linkCheck = fields.linkOn && fields.link.trim() !== '' ? normalizeLinkInput(fields.link, limits.link_max) : null
   const host = linkCheck?.ok ? linkHost(linkCheck.url) : ''
+
+  const pickCourse = (tagId: number) => {
+    const r = toggleCourse(fields.courseIds, tagId, limits.courses_per_recipe)
+    if (r.limited) {
+      tg.haptic.notify('warning')
+      toast(`Не больше ${limits.courses_per_recipe} типов блюда`, { tone: 'error' })
+      return
+    }
+    set('courseIds', r.ids)
+  }
+
+  const onTagCreated = (tag: RecipeTag) => {
+    if (tag.kind === 'cuisine') set('cuisineId', tag.id)
+    else if (!fields.courseIds.includes(tag.id)) pickCourse(tag.id)
+    setTagSheet((s) => ({ ...s, open: false }))
+  }
 
   return (
     <form className="form" noValidate onSubmit={dismissKeyboard(tg)}>
@@ -156,6 +236,53 @@ function RecipeFormBody({ recipe }: { recipe: Recipe | null }) {
         enterKeyHint="done"
       />
 
+      <Section header="Кухня" footer={errors.cuisine_id}>
+        <div className="section__pad">
+          <ChipGroup label="Кухня" wrap>
+            <Chip selected={fields.cuisineId === null} onSelect={() => set('cuisineId', null)}>
+              Не указана
+            </Chip>
+            {cuisines.map((t) => (
+              <Chip key={t.id} selected={fields.cuisineId === t.id} emoji={t.emoji} onSelect={() => set('cuisineId', t.id)}>
+                {t.name}
+              </Chip>
+            ))}
+            <Chip action onSelect={() => setTagSheet({ open: true, kind: 'cuisine' })}>
+              <IconPlus size={16} strokeWidth={2.4} />
+              Своя
+            </Chip>
+          </ChipGroup>
+        </div>
+      </Section>
+
+      <Section
+        header={
+          <>
+            Тип блюда
+            {fields.courseIds.length > 0 && (
+              <span className="section__count num">
+                {fields.courseIds.length}/{limits.courses_per_recipe}
+              </span>
+            )}
+          </>
+        }
+        footer={errors.course_ids ?? 'Можно выбрать несколько: например, «Ужин» и «Второе».'}
+      >
+        <div className="section__pad">
+          <ChipGroup label="Тип блюда" wrap multi>
+            {courses.map((t) => (
+              <Chip key={t.id} multi selected={fields.courseIds.includes(t.id)} emoji={t.emoji} onSelect={() => pickCourse(t.id)}>
+                {t.name}
+              </Chip>
+            ))}
+            <Chip action onSelect={() => setTagSheet({ open: true, kind: 'course' })}>
+              <IconPlus size={16} strokeWidth={2.4} />
+              Свой
+            </Chip>
+          </ChipGroup>
+        </div>
+      </Section>
+
       <PhotoEditor
         label="Скриншоты и фото"
         draft={photos}
@@ -167,6 +294,57 @@ function RecipeFormBody({ recipe }: { recipe: Recipe | null }) {
       />
 
       <Section header="Детали">
+        <SwitchRow
+          label="Ингредиенты"
+          before={
+            <IconTile tone="green">
+              <IconClipboardList size={18} strokeWidth={2.1} />
+            </IconTile>
+          }
+          checked={fields.ingredientsOn}
+          onChange={(on) => {
+            setFields((f) => ({
+              ...f,
+              ingredientsOn: on,
+              ingredients: on && f.ingredients.length === 0 ? [emptyRow([])] : f.ingredients,
+            }))
+            setErrors((e) => ({ ...e, ingredients: undefined }))
+          }}
+        >
+          <IngredientsEditor
+            rows={fields.ingredients}
+            units={me.units}
+            max={limits.ingredients_per_recipe}
+            nameMax={limits.item_name_max}
+            errors={rowErrors}
+            error={errors.ingredients}
+            onChange={(rows) => {
+              set('ingredients', rows)
+              setRowErrors({})
+            }}
+          />
+        </SwitchRow>
+        <SwitchRow
+          label="КБЖУ"
+          before={
+            <IconTile tone="amber">
+              <IconFlame size={18} strokeWidth={2.1} />
+            </IconTile>
+          }
+          checked={fields.nutritionOn}
+          onChange={(on) => set('nutritionOn', on)}
+        >
+          <NutritionEditor
+            draft={fields.nutrition}
+            limits={limits}
+            errors={nutritionErrors}
+            error={errors.nutrition}
+            onChange={(draft) => {
+              set('nutrition', draft)
+              setNutritionErrors({})
+            }}
+          />
+        </SwitchRow>
         <SwitchRow
           label="Ссылка на рецепт"
           before={
@@ -195,7 +373,7 @@ function RecipeFormBody({ recipe }: { recipe: Recipe | null }) {
           />
         </SwitchRow>
         <SwitchRow
-          label="Написать рецепт"
+          label="Как готовить"
           before={
             <IconTile tone="orange">
               <IconNotebook size={18} strokeWidth={2.1} />
@@ -206,7 +384,7 @@ function RecipeFormBody({ recipe }: { recipe: Recipe | null }) {
         >
           <TextArea
             label="Рецепт"
-            placeholder={'Ингредиенты и шаги.\n1. …'}
+            placeholder={'Шаги по порядку.\n1. …'}
             value={fields.body}
             onChange={(e) => set('body', e.target.value)}
             error={errors.body}
@@ -223,6 +401,15 @@ function RecipeFormBody({ recipe }: { recipe: Recipe | null }) {
           {errors.form}
         </p>
       )}
+
+      <TagSheet
+        open={tagSheet.open}
+        tag={null}
+        kind={tagSheet.kind}
+        onClose={() => setTagSheet((s) => ({ ...s, open: false }))}
+        onSaved={onTagCreated}
+      />
     </form>
   )
 }
+

@@ -17,6 +17,8 @@ export type Route =
   | { name: 'viewer'; images: ApiImage[]; start: number; title: string }
   | { name: 'stats' }
   | { name: 'categories' }
+  | { name: 'recipe-tags' }
+  | { name: 'shopping' }
 
 interface Entry {
   key: number

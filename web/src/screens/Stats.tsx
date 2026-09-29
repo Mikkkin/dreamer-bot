@@ -4,6 +4,7 @@ import type { Category, Stats as StatsData, Wish } from '../api/types'
 import { categoryBackdrop, categoryEmoji } from '../lib/categoryStyle'
 import {
   DREAM_FORMS,
+  TIMES_FORMS,
   WISH_FORMS,
   countOf,
   formatMoney,
@@ -15,7 +16,7 @@ import {
 } from '../lib/format'
 import { everyone, personSlot, useData, useMe } from '../state/data'
 import { DonutRing } from '../ui/art'
-import { IconCookingPot, IconHeart, IconPiggy, IconSparkles } from '../ui/icons'
+import { IconChefHat, IconCookingPot, IconHeart, IconPiggy, IconSparkles } from '../ui/icons'
 import { Cell, EmptyState, IconTile, RetryBanner, Section, Skeleton } from '../ui/layout'
 import { Avatar } from '../ui/media'
 import { useCountUp } from '../ui/useCountUp'
@@ -88,6 +89,7 @@ function StatsBody({ stats, wishes }: { stats: StatsData; wishes: Wish[] }) {
     [overall, wishes],
   )
   const fulfilled = useMemo(() => sumByCurrency(overall.done.sums), [overall])
+  const saved = useMemo(() => sumByCurrency(stats.saved), [stats.saved])
 
   const rows = stats.categories
     .map((c) => ({ category: c.category, count: c.by_status.want.count + c.by_status.progress.count + c.by_status.done.count }))
@@ -120,6 +122,15 @@ function StatsBody({ stats, wishes }: { stats: StatsData; wishes: Wish[] }) {
         }
         title="Рецептов"
         after={<span className="num stat-count">{stats.recipes}</span>}
+      />
+      <Cell
+        before={
+          <IconTile tone="amber">
+            <IconChefHat size={18} strokeWidth={2.1} />
+          </IconTile>
+        }
+        title="Готовили"
+        after={<span className="num stat-count">{countOf(stats.recipes_cooked, TIMES_FORMS)}</span>}
       />
     </Section>
   )
@@ -188,10 +199,24 @@ function StatsBody({ stats, wishes }: { stats: StatsData; wishes: Wish[] }) {
         </Section>
       )}
 
+      {saved.length > 0 && (
+        <Section header="Отложено">
+          {saved.map((t) => (
+            <MoneyRow
+              key={t.currency}
+              total={t}
+              symbol={symbols.get(t.currency) ?? t.currency}
+              note={countOf(savingFor(wishes, t.currency), WISH_FORMS)}
+              tone="saved"
+            />
+          ))}
+        </Section>
+      )}
+
       {fulfilled.length > 0 && (
         <Section header="Сбылось на сумму">
           {fulfilled.map((t) => (
-            <MoneyRow key={t.currency} total={t} symbol={symbols.get(t.currency) ?? t.currency} done />
+            <MoneyRow key={t.currency} total={t} symbol={symbols.get(t.currency) ?? t.currency} tone="done" />
           ))}
         </Section>
       )}
@@ -244,16 +269,21 @@ function Tile({ tone, icon, value, label }: { tone: 'want' | 'progress' | 'done'
   )
 }
 
-function MoneyRow({ total, symbol, note, done }: { total: CurrencyTotal; symbol: string; note?: string; done?: boolean }) {
+function MoneyRow({ total, symbol, note, tone }: { total: CurrencyTotal; symbol: string; note?: string; tone?: 'done' | 'saved' }) {
   return (
     <div className="stat-row">
-      <span className={done ? 'money-tile money-tile--done' : 'money-tile'} aria-hidden="true">
+      <span className={tone ? `money-tile money-tile--${tone}` : 'money-tile'} aria-hidden="true">
         {symbol}
       </span>
       <span className="num stat-row__money">{formatMoney(total.minor, total.currency)}</span>
       {note && <span className="stat-row__note">{note}</span>}
     </div>
   )
+}
+
+/** Open wishes with savings in the currency. */
+function savingFor(wishes: Wish[], currency: string): number {
+  return wishes.filter((w) => w.status !== 'done' && w.saved?.total.currency === currency).length
 }
 
 function pricedOpen(wishes: Wish[], currency: string): number {

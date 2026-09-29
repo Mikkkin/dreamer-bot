@@ -1,99 +1,37 @@
 import { createContext, use, useCallback, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react'
 import { ApiClient } from '../api/client'
 import { ApiError } from '../api/errors'
-import type { Category, Me, Person, Recipe, Wish } from '../api/types'
+import type { Category, Me, Person, Recipe, RecipeTag, ShoppingItem, Store, Wish } from '../api/types'
+import { initialState, reducer, type State } from './store'
 
 // The whole dataset of a couple is small, so it is loaded once and filtered on
 // the client. Mutations update the local copy right away and then refetch.
 
 export type Fatal = 'unauthorized' | 'forbidden'
-export type Collection = 'wishes' | 'recipes' | 'categories'
-
-interface State {
-  phase: 'loading' | 'ready' | 'failed'
-  me: Me | null
-  wishes: Wish[]
-  recipes: Recipe[]
-  categories: Category[]
-  /** A failed load or refresh that the user can retry from a banner. */
-  error: ApiError | null
-}
-
-type Action =
-  | { type: 'loading' }
-  | { type: 'loaded'; me: Me; wishes: Wish[]; recipes: Recipe[]; categories: Category[] }
-  | { type: 'failed'; error: ApiError }
-  | { type: 'wishes'; wishes: Wish[] }
-  | { type: 'recipes'; recipes: Recipe[] }
-  | { type: 'categories'; categories: Category[] }
-  | { type: 'put-wish'; wish: Wish }
-  | { type: 'drop-wish'; id: number }
-  | { type: 'put-recipe'; recipe: Recipe }
-  | { type: 'drop-recipe'; id: number }
-  | { type: 'put-category'; category: Category }
-  | { type: 'drop-category'; id: number }
-
-const initialState: State = { phase: 'loading', me: null, wishes: [], recipes: [], categories: [], error: null }
-
-function upsert<T extends { id: number }>(list: T[], item: T): T[] {
-  const i = list.findIndex((x) => x.id === item.id)
-  return i < 0 ? [item, ...list] : list.map((x) => (x.id === item.id ? item : x))
-}
-
-function reducer(state: State, action: Action): State {
-  switch (action.type) {
-    case 'loading':
-      return { ...state, phase: state.phase === 'ready' ? 'ready' : 'loading' }
-    case 'loaded':
-      return {
-        phase: 'ready',
-        me: action.me,
-        wishes: action.wishes,
-        recipes: action.recipes,
-        categories: sortCategories(action.categories),
-        error: null,
-      }
-    case 'failed':
-      return { ...state, phase: state.phase === 'ready' ? 'ready' : 'failed', error: action.error }
-    case 'wishes':
-      return { ...state, wishes: action.wishes, error: null }
-    case 'recipes':
-      return { ...state, recipes: action.recipes, error: null }
-    case 'categories':
-      return { ...state, categories: sortCategories(action.categories), error: null }
-    case 'put-wish':
-      return { ...state, wishes: upsert(state.wishes, action.wish) }
-    case 'drop-wish':
-      return { ...state, wishes: state.wishes.filter((w) => w.id !== action.id) }
-    case 'put-recipe':
-      return { ...state, recipes: upsert(state.recipes, action.recipe) }
-    case 'drop-recipe':
-      return { ...state, recipes: state.recipes.filter((r) => r.id !== action.id) }
-    case 'put-category':
-      return { ...state, categories: sortCategories(upsert(state.categories, action.category)) }
-    case 'drop-category':
-      return {
-        ...state,
-        categories: state.categories.filter((c) => c.id !== action.id),
-        wishes: state.wishes.map((w) => (w.category_id === action.id ? { ...w, category_id: null } : w)),
-      }
-  }
-}
-
-function sortCategories(list: Category[]): Category[] {
-  return [...list].sort((a, b) => a.position - b.position || a.id - b.id)
-}
+export type Collection = 'wishes' | 'recipes' | 'categories' | 'tags' | 'shopping'
 
 export interface Data extends State {
   api: ApiClient
   reload(): Promise<void>
   refresh(...collections: Collection[]): Promise<void>
+  /** Refetches one wish (its savings total or status changed on the server); false when that failed. */
+  refreshWish(id: number): Promise<boolean>
+  /** Refetches one recipe (its cooking summary changed on the server). */
+  refreshRecipe(id: number): Promise<void>
+  /** Loads the store links once; later calls reuse them. */
+  loadStores(): Promise<void>
   putWish(wish: Wish): void
   dropWish(id: number): void
   putRecipe(recipe: Recipe): void
   dropRecipe(id: number): void
   putCategory(category: Category): void
   dropCategory(id: number): void
+  putTag(tag: RecipeTag): void
+  dropTag(id: number): void
+  putShopping(items: ShoppingItem[]): void
+  dropShopping(ids: number[]): void
+  setShopping(items: ShoppingItem[]): void
+  setStores(stores: Store[]): void
 }
 
 const DataContext = createContext<Data | null>(null)
@@ -127,13 +65,21 @@ export function DataProvider({ initData, onFatal, watchActivation, children }: D
     () => new ApiClient(initData, (e) => onFatal(e.status === 403 ? 'forbidden' : 'unauthorized')),
   )
   const loadedAt = useRef(0)
+  const storesLoaded = useRef(false)
 
   const reload = useCallback(async () => {
     dispatch({ type: 'loading' })
     try {
-      const [me, wishes, recipes, categories] = await Promise.all([api.me(), api.wishes(), api.recipes(), api.categories()])
+      const [me, wishes, recipes, categories, tags, shopping] = await Promise.all([
+        api.me(),
+        api.wishes(),
+        api.recipes(),
+        api.categories(),
+        api.recipeTags(),
+        api.shopping(),
+      ])
       loadedAt.current = Date.now()
-      dispatch({ type: 'loaded', me, wishes, recipes, categories })
+      dispatch({ type: 'loaded', me, wishes, recipes, categories, tags, shopping })
     } catch (err) {
       if (err instanceof ApiError && !err.isAuth) dispatch({ type: 'failed', error: err })
     }
@@ -144,9 +90,18 @@ export function DataProvider({ initData, onFatal, watchActivation, children }: D
       try {
         await Promise.all(
           collections.map(async (c) => {
-            if (c === 'wishes') dispatch({ type: 'wishes', wishes: await api.wishes() })
-            else if (c === 'recipes') dispatch({ type: 'recipes', recipes: await api.recipes() })
-            else dispatch({ type: 'categories', categories: await api.categories() })
+            switch (c) {
+              case 'wishes':
+                return dispatch({ type: 'wishes', wishes: await api.wishes() })
+              case 'recipes':
+                return dispatch({ type: 'recipes', recipes: await api.recipes() })
+              case 'categories':
+                return dispatch({ type: 'categories', categories: await api.categories() })
+              case 'tags':
+                return dispatch({ type: 'tags', tags: await api.recipeTags() })
+              case 'shopping':
+                return dispatch({ type: 'shopping', items: await api.shopping() })
+            }
           }),
         )
       } catch (err) {
@@ -155,6 +110,44 @@ export function DataProvider({ initData, onFatal, watchActivation, children }: D
     },
     [api],
   )
+
+  const refreshWish = useCallback(
+    async (id: number) => {
+      try {
+        dispatch({ type: 'put-wish', wish: await api.wish(id) })
+        return true
+      } catch (err) {
+        if (err instanceof ApiError && err.code === 'not_found') {
+          dispatch({ type: 'drop-wish', id })
+          return true
+        }
+        return false
+      }
+    },
+    [api],
+  )
+
+  const refreshRecipe = useCallback(
+    async (id: number) => {
+      try {
+        dispatch({ type: 'put-recipe', recipe: await api.recipe(id) })
+      } catch (err) {
+        if (err instanceof ApiError && err.code === 'not_found') dispatch({ type: 'drop-recipe', id })
+      }
+    },
+    [api],
+  )
+
+  const loadStores = useCallback(async () => {
+    if (storesLoaded.current) return
+    storesLoaded.current = true
+    try {
+      dispatch({ type: 'stores', stores: await api.stores() })
+    } catch {
+      // Store links are a convenience: without them the list still works.
+      storesLoaded.current = false
+    }
+  }, [api])
 
   useEffect(() => {
     void reload()
@@ -175,14 +168,23 @@ export function DataProvider({ initData, onFatal, watchActivation, children }: D
       api,
       reload,
       refresh,
+      refreshWish,
+      refreshRecipe,
+      loadStores,
       putWish: (wish) => dispatch({ type: 'put-wish', wish }),
       dropWish: (id) => dispatch({ type: 'drop-wish', id }),
       putRecipe: (recipe) => dispatch({ type: 'put-recipe', recipe }),
       dropRecipe: (id) => dispatch({ type: 'drop-recipe', id }),
       putCategory: (category) => dispatch({ type: 'put-category', category }),
       dropCategory: (id) => dispatch({ type: 'drop-category', id }),
+      putTag: (tag) => dispatch({ type: 'put-tag', tag }),
+      dropTag: (id) => dispatch({ type: 'drop-tag', id }),
+      putShopping: (items) => dispatch({ type: 'put-shopping', items }),
+      dropShopping: (ids) => dispatch({ type: 'drop-shopping', ids }),
+      setShopping: (items) => dispatch({ type: 'shopping', items }),
+      setStores: (stores) => dispatch({ type: 'stores', stores }),
     }),
-    [state, api, reload, refresh],
+    [state, api, reload, refresh, refreshWish, refreshRecipe, loadStores],
   )
 
   return <DataContext value={value}>{children}</DataContext>

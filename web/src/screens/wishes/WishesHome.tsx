@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { Category, Status } from '../../api/types'
 import { WISH_FORMS, countOf, formatMoney, percent, sumByCurrency } from '../../lib/format'
+import { openSavings } from '../../lib/savings'
 import { personSlot, useData, useMe } from '../../state/data'
 import { useNav } from '../../state/nav'
 import { useMainButton, useTelegram } from '../../telegram/hooks'
@@ -70,6 +71,7 @@ export function WishesHome({ active }: { active: boolean }) {
     () => sumByCurrency(wishes.flatMap((w) => (w.status !== 'done' && w.price ? [w.price] : []))),
     [wishes],
   )
+  const saved = useMemo(() => openSavings(wishes), [wishes])
   const doneTotal = wishes.filter((w) => w.status === 'done').length
   const uncategorised = chipCounts.get(null) ?? 0
 
@@ -93,6 +95,7 @@ export function WishesHome({ active }: { active: boolean }) {
           total={wishes.length}
           done={doneTotal}
           planned={planned.map((t) => formatMoney(t.minor, t.currency))}
+          saved={saved.map((t) => formatMoney(t.minor, t.currency))}
           onOpen={() => {
             tg.haptic.impact('light')
             nav.push({ name: 'stats' })
@@ -161,15 +164,33 @@ export function WishesHome({ active }: { active: boolean }) {
 }
 
 /** The emotional summary: what we are dreaming of, and how much has come true. Opens the stats. */
-function HeroCard({ total, done, planned, onOpen }: { total: number; done: number; planned: string[]; onOpen: () => void }) {
+function HeroCard({
+  total,
+  done,
+  planned,
+  saved,
+  onOpen,
+}: {
+  total: number
+  done: number
+  planned: string[]
+  saved: string[]
+  onOpen: () => void
+}) {
   const pct = percent(done, total)
   const hasMoney = planned.length > 0
   const money = planned.join(' · ')
   const label = hasMoney
     ? `Статистика: в планах ${planned.join(' и ')}, сбылось ${done} из ${total}`
     : `Статистика: ${countOf(total, WISH_FORMS)}, сбылось ${done}`
+  const savedLine = saved.join(' · ')
   return (
-    <button type="button" className="hero-card" onClick={onOpen} aria-label={label}>
+    <button
+      type="button"
+      className={saved.length > 0 ? 'hero-card hero-card--saved' : 'hero-card'}
+      onClick={onOpen}
+      aria-label={saved.length > 0 ? `${label}, отложено ${saved.join(' и ')}` : label}
+    >
       <span className="hero-card__label">{hasMoney ? 'В планах' : 'Наши мечты'}</span>
       <span className="hero-card__value num">{hasMoney ? money : countOf(total, WISH_FORMS)}</span>
       <span className="hero-card__sub">
@@ -179,6 +200,12 @@ function HeroCard({ total, done, planned, onOpen }: { total: number; done: numbe
             ? `Сбылось уже ${done} ✨`
             : 'Первая мечта — уже скоро ✨'}
       </span>
+      {saved.length > 0 && (
+        <span className="hero-card__saved">
+          <IconPiggy size={14} strokeWidth={2.2} />
+          <span className="num">Отложено {savedLine}</span>
+        </span>
+      )}
       <DonutRing className="hero-card__ring" value={done / total} size={52} stroke={5} label={`Сбылось ${pct}%`}>
         <span className="num">{pct}%</span>
       </DonutRing>

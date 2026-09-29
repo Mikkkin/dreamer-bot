@@ -1,8 +1,13 @@
 import { describe, expect, test } from 'bun:test'
 import {
+  INGREDIENT_FORMS,
+  ITEM_FORMS,
   RECIPE_FORMS,
+  SERVING_FORMS,
+  TIMES_FORMS,
   WISH_FORMS,
   countOf,
+  decimalComma,
   formatByline,
   formatDay,
   formatMoney,
@@ -118,4 +123,15 @@ test('percent', () => {
   expect(percent(7, 31)).toBe(23)
   expect(percent(0, 0)).toBe(0)
   expect(percent(5, 5)).toBe(100)
+})
+
+test('cooking counts and decimals', () => {
+  expect(countOf(1, TIMES_FORMS)).toBe('1 раз')
+  expect(countOf(3, TIMES_FORMS)).toBe('3 раза')
+  expect(countOf(5, TIMES_FORMS)).toBe('5 раз')
+  expect(countOf(2, SERVING_FORMS)).toBe('2 порции')
+  expect(countOf(21, ITEM_FORMS)).toBe('21 позиция')
+  expect(countOf(5, INGREDIENT_FORMS)).toBe('5 ингредиентов')
+  expect(decimalComma('4.5')).toBe('4,5')
+  expect(decimalComma('4')).toBe('4')
 })

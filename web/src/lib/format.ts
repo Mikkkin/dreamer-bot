@@ -127,3 +127,13 @@ export function percent(part: number, total: number): number {
 
 /** Genitive after "из": из 1 рецепта, из 3 рецептов, из 21 рецепта. */
 export const RECIPE_GENITIVE_FORMS: PluralForms = ['рецепта', 'рецептов', 'рецептов']
+
+export const TIMES_FORMS: PluralForms = ['раз', 'раза', 'раз']
+export const SERVING_FORMS: PluralForms = ['порция', 'порции', 'порций']
+export const ITEM_FORMS: PluralForms = ['позиция', 'позиции', 'позиций']
+export const INGREDIENT_FORMS: PluralForms = ['ингредиент', 'ингредиента', 'ингредиентов']
+
+/** An API decimal for people, e.g. a rating "4.5" → "4,5". */
+export function decimalComma(s: string): string {
+  return s.replace('.', ',')
+}

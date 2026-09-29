@@ -3,12 +3,25 @@ import type {
   ApiImage,
   Category,
   CategoryInput,
+  Cook,
   ImageOwner,
   Me,
+  RatingInput,
   Recipe,
   RecipeInput,
+  RecipeTag,
+  RecipeTagInput,
+  Saving,
+  SavingInput,
+  ShoppingItem,
+  ShoppingItemInput,
+  ShoppingPatch,
   Stats,
   Status,
+  Store,
+  VkusvillCart,
+  VkusvillCartLine,
+  VkusvillMatch,
   Wish,
   WishInput,
 } from './types'
@@ -98,6 +111,97 @@ export class ApiClient {
 
   deleteRecipe(id: number): Promise<void> {
     return this.#json('DELETE', `/api/recipes/${seg(id)}`)
+  }
+
+  async savings(wishId: number): Promise<Saving[]> {
+    return (await this.#json<{ savings: Saving[] }>('GET', `/api/wishes/${seg(wishId)}/savings`)).savings
+  }
+
+  /** A wish still in «Хотим» moves to «Копим» on the server. */
+  addSaving(wishId: number, input: SavingInput): Promise<Saving> {
+    return this.#json('POST', `/api/wishes/${seg(wishId)}/savings`, input)
+  }
+
+  deleteSaving(wishId: number, savingId: number): Promise<void> {
+    return this.#json('DELETE', `/api/wishes/${seg(wishId)}/savings/${seg(savingId)}`)
+  }
+
+  async recipeTags(): Promise<RecipeTag[]> {
+    return (await this.#json<{ tags: RecipeTag[] }>('GET', '/api/recipe-tags')).tags
+  }
+
+  createRecipeTag(input: RecipeTagInput): Promise<RecipeTag> {
+    return this.#json('POST', '/api/recipe-tags', input)
+  }
+
+  updateRecipeTag(id: number, input: { name?: string; emoji?: string }): Promise<RecipeTag> {
+    return this.#json('PATCH', `/api/recipe-tags/${seg(id)}`, input)
+  }
+
+  deleteRecipeTag(id: number): Promise<void> {
+    return this.#json('DELETE', `/api/recipe-tags/${seg(id)}`)
+  }
+
+  /** Records a cooking now; null cooks without a rating. The recipe stays in the list. */
+  cookRecipe(recipeId: number, rating: RatingInput | null): Promise<Cook> {
+    return this.#json('POST', `/api/recipes/${seg(recipeId)}/cooks`, rating ?? {})
+  }
+
+  async cooks(recipeId: number): Promise<Cook[]> {
+    return (await this.#json<{ cooks: Cook[] }>('GET', `/api/recipes/${seg(recipeId)}/cooks`)).cooks
+  }
+
+  /** Sets or replaces the caller's rating of one cooking. */
+  rateCook(recipeId: number, cookId: number, rating: RatingInput): Promise<Cook> {
+    return this.#json('PUT', `/api/recipes/${seg(recipeId)}/cooks/${seg(cookId)}/rating`, rating)
+  }
+
+  deleteCook(recipeId: number, cookId: number): Promise<void> {
+    return this.#json('DELETE', `/api/recipes/${seg(recipeId)}/cooks/${seg(cookId)}`)
+  }
+
+  /** Adds the ingredients at the given positions (null = all) and returns the added or merged items. */
+  async addRecipeToShopping(recipeId: number, positions: readonly number[] | null): Promise<ShoppingItem[]> {
+    if (positions !== null && positions.some((p) => !Number.isSafeInteger(p) || p < 0)) {
+      throw new ApiError(400, 'validation', 'Некорректный выбор ингредиентов')
+    }
+    const body = positions === null ? {} : { positions: [...positions] }
+    return (await this.#json<{ items: ShoppingItem[] }>('POST', `/api/recipes/${seg(recipeId)}/shopping`, body)).items
+  }
+
+  async shopping(): Promise<ShoppingItem[]> {
+    return (await this.#json<{ items: ShoppingItem[] }>('GET', '/api/shopping')).items
+  }
+
+  async addShopping(items: readonly ShoppingItemInput[]): Promise<ShoppingItem[]> {
+    return (await this.#json<{ items: ShoppingItem[] }>('POST', '/api/shopping', { items })).items
+  }
+
+  updateShopping(id: number, patch: ShoppingPatch): Promise<ShoppingItem> {
+    return this.#json('PATCH', `/api/shopping/${seg(id)}`, patch)
+  }
+
+  deleteShopping(id: number): Promise<void> {
+    return this.#json('DELETE', `/api/shopping/${seg(id)}`)
+  }
+
+  async clearCheckedShopping(): Promise<number> {
+    return (await this.#json<{ removed: number }>('POST', '/api/shopping/clear-checked')).removed
+  }
+
+  async stores(): Promise<Store[]> {
+    return (await this.#json<{ stores: Store[] }>('GET', '/api/stores')).stores
+  }
+
+  /** Candidate ВкусВилл products for unchecked items (null = all unchecked, at most 30). 503 "unavailable" when ВкусВилл is down. */
+  async vkusvillMatch(itemIds: readonly number[] | null): Promise<VkusvillMatch[]> {
+    const body = itemIds === null ? {} : { item_ids: itemIds.map((id) => Number(seg(id))) }
+    return (await this.#json<{ matches: VkusvillMatch[] }>('POST', '/api/shopping/vkusvill/match', body)).matches
+  }
+
+  /** Creates a shared ВкусВилл basket and returns its link. */
+  vkusvillCart(lines: readonly VkusvillCartLine[]): Promise<VkusvillCart> {
+    return this.#json('POST', '/api/shopping/vkusvill/cart', { lines })
   }
 
   stats(): Promise<Stats> {

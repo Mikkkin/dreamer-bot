@@ -1,8 +1,9 @@
-// Deep links: the bot opens the app with WEBAPP_URL?wish={id} or ?recipe={id}.
-// A t.me "startapp" parameter of the form w_{id} / r_{id} is accepted too. The
-// hash is reserved for Telegram's launch parameters and is never read here.
+// Deep links: the bot opens the app with WEBAPP_URL?wish={id}, ?recipe={id}
+// or ?shopping=1. A t.me "startapp" parameter of the form w_{id} / r_{id} is
+// accepted too. The hash is reserved for Telegram's launch parameters and is
+// never read here.
 
-export type DeepLink = { kind: 'wish' | 'recipe'; id: number }
+export type DeepLink = { kind: 'wish' | 'recipe'; id: number } | { kind: 'shopping' }
 
 const ID_RE = /^[1-9]\d{0,14}$/
 const START_PARAM_RE = /^([wr])_([1-9]\d{0,14})$/
@@ -19,6 +20,7 @@ export function parseDeepLink(search: string, startParam?: string | null): DeepL
   if (wish !== null) return { kind: 'wish', id: wish }
   const recipe = parseId(q.get('recipe'))
   if (recipe !== null) return { kind: 'recipe', id: recipe }
+  if (q.get('shopping') === '1') return { kind: 'shopping' }
 
   const m = startParam ? START_PARAM_RE.exec(startParam) : null
   const id = parseId(m?.[2])

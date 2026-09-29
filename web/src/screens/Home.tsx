@@ -1,9 +1,10 @@
 import { useState, type AnimationEvent } from 'react'
 import { writePref } from '../lib/prefs'
+import { shoppingCounts } from '../lib/shopping'
 import { everyone, personSlot, useData, useMe } from '../state/data'
 import { useNav, type Section } from '../state/nav'
 import { SectionTabs } from '../ui/controls'
-import { IconChart, IconFolderHeart } from '../ui/icons'
+import { IconCart, IconChart, IconFolderHeart, IconTag } from '../ui/icons'
 import { IconButton, RetryBanner, Skeleton } from '../ui/layout'
 import { PairAvatars } from '../ui/media'
 import { RecipesHome } from './recipes/RecipesHome'
@@ -52,10 +53,19 @@ export function Home({ section: initial }: { section: Section }) {
             <IconButton label="Статистика" onClick={() => nav.push({ name: 'stats' })}>
               <IconChart size={20} strokeWidth={2.2} />
             </IconButton>
-            {section === 'wishes' && (
+            {section === 'wishes' ? (
               <IconButton label="Категории" onClick={() => nav.push({ name: 'categories' })}>
                 <IconFolderHeart size={20} />
               </IconButton>
+            ) : (
+              <>
+                <IconButton label="Кухни и типы блюд" onClick={() => nav.push({ name: 'recipe-tags' })}>
+                  <IconTag size={20} />
+                </IconButton>
+                <IconButton label="Покупки" badge={shoppingCounts(data.shopping).open} onClick={() => nav.push({ name: 'shopping' })}>
+                  <IconCart size={20} />
+                </IconButton>
+              </>
             )}
           </div>
         </div>

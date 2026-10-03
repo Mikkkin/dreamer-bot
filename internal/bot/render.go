@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -8,6 +9,7 @@ import (
 	"github.com/go-telegram/bot/models"
 
 	"github.com/Mikkkin/dreamer-bot/internal/domain"
+	"github.com/Mikkkin/dreamer-bot/internal/nutrition"
 )
 
 // Excerpt lengths (runes) of long free text in chat messages; the Mini App
@@ -106,6 +108,9 @@ func renderDraft(d draft) string {
 	case viewCourses:
 		h.Text("Выберите тип блюда — можно несколько 👇")
 	default:
+		if d.source != "" {
+			h.Text("📥 Похоже на рецепт — могу разложить ингредиенты и шаги сам.").NL()
+		}
 		h.Italic("Проверьте и нажмите «✅ Сохранить»")
 	}
 	return h.String()
@@ -211,7 +216,10 @@ func renderRecipe(r domain.Recipe, meta entityMeta, loc *time.Location, limit, b
 	if r.Link != nil {
 		h.NL().Text("🔗 ").Link(*r.Link, linkLabel(*r.Link))
 	}
-	if line := nutritionLine(r.Nutrition); line != "" {
+	if r.Servings != nil {
+		h.NL().Text("🍽 " + servingsText(*r.Servings))
+	}
+	if line := recipeNutritionLine(r); line != "" {
 		h.NL().Text(line)
 	}
 	if n := len(r.Ingredients); n > 0 {
@@ -488,6 +496,113 @@ func cookingLine(s domain.CookingSummary) string {
 
 func timesText(n int) string {
 	return strconv.Itoa(n) + " " + plural(n, "раз", "раза", "раз")
+}
+
+// recipeNutritionLine is the КБЖУ on a recipe card: the recipe's own
+// values when they are set, otherwise the estimate from its ingredients,
+// marked «≈» and with how many ingredients it covers.
+func recipeNutritionLine(r domain.Recipe) string {
+	if r.Nutrition != nil {
+		return nutritionLine(r.Nutrition)
+	}
+	res, ok := estimate(r)
+	if !ok {
+		return ""
+	}
+	v, per := res.Per100, "на 100 г"
+	if res.PerServing != nil {
+		v, per = *res.PerServing, "на порцию"
+	}
+	return "🔥 ≈" + kcalText(v.Kcal) + " ккал · Б " + domain.FormatTenths(v.Protein) +
+		" · Ж " + domain.FormatTenths(v.Fat) + " · У " + domain.FormatTenths(v.Carbs) +
+		" (" + per + ", " + coverageText(res.Coverage) + ")"
+}
+
+// estimate computes the КБЖУ of the recipe from its ingredients with the
+// built-in food table; ok is false when no ingredient could be counted.
+func estimate(r domain.Recipe) (nutrition.Result, bool) {
+	if len(r.Ingredients) == 0 {
+		return nutrition.Result{}, false
+	}
+	servings := 0
+	if r.Servings != nil {
+		servings = *r.Servings
+	}
+	res := nutrition.Default().Compute(r.Ingredients, servings)
+	return res, res.Coverage.Counted > 0
+}
+
+// coverageText is «по 5 из 6 ингредиентов» or «по всем ингредиентам»;
+// «по вкусу» lines do not count.
+func coverageText(c nutrition.Coverage) string {
+	if c.Counted >= c.Total {
+		return "по всем ингредиентам"
+	}
+	return "по " + strconv.Itoa(c.Counted) + " из " + strconv.Itoa(c.Total) + " " +
+		plural(c.Total, "ингредиента", "ингредиентов", "ингредиентов")
+}
+
+// kcalText rounds tenths of kcal to whole kcal: an estimate has no
+// meaningful decimals.
+func kcalText(tenths int) string { return strconv.Itoa((tenths + 5) / 10) }
+
+func servingsText(n int) string {
+	return strconv.Itoa(n) + " " + plural(n, "порция", "порции", "порций")
+}
+
+// recipeSummary is «11 ингредиентов · 6 шагов · 4 порции · ≈540 ккал/порц»;
+// unknown parts are left out.
+func recipeSummary(r domain.Recipe) string {
+	var parts []string
+	if n := len(r.Ingredients); n > 0 {
+		parts = append(parts, strconv.Itoa(n)+" "+plural(n, "ингредиент", "ингредиента", "ингредиентов"))
+	}
+	if n := countSteps(r.Body); n > 0 {
+		parts = append(parts, strconv.Itoa(n)+" "+plural(n, "шаг", "шага", "шагов"))
+	}
+	if r.Servings != nil {
+		parts = append(parts, servingsText(*r.Servings))
+	}
+	if kcal := kcalPerServing(r); kcal != "" {
+		parts = append(parts, kcal)
+	}
+	return strings.Join(parts, " · ")
+}
+
+// kcalPerServing is «540 ккал/порц» from the recipe's own КБЖУ, «≈540
+// ккал/порц» estimated from the ingredients, or "" when the servings (or,
+// for the own values, the dish weight) are unknown.
+func kcalPerServing(r domain.Recipe) string {
+	if r.Nutrition != nil {
+		if m, ok := r.Nutrition.PerServing(); ok {
+			return kcalText(m.Kcal) + " ккал/порц"
+		}
+		return ""
+	}
+	if res, ok := estimate(r); ok && res.PerServing != nil {
+		return "≈" + kcalText(res.PerServing.Kcal) + " ккал/порц"
+	}
+	return ""
+}
+
+// stepLine is a numbered step of a recipe body: «1. …» or «1) …».
+var stepLine = regexp.MustCompile(`^\d{1,3}[.)]\s`)
+
+// countSteps counts the numbered lines of a recipe body, which is how
+// imported steps are written. The original text an unsure import keeps
+// below sourceHeading does not count.
+func countSteps(body string) int {
+	n := 0
+	for _, line := range strings.Split(body, "\n") {
+		line = strings.TrimSpace(line)
+		if line == sourceHeading {
+			break
+		}
+		if stepLine.MatchString(line) {
+			n++
+		}
+	}
+	return n
 }
 
 // nutritionLine is the short КБЖУ of a recipe: per serving when known,

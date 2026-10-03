@@ -116,6 +116,12 @@ func (a *app) deleteRecipe(ctx context.Context, r *cbReply, msg *models.Message,
 		return
 	}
 	a.removeCard(ctx, msg)
+	// A recipe imported a moment ago has not been announced yet; the
+	// partner never hears of it.
+	if a.notices != nil && a.notices.forgetImport(id) {
+		r.answer(ctx, "Удалено 🗑 Партнёр о нём не узнает")
+		return
+	}
 	r.answer(ctx, "Удалено 🗑")
 }
 

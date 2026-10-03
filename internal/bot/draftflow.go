@@ -15,17 +15,27 @@ import (
 )
 
 // startDraft replaces the user's draft with a new one built from a message
-// (and an optional first photo) and sends its card.
+// (and an optional first photo) and sends its card. A text message that
+// reads like a recipe starts a recipe draft with «📥 Разобрать как рецепт».
 func (a *app) startDraft(ctx context.Context, m *models.Message, p parsedInput, photo string) {
+	a.startDraftAs(ctx, m, p, photo, kindWish)
+}
+
+// startDraftAs is startDraft for a draft of the given kind.
+func (a *app) startDraftAs(ctx context.Context, m *models.Message, p parsedInput, photo string, kind entityKind) {
 	user := domain.UserID(m.From.ID)
 	if old, ok := a.drafts.get(user); ok {
 		a.retireCard(ctx, old, "Черновик заменён новым 👇")
 	}
 	d := a.drafts.begin(m.Chat.ID)
 	d.applyParsed(p)
+	d.setKind(kind)
 	if photo != "" {
 		d.addPhoto(photo)
 		d.albumID = m.MediaGroupID
+	} else if looksLikeRecipe(m.Text) {
+		d.source = m.Text
+		d.setKind(kindRecipe)
 	}
 	a.showDraft(ctx, &d)
 	a.drafts.put(user, d)
@@ -114,6 +124,10 @@ func (a *app) onDraftCallback(ctx context.Context, r *cbReply, user domain.UserI
 		return
 	case opDraftSave:
 		a.saveDraft(ctx, r, user, d)
+		return
+	case opDraftImport:
+		a.dropSaving(ctx, user)
+		a.importDraft(ctx, r, user, d)
 		return
 	case opDraftCancel:
 		a.drafts.remove(user, d.id)

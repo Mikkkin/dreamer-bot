@@ -205,9 +205,11 @@ func (a *app) dropSaving(ctx context.Context, user domain.UserID) bool {
 }
 
 // dropPrompts leaves every "waiting for your answer" state of the user (a
-// draft field or a saving amount). It reports whether there was one.
+// draft field, a saving amount or the caption of a post Instagram did not
+// give). It reports whether there was one.
 func (a *app) dropPrompts(ctx context.Context, user domain.UserID) bool {
 	saving := a.dropSaving(ctx, user)
 	field := a.dropAwaiting(ctx, user)
-	return saving || field
+	caption := a.captions.drop(user)
+	return saving || field || caption
 }

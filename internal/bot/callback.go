@@ -24,6 +24,7 @@ import (
 //	r:b:<id>               recipe: back to the card buttons
 //	r:s:<id>               recipe: add every ingredient to the shopping list
 //	r:v:<id>:<cook>:<1-5>  recipe: rate a cooking (partner notification)
+//	i:d|n:<id>             imported recipe: ask delete, keep (deleting is r:y)
 //	k:<id>                 another random recipe than <id>
 //	s:l:<page>             shopping list page
 //	s:k|u:<item>:<page>    shopping item bought / not bought
@@ -38,6 +39,7 @@ import (
 //	d:<draft>:back         draft: back to the card
 //	d:<draft>:f:<t|p|l|b>  draft: ask for title, price, link or text
 //	d:<draft>:hot          draft: toggle «очень хочу»
+//	d:<draft>:imp          draft: import its text as a recipe
 //	d:<draft>:ok           draft: save
 //	d:<draft>:no           draft: discard
 const maxCallbackData = 64
@@ -70,6 +72,8 @@ const (
 	opRecipeBack
 	opRecipeShop
 	opRecipeRate
+	opImportAskDelete
+	opImportKeep
 	opCookAgain
 	opShopList
 	opShopCheck
@@ -87,6 +91,7 @@ const (
 	opDraftHot
 	opDraftSave
 	opDraftCancel
+	opDraftImport
 )
 
 // callback is a decoded button payload. Which fields are meaningful depends
@@ -173,6 +178,8 @@ func (c callback) encode() string {
 		return draft + "ok"
 	case opDraftCancel:
 		return draft + "no"
+	case opDraftImport:
+		return draft + "imp"
 	}
 	if entity, action, ok := entityAction(c.op); ok {
 		return entity + ":" + action + ":" + id
@@ -185,6 +192,7 @@ var entityOps = [...]cbOp{
 	opWishOpen, opWishAskDelete, opWishDelete, opWishKeep, opWishSave,
 	opRecipeOpen, opRecipeAskDelete, opRecipeDelete, opRecipeKeep,
 	opRecipeCookAsk, opRecipeBack, opRecipeShop,
+	opImportAskDelete, opImportKeep,
 }
 
 // entityAction splits the per-entity ops into their wire tokens.
@@ -214,6 +222,10 @@ func entityAction(op cbOp) (entity, action string, ok bool) {
 		return "r", "b", true
 	case opRecipeShop:
 		return "r", "s", true
+	case opImportAskDelete:
+		return "i", "d", true
+	case opImportKeep:
+		return "i", "n", true
 	}
 	return "", "", false
 }
@@ -287,7 +299,7 @@ func parseCallback(s string) (callback, error) {
 		}
 	case "l":
 		return parseListCallback(p)
-	case "w", "r":
+	case "w", "r", "i":
 		return parseEntityCallback(p)
 	case "s":
 		return parseShopCallback(p)
@@ -411,6 +423,8 @@ func parseDraftCallback(p []string) (callback, error) {
 			c.op = opDraftSave
 		case "no":
 			c.op = opDraftCancel
+		case "imp":
+			c.op = opDraftImport
 		default:
 			return callback{}, errBadCallback
 		}

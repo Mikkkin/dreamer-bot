@@ -123,6 +123,11 @@ func (f *fakeAPI) AnswerCallbackQuery(_ context.Context, p *tg.AnswerCallbackQue
 	return err == nil, err
 }
 
+func (f *fakeAPI) SetMessageReaction(_ context.Context, p *tg.SetMessageReactionParams) (bool, error) {
+	_, err := f.record("SetMessageReaction", p)
+	return err == nil, err
+}
+
 func (f *fakeAPI) LeaveChat(_ context.Context, p *tg.LeaveChatParams) (bool, error) {
 	_, err := f.record("LeaveChat", p)
 	return err == nil, err
@@ -493,6 +498,11 @@ type fakeRecipes struct {
 	created []domain.RecipeDraft
 	random  []domain.RecipeID // IDs returned by Random in order (cycled)
 	rolls   int
+	// importer answers Import; inputs records every call.
+	importer func(ctx context.Context, actor domain.UserID, in service.ImportInput) (domain.Recipe, service.ImportReport, error)
+	inputs   []service.ImportInput
+	patches  []domain.RecipePatch
+	images   int // photos added with AddImage
 }
 
 func (f *fakeRecipes) Create(_ context.Context, actor domain.UserID, d domain.RecipeDraft) (domain.Recipe, error) {
@@ -541,8 +551,19 @@ func (f *fakeRecipes) Random(context.Context) (domain.Recipe, error) {
 	return f.items[id], nil
 }
 
-func (f *fakeRecipes) Update(context.Context, domain.UserID, domain.RecipeID, domain.RecipePatch) (domain.Recipe, error) {
-	return domain.Recipe{}, errNotImplemented
+func (f *fakeRecipes) Update(_ context.Context, _ domain.UserID, id domain.RecipeID, p domain.RecipePatch) (domain.Recipe, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	r, ok := f.items[id]
+	if !ok {
+		return domain.Recipe{}, domain.ErrNotFound
+	}
+	if err := r.Apply(p, f.now()); err != nil {
+		return domain.Recipe{}, err
+	}
+	f.items[id] = r
+	f.patches = append(f.patches, p)
+	return r, nil
 }
 
 func (f *fakeRecipes) Delete(_ context.Context, _ domain.UserID, id domain.RecipeID) error {
@@ -553,6 +574,9 @@ func (f *fakeRecipes) Delete(_ context.Context, _ domain.UserID, id domain.Recip
 }
 
 func (f *fakeRecipes) AddImage(context.Context, domain.UserID, domain.RecipeID, io.Reader) (domain.Image, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.images++
 	return domain.Image{}, nil
 }
 
@@ -930,9 +954,11 @@ func newTestEnv(t *testing.T) *testEnv {
 		svc:      s,
 		drafts:   newDraftStore(draftTTL, clk.Now),
 		savings:  newSavingPrompts(draftTTL, clk.Now),
+		captions: newCaptionWaits(captionWaitTTL, clk.Now),
 		recent:   newRecentActions(recentActionTTL, clk.Now),
 		locks:    newUserLocks(),
 		toucher:  newToucher(s.Users, clk.Now, log),
+		jobs:     newJobs(log),
 		web:      web,
 		username: botUsername,
 		currency: "EUR",

@@ -1,6 +1,7 @@
 // Package bot is the Telegram chat face of the wishlist: quick add of wishes
-// and recipes from text and photos, lists and cards, statistics and partner
-// notifications. It is a thin adapter over the service use cases.
+// and recipes from text and photos, recipe import from Instagram links and
+// recipe texts, lists and cards, statistics and partner notifications. It is
+// a thin adapter over the service use cases.
 //
 // Security model: only private chats with whitelisted users are served;
 // everything else is dropped without a reply. The bot token never reaches
@@ -180,21 +181,25 @@ func (b *Bot) Attach(s *service.Services) {
 		return
 	}
 	b.app.Store(&app{
-		api:      b.api,
-		files:    newDownloader(b.api, b.opts.MaxImageBytes, b.redact),
-		svc:      s,
-		drafts:   newDraftStore(draftTTL, b.now),
-		savings:  newSavingPrompts(draftTTL, b.now),
-		recent:   newRecentActions(recentActionTTL, b.now),
-		locks:    newUserLocks(),
-		toucher:  newToucher(s.Users, b.now, b.log),
-		web:      b.web,
-		username: b.username,
-		currency: b.opts.DefaultCurrency,
-		loc:      time.Local,
-		now:      b.now,
-		log:      b.log,
-		timeout:  handlerTimeout,
+		api:        b.api,
+		files:      newDownloader(b.api, b.opts.MaxImageBytes, b.redact),
+		svc:        s,
+		drafts:     newDraftStore(draftTTL, b.now),
+		savings:    newSavingPrompts(draftTTL, b.now),
+		captions:   newCaptionWaits(captionWaitTTL, b.now),
+		recent:     newRecentActions(recentActionTTL, b.now),
+		locks:      newUserLocks(),
+		toucher:    newToucher(s.Users, b.now, b.log),
+		jobs:       newJobs(b.log),
+		notices:    b.notifier,
+		web:        b.web,
+		username:   b.username,
+		currency:   b.opts.DefaultCurrency,
+		loc:        time.Local,
+		now:        b.now,
+		log:        b.log,
+		timeout:    handlerTimeout,
+		importHint: importHintAfter,
 	})
 	b.notifier.attach(s)
 	b.attachOnce.Do(func() {
@@ -205,8 +210,8 @@ func (b *Bot) Attach(s *service.Services) {
 }
 
 // Run configures the bot account (webhook off, commands, menu button) and
-// long-polls until ctx is done. It then waits for in-flight handlers and
-// notifications before returning. Polling errors are retried with backoff
+// long-polls until ctx is done. It then waits for in-flight handlers,
+// imports and notifications before returning. Polling errors are retried with backoff
 // by the library and never end Run.
 func (b *Bot) Run(ctx context.Context) error {
 	a := b.app.Load()
@@ -222,9 +227,14 @@ func (b *Bot) Run(ctx context.Context) error {
 
 	var janitor sync.WaitGroup
 	janitor.Go(func() { a.drafts.janitor(ctx, janitorEvery) })
+	janitor.Go(func() { sweepEvery(ctx, janitorEvery, a.captions.sweep) })
 	b.log.Info("bot: polling started")
 	b.client.Start(ctx)
 	janitor.Wait()
+	// Imports still running are cancelled and answer in the chat; the ones
+	// that saved a recipe hand their notice to the notifier, so it drains
+	// last.
+	a.jobs.stop()
 	b.notifier.drain()
 	b.log.Info("bot: stopped")
 	return nil

@@ -40,7 +40,7 @@ func TestCallbackRoundTrip(t *testing.T) {
 		callback{op: opShopUncheck, id: 1, page: 0},
 		callback{op: opShopClear},
 	)
-	for _, op := range []cbOp{opDraftCategories, opDraftCuisines, opDraftCourses, opDraftBack, opDraftHot, opDraftSave, opDraftCancel} {
+	for _, op := range []cbOp{opDraftCategories, opDraftCuisines, opDraftCourses, opDraftBack, opDraftHot, opDraftSave, opDraftCancel, opDraftImport} {
 		cases = append(cases, callback{op: op, draft: maxDraft})
 	}
 	for _, op := range []cbOp{opDraftCategory, opDraftCuisine, opDraftCourse} {
@@ -96,6 +96,9 @@ func TestCallbackExamples(t *testing.T) {
 		"d:7:cu:3":     {op: opDraftCuisine, draft: 7, id: 3},
 		"d:7:co":       {op: opDraftCourses, draft: 7},
 		"d:7:co:0":     {op: opDraftCourse, draft: 7},
+		"d:7:imp":      {op: opDraftImport, draft: 7},
+		"i:d:4":        {op: opImportAskDelete, id: 4},
+		"i:n:4":        {op: opImportKeep, id: 4},
 	}
 	for s, want := range tests {
 		if got := want.String(); got != s {
@@ -125,6 +128,7 @@ func TestCallbackRejectsGarbage(t *testing.T) {
 		"w:v:1:2:3", "w:c:1:3", "r:x:1",
 		"s", "s:", "s:x:1", "s:l", "s:l:-1", "s:l:10000", "s:k:1", "s:k:0:0", "s:k:1:x", "s:u:1:0:0", "s:z:1:0",
 		"d:1:cu:x", "d:1:co:-1", "d:1:cu:01", "d:1:cu:1:2", "d:1:cou", "d:1:cuisine",
+		"d:1:imp:1", "d:0:imp", "i", "i:d", "i:d:0", "i:d:1:2", "i:y:1", "i:o:1", "i:n:", "r:i:1",
 	}
 	for _, s := range bad {
 		if c, err := parseCallback(s); err == nil {

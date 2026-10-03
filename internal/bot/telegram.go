@@ -23,6 +23,7 @@ type messenger interface {
 	EditMessageReplyMarkup(ctx context.Context, p *tg.EditMessageReplyMarkupParams) (*models.Message, error)
 	DeleteMessage(ctx context.Context, p *tg.DeleteMessageParams) (bool, error)
 	AnswerCallbackQuery(ctx context.Context, p *tg.AnswerCallbackQueryParams) (bool, error)
+	SetMessageReaction(ctx context.Context, p *tg.SetMessageReactionParams) (bool, error)
 	LeaveChat(ctx context.Context, p *tg.LeaveChatParams) (bool, error)
 }
 

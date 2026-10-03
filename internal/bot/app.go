@@ -31,9 +31,14 @@ type app struct {
 	svc      *service.Services
 	drafts   *draftStore
 	savings  *savingPrompts
+	captions *captionWaits
 	recent   *recentActions
 	locks    *userLocks
 	toucher  *toucher
+	jobs     *jobs
+	// notices cancels a pending import notice when the recipe is deleted
+	// from the chat; nil when there is no notifier.
+	notices  importNotices
 	web      *webApp
 	username string
 	currency domain.Currency
@@ -41,6 +46,17 @@ type app struct {
 	now      func() time.Time
 	log      *slog.Logger
 	timeout  time.Duration
+	// importHint is how long an import from a link runs before the status
+	// says the video may be watched; 0 never says it.
+	importHint time.Duration
+}
+
+// importNotices is the part of the notifier that holds back the notices
+// of imported recipes.
+type importNotices interface {
+	// forgetImport drops the pending notice of the recipe and reports
+	// whether there was one.
+	forgetImport(id domain.RecipeID) bool
 }
 
 func (a *app) handle(ctx context.Context, _ *tg.Bot, u *models.Update) {
@@ -87,6 +103,14 @@ func (a *app) onMessage(ctx context.Context, m *models.Message) {
 	}
 	if d, ok := a.drafts.get(user); ok && d.awaiting != fieldNone {
 		a.fillField(ctx, m, d)
+		return
+	}
+	if link, ok := instagramLink(m.Text, m.Entities); ok {
+		a.importLink(ctx, m, link)
+		return
+	}
+	if w, ok := a.captions.take(user); ok {
+		a.importCaption(ctx, m, w)
 		return
 	}
 	a.startDraft(ctx, m, parseInput(m.Text, m.Entities), "")
@@ -169,6 +193,11 @@ func (a *app) onCallback(ctx context.Context, cq *models.CallbackQuery) {
 		a.restoreRecipeButtons(ctx, r, msg, domain.RecipeID(c.id), "Оставили 👌")
 	case opRecipeBack:
 		a.restoreRecipeButtons(ctx, r, msg, domain.RecipeID(c.id), "")
+	case opImportAskDelete:
+		a.askDelete(ctx, r, msg, c.id, opRecipeDelete, opImportKeep)
+	case opImportKeep:
+		a.setKeyboard(ctx, msg, importKeyboard(domain.RecipeID(c.id), a.web.recipeLink(domain.RecipeID(c.id))))
+		r.answer(ctx, "Оставили 👌")
 	case opRecipeCookAsk:
 		a.askCook(ctx, r, msg, domain.RecipeID(c.id))
 	case opRecipeCook:
@@ -189,7 +218,8 @@ func (a *app) onCallback(ctx context.Context, cq *models.CallbackQuery) {
 func isDraftOp(op cbOp) bool {
 	switch op {
 	case opDraftKind, opDraftCategories, opDraftCategory, opDraftCuisines, opDraftCuisine,
-		opDraftCourses, opDraftCourse, opDraftBack, opDraftField, opDraftHot, opDraftSave, opDraftCancel:
+		opDraftCourses, opDraftCourse, opDraftBack, opDraftField, opDraftHot, opDraftSave, opDraftCancel,
+		opDraftImport:
 		return true
 	}
 	return false

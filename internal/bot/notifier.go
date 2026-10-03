@@ -34,23 +34,26 @@ const (
 
 // notifier implements service.Notifier. Every notice is delivered in its own
 // goroutine, detached from the request that triggered it; drain waits for
-// all of them on shutdown (pending recipe edits are announced right away).
+// all of them on shutdown (pending recipe edits and imports are announced
+// right away).
 type notifier struct {
-	api     messenger
-	web     *webApp
-	log     *slog.Logger
-	svc     atomic.Pointer[service.Services]
-	delay   time.Duration // before a creation is announced
-	quiet   time.Duration // after the last edit of a recipe
-	timeout time.Duration
-	now     func() time.Time
+	api         messenger
+	web         *webApp
+	log         *slog.Logger
+	svc         atomic.Pointer[service.Services]
+	delay       time.Duration // before a creation is announced
+	quiet       time.Duration // after the last edit of a recipe
+	importQuiet time.Duration // after an import or the importer's last edit
+	timeout     time.Duration
+	now         func() time.Time
 
 	mu       sync.Mutex
 	closed   bool
 	quit     chan struct{}
 	wg       sync.WaitGroup
-	creating map[domain.RecipeID]int      // RecipeCreated notices not delivered yet
-	updates  map[updateKey]*pendingUpdate // edit bursts waiting for quiet
+	creating map[domain.RecipeID]int            // RecipeCreated notices not delivered yet
+	updates  map[updateKey]*pendingUpdate       // edit bursts waiting for quiet
+	imports  map[domain.RecipeID]*pendingImport // imported recipes in their review window
 }
 
 // updateKey identifies one burst of edits: a recipe changed by one person
@@ -73,16 +76,18 @@ var _ service.Notifier = (*notifier)(nil)
 
 func newNotifier(api messenger, web *webApp, log *slog.Logger) *notifier {
 	return &notifier{
-		api:      api,
-		web:      web,
-		log:      log,
-		delay:    notifyCreatedDelay,
-		quiet:    notifyUpdatedQuiet,
-		timeout:  notifyTimeout,
-		now:      time.Now,
-		quit:     make(chan struct{}),
-		creating: make(map[domain.RecipeID]int),
-		updates:  make(map[updateKey]*pendingUpdate),
+		api:         api,
+		web:         web,
+		log:         log,
+		delay:       notifyCreatedDelay,
+		quiet:       notifyUpdatedQuiet,
+		importQuiet: notifyImportedQuiet,
+		timeout:     notifyTimeout,
+		now:         time.Now,
+		quit:        make(chan struct{}),
+		creating:    make(map[domain.RecipeID]int),
+		updates:     make(map[updateKey]*pendingUpdate),
+		imports:     make(map[domain.RecipeID]*pendingImport),
 	}
 }
 
@@ -173,9 +178,13 @@ func (n *notifier) isCreating(id domain.RecipeID) bool {
 
 // RecipeUpdated coalesces edits: the partner hears of a recipe once it has
 // stayed unchanged for the quiet period. Edits while the recipe's creation
-// notice is pending are folded into that notice, and a recipe deleted in the
-// meantime is not announced.
+// notice is pending are folded into that notice, edits by the importer of
+// a recipe in its review window restart the window instead, and a recipe
+// deleted in the meantime is not announced.
 func (n *notifier) RecipeUpdated(ctx context.Context, r service.Recipients, rec domain.Recipe) {
+	if n.foldIntoImport(r, rec) {
+		return
+	}
 	key := updateKey{recipe: rec.ID, actor: r.Actor.ID}
 	n.mu.Lock()
 	if n.creating[rec.ID] > 0 {
@@ -187,10 +196,7 @@ func (n *notifier) RecipeUpdated(ctx context.Context, r service.Recipients, rec 
 	if p, ok := n.updates[key]; ok {
 		p.r, p.rec, p.due = r, rec, due
 		n.mu.Unlock()
-		select {
-		case p.bump <- struct{}{}:
-		default: // a wake-up is already pending
-		}
+		wake(p.bump)
 		return
 	}
 	p := &pendingUpdate{r: r, rec: rec, due: due, bump: make(chan struct{}, 1)}

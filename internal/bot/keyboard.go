@@ -122,11 +122,25 @@ func draftKeyboard(d draft, categories []domain.Category, tags []domain.RecipeTa
 	}
 	save := cbButton("✅ Сохранить", op(opDraftSave))
 	save.Style = styleSuccess
-	rows = append(rows,
-		[]button{cbButton("✏️ Название", field(fieldTitle))},
-		[]button{save, cbButton("✖️ Отмена", op(opDraftCancel))},
-	)
+	rows = append(rows, []button{cbButton("✏️ Название", field(fieldTitle))})
+	if d.source != "" {
+		parse := cbButton("📥 Разобрать как рецепт", op(opDraftImport))
+		parse.Style = stylePrimary
+		rows = append(rows, []button{parse})
+	}
+	rows = append(rows, []button{save, cbButton("✖️ Отмена", op(opDraftCancel))})
 	return keyboard(rows...)
+}
+
+// importKeyboard is under the answer to an import: open the new recipe in
+// the Mini App (to check it) or delete it, after a confirmation.
+func importKeyboard(id domain.RecipeID, openURL string) *models.InlineKeyboardMarkup {
+	row := []button{}
+	if openURL != "" {
+		row = append(row, webAppButton("Открыть ✨", openURL))
+	}
+	row = append(row, cbButton("🗑 Удалить", callback{op: opImportAskDelete, id: int64(id)}))
+	return keyboard(row)
 }
 
 func categoryKeyboard(d draft, categories []domain.Category) *models.InlineKeyboardMarkup {

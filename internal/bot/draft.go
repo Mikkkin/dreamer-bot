@@ -79,6 +79,9 @@ type draft struct {
 	hot           bool
 	photos        []string // Telegram file IDs, largest size
 	albumID       string   // media_group_id of the album being collected
+	// source is the message text when it reads like a recipe: the card
+	// then offers «📥 Разобрать как рецепт», which imports it.
+	source string
 
 	awaiting draftField
 	promptID int // message ID of the ForceReply prompt
@@ -387,6 +390,11 @@ func (s *draftStore) expired(d draft) bool {
 
 // janitor sweeps periodically until ctx is done.
 func (s *draftStore) janitor(ctx context.Context, every time.Duration) {
+	sweepEvery(ctx, every, func() { s.sweep() })
+}
+
+// sweepEvery calls sweep periodically until ctx is done.
+func sweepEvery(ctx context.Context, every time.Duration, sweep func()) {
 	t := time.NewTicker(every)
 	defer t.Stop()
 	for {
@@ -394,7 +402,7 @@ func (s *draftStore) janitor(ctx context.Context, every time.Duration) {
 		case <-ctx.Done():
 			return
 		case <-t.C:
-			s.sweep()
+			sweep()
 		}
 	}
 }

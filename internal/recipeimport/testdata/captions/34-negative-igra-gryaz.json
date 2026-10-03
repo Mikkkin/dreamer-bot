@@ -1,0 +1,8 @@
+{
+  "source_url": "https://www.instagram.com/reel/Daz8W5TsNOg/",
+  "title": null,
+  "servings": null,
+  "ingredients": [],
+  "steps": [],
+  "notes": "NEGATIVE (not food): 'Рецепт игры' — a sensory-play 'грязь' for children made from flour, cocoa and water ('1 стакан муки, ½ стакана какао и примерно 1 стакан воды'), followed by a laundry-detergent ad. It contains the word 'Рецепт', food words and valid amounts, so a naive parser WILL extract 3 ingredients; the expected result is not-a-recipe."
+}

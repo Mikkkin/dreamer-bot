@@ -1,0 +1,8 @@
+{
+  "source_url": "https://www.instagram.com/reel/DdrKDifIDhK/",
+  "title": null,
+  "servings": null,
+  "ingredients": [],
+  "steps": [],
+  "notes": "NEGATIVE (advert): sells an e-book of 62 dinner recipes. Bullet lines look like an ingredient list ('• 62 рецепта без повтора', '• идеи из курицы, мяса, фарша и рыбы') — '62' must not become an amount and 'курица/мясо/фарш/рыба' must not become ingredients. Expected: not-a-recipe."
+}

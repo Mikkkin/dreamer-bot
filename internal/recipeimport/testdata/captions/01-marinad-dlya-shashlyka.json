@@ -1,0 +1,65 @@
+{
+  "source_url": "https://www.instagram.com/reel/DItfAhKCJ3h/",
+  "title": "Маринад для шашлыка",
+  "servings": null,
+  "ingredients": [
+    {
+      "raw": "- Соль поваренная — 23 г",
+      "name": "Соль поваренная",
+      "amount": "23",
+      "unit": "г",
+      "section": null
+    },
+    {
+      "raw": "- Соль нитритная — 10 г (если хотите слегка подкопчённый оттенок и красивый цвет)",
+      "name": "Соль нитритная",
+      "amount": "10",
+      "unit": "г",
+      "section": null
+    },
+    {
+      "raw": "- Перец чёрный молотый — 2 ч. л.",
+      "name": "Перец чёрный молотый",
+      "amount": "2",
+      "unit": "ч. л.",
+      "section": null
+    },
+    {
+      "raw": "- Базилик (сухой) — 2 ст. л. (или 1 пучок свежего, мелко нарезать)",
+      "name": "Базилик",
+      "amount": "2",
+      "unit": "ст. л.",
+      "section": null
+    },
+    {
+      "raw": "- Лук репчатый — 3 крупные головки (примерно 400–500 г), нарезать полукольцами",
+      "name": "Лук репчатый",
+      "amount": "3",
+      "unit": "шт",
+      "section": null
+    },
+    {
+      "raw": "- Растительное масло — 100 мл",
+      "name": "Растительное масло",
+      "amount": "100",
+      "unit": "мл",
+      "section": null
+    },
+    {
+      "raw": "- Сахар (по желанию) — 1 ч. л. (чуть усилит вкус, можно не добавлять)",
+      "name": "Сахар",
+      "amount": "1",
+      "unit": "ч. л.",
+      "section": null
+    }
+  ],
+  "steps": [
+    "Нарежьте мясо крупными кусками (примерно 4–5 см).",
+    "В глубокой посуде перемешайте соль, перец, базилик, сахар (если решили добавить).",
+    "Добавьте лук кольцами — слегка помните его руками, чтобы он дал сок, и перемешай с мясом.",
+    "Влейте масло, хорошо всё перемешайте.",
+    "Накройте крышкой или плёнкой и уберите в холодильник на 12 часов минимум, а лучше на 18–24 часа.",
+    "За час до жарки достаньте мясо из холодильника, чтобы оно стало комнатной температуры — так шашлык жарится равномернее."
+  ],
+  "notes": "Title line continues on the next line '(на 3,3 кг свиной шеи):' — that is the meat quantity, but the meat itself is not in the list, so it is not an ingredient and servings stay null. 'Основные ингредиенты:' is the list header, not a section. Onion '3 крупные головки (примерно 400–500 г)' → 3 шт ('головка' of onion = one onion); the gram range is a parenthetical alternative. Basil alternative '(или 1 пучок свежего…)' and '(по желанию)' sugar are parenthetical tips. The last '- За час до жарки…' line uses the same '-' bullet as the ingredients but sits after the numbered steps and has no quantity → it is step 6, not an ingredient."
+}

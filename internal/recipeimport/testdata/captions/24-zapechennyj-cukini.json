@@ -1,0 +1,69 @@
+{
+  "source_url": "https://www.instagram.com/reel/C_DwG_wNK0-/",
+  "title": "Запеченный ароматный цукини",
+  "servings": null,
+  "ingredients": [
+    {
+      "raw": "Цукини - 1 шт.",
+      "name": "Цукини",
+      "amount": "1",
+      "unit": "шт",
+      "section": null
+    },
+    {
+      "raw": "Орегано сушеный - 1/2 ч.л.",
+      "name": "Орегано сушеный",
+      "amount": "0.5",
+      "unit": "ч. л.",
+      "section": null
+    },
+    {
+      "raw": "Базилик сушеный - 1/2 ч.л.",
+      "name": "Базилик сушеный",
+      "amount": "0.5",
+      "unit": "ч. л.",
+      "section": null
+    },
+    {
+      "raw": "Чеснок сушеный - 1/2 ч.л.",
+      "name": "Чеснок сушеный",
+      "amount": "0.5",
+      "unit": "ч. л.",
+      "section": null
+    },
+    {
+      "raw": "Пармезан - 50 гр.",
+      "name": "Пармезан",
+      "amount": "50",
+      "unit": "г",
+      "section": null
+    },
+    {
+      "raw": "Яйцо - 1 шт.",
+      "name": "Яйцо",
+      "amount": "1",
+      "unit": "шт",
+      "section": null
+    },
+    {
+      "raw": "Перец черный молотый по вкусу",
+      "name": "Перец черный молотый",
+      "amount": null,
+      "unit": "по вкусу",
+      "section": null
+    },
+    {
+      "raw": "Соль по вкусу",
+      "name": "Соль",
+      "amount": null,
+      "unit": "по вкусу",
+      "section": null
+    }
+  ],
+  "steps": [
+    "Цукини промыть, нарезать на брусочки. Пармезан натереть на мелкой терке. В глубокой чаше смешать специи, перец соль, тертый сыр и яйцо. Обвалять в полученной смеси цукини.",
+    "Противень выстелить пергаментом. Выложить сверху брусочки. Выпекать при температуре 180 градусов 20 минут. Затем еще на 2-3 минуты можно включить режим «Гриль».",
+    "Подавать можно со сметаной и зеленью или с сырным соусом."
+  ],
+  "notes": "No 'Ингредиенты' or 'Приготовление' headers at all: blocks are separated by lines containing only U+2800 (Braille blank, used on Instagram as an invisible spacer — not whitespace for most regex engines). Title line ends with ' Рецепт⤵️' which must be cut. Steps are prose paragraphs. 'Приятного аппетита!' excluded."
+}

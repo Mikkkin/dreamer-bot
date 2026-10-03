@@ -1,0 +1,8 @@
+{
+  "source_url": "https://www.instagram.com/reel/DaUyiY4owc0/",
+  "title": null,
+  "servings": null,
+  "ingredients": [],
+  "steps": [],
+  "notes": "NO_RECIPE_TEXT: a TV-show teaser (one prose paragraph about salads, 'Смотрите в новом выпуске программы…'). It is a real recipe post but the caption contains no ingredients and no steps — the recipe is only in the video. Expected: nothing to import; the importer should fall back to manual entry or an LLM over the video transcript."
+}

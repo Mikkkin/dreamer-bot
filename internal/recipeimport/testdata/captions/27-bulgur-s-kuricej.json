@@ -1,0 +1,106 @@
+{
+  "source_url": "https://www.instagram.com/reel/DOpov-mAGHs/",
+  "title": "Сливочный булгур с курицей",
+  "servings": 2,
+  "ingredients": [
+    {
+      "raw": "🥄 Булгур - 150 г",
+      "name": "Булгур",
+      "amount": "150",
+      "unit": "г",
+      "section": null
+    },
+    {
+      "raw": "🍗 Куриная грудка - 1 шт",
+      "name": "Куриная грудка",
+      "amount": "1",
+      "unit": "шт",
+      "section": null
+    },
+    {
+      "raw": "🍅 Вяленые томаты - 50 г",
+      "name": "Вяленые томаты",
+      "amount": "50",
+      "unit": "г",
+      "section": null
+    },
+    {
+      "raw": "🥛 Сливки 20% - 200 мл",
+      "name": "Сливки 20%",
+      "amount": "200",
+      "unit": "мл",
+      "section": null
+    },
+    {
+      "raw": "🧄 Чеснок - 2 зуб.",
+      "name": "Чеснок",
+      "amount": "2",
+      "unit": "зубчик",
+      "section": null
+    },
+    {
+      "raw": "🥬 Шпинат - горсть",
+      "name": "Шпинат",
+      "amount": null,
+      "unit": null,
+      "section": null
+    },
+    {
+      "raw": "🧀 Твердый сыр - для подачи",
+      "name": "Твердый сыр",
+      "amount": null,
+      "unit": null,
+      "section": null
+    },
+    {
+      "raw": "🍲 Бульон (или вода) - 250 мл",
+      "name": "Бульон",
+      "amount": "250",
+      "unit": "мл",
+      "section": null
+    },
+    {
+      "raw": "🧈 Сливочное масло - 1 ч.л.",
+      "name": "Сливочное масло",
+      "amount": "1",
+      "unit": "ч. л.",
+      "section": null
+    },
+    {
+      "raw": "🧂 Специи: соль, паприка, чеснок сушеный, приправа для курицы.",
+      "name": "Соль",
+      "amount": null,
+      "unit": null,
+      "section": "Специи"
+    },
+    {
+      "raw": "🧂 Специи: соль, паприка, чеснок сушеный, приправа для курицы.",
+      "name": "Паприка",
+      "amount": null,
+      "unit": null,
+      "section": "Специи"
+    },
+    {
+      "raw": "🧂 Специи: соль, паприка, чеснок сушеный, приправа для курицы.",
+      "name": "Чеснок сушеный",
+      "amount": null,
+      "unit": null,
+      "section": "Специи"
+    },
+    {
+      "raw": "🧂 Специи: соль, паприка, чеснок сушеный, приправа для курицы.",
+      "name": "Приправа для курицы",
+      "amount": null,
+      "unit": null,
+      "section": "Специи"
+    }
+  ],
+  "steps": [
+    "Курицу режем кубиком, обжариваем со специями до корочки.",
+    "Добавляем мелко резанные томаты, давленый чеснок и булгур. Обжариваем 2 минуты.",
+    "Вливаем бульон, солим, накрываем крышкой и томим на медленном огне 20 минут.",
+    "Вливаем сливки, добавляем шпинат и тертый сыр. Перемешиваем и греем еще 3 минуты!",
+    "Сервируем и немедленно приступаем к дегустации!"
+  ],
+  "notes": "Store/marketing post: title is inside the first sentence ('Этот сливочный булгур с курицей стал…'). 'ИНГРЕДИЕНТЫ (2 порции) 👇' — servings in parentheses in a caps header; steps header 'ШАГИ 👇'. A different food emoji per line. Non-quantities in the amount slot: 'горсть' (out-of-vocab unit, no number), 'для подачи' (purpose). 'зуб.' abbreviation → зубчик. Inline label line 'Специи: соль, паприка, …' → four ingredients, section 'Специи'. Ad with a shop domain and a phone number ('+7 708 832 31 38' — digits that must not become amounts) after the steps."
+}

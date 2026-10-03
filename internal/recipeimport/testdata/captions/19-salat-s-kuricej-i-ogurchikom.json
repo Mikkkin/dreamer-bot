@@ -1,0 +1,72 @@
+{
+  "source_url": "https://www.instagram.com/reel/DdoDhoLArvS/",
+  "title": null,
+  "servings": null,
+  "ingredients": [
+    {
+      "raw": "🥔Картофель-4 шт (среднего размера)",
+      "name": "Картофель",
+      "amount": "4",
+      "unit": "шт",
+      "section": null
+    },
+    {
+      "raw": "🍗Отварная курица-400 гр.",
+      "name": "Отварная курица",
+      "amount": "400",
+      "unit": "г",
+      "section": null
+    },
+    {
+      "raw": "🧅Лук-2 шт. (Крупные ) обжарить.",
+      "name": "Лук",
+      "amount": "2",
+      "unit": "шт",
+      "section": null
+    },
+    {
+      "raw": "🥕Морковь-2 шт среднего размера.(отварить)",
+      "name": "Морковь",
+      "amount": "2",
+      "unit": "шт",
+      "section": null
+    },
+    {
+      "raw": "🥒Кислый огурчик-3 шт. ( нарезать мелким кубиком)",
+      "name": "Кислый огурчик",
+      "amount": "3",
+      "unit": "шт",
+      "section": null
+    },
+    {
+      "raw": "🥚Яйцо-5 шт.",
+      "name": "Яйцо",
+      "amount": "5",
+      "unit": "шт",
+      "section": null
+    },
+    {
+      "raw": "🧀Плавленный сырок-2 шт.",
+      "name": "Плавленный сырок",
+      "amount": "2",
+      "unit": "шт",
+      "section": null
+    },
+    {
+      "raw": "Майонез по вкусу.",
+      "name": "Майонез",
+      "amount": null,
+      "unit": "по вкусу",
+      "section": null
+    },
+    {
+      "raw": "🧂Соль по вкусу",
+      "name": "Соль",
+      "amount": null,
+      "unit": "по вкусу",
+      "section": null
+    }
+  ],
+  "steps": [],
+  "notes": "Three paragraphs of story first; the salad is never named → title null. Header '✅ИНГРЕДИЕНТЫ:' in caps with an emoji. Per-ingredient emoji glued to the name, hyphen with no spaces. Prep instructions trail the amount ('обжарить.', '.(отварить)', '( нарезать мелким кубиком)') — strip them from the ingredient. One line has no emoji bullet ('Майонез по вкусу.'). Steps only in video ('СПОСОБ ПРИГОТОВЛЕНИЯ СМОТРИТЕ В ВИДЕО 📹')."
+}

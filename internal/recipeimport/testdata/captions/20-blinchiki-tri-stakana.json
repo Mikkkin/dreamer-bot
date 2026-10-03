@@ -1,0 +1,63 @@
+{
+  "source_url": "https://www.instagram.com/reel/DVBVpfQCGZk/",
+  "title": "«3 стакана»",
+  "servings": null,
+  "ingredients": [
+    {
+      "raw": "· 1 стакан кефира (200-250 мл)",
+      "name": "Кефир",
+      "amount": "1",
+      "unit": "стакан",
+      "section": null
+    },
+    {
+      "raw": "· 1 стакан муки",
+      "name": "Мука",
+      "amount": "1",
+      "unit": "стакан",
+      "section": null
+    },
+    {
+      "raw": "· ⅓ стакана сахарного песка",
+      "name": "Сахарный песок",
+      "amount": "0.33",
+      "unit": "стакан",
+      "section": null
+    },
+    {
+      "raw": "· 1 яйцо",
+      "name": "Яйцо",
+      "amount": "1",
+      "unit": "шт",
+      "section": null
+    },
+    {
+      "raw": "· ½ чайной ложки соды",
+      "name": "Сода",
+      "amount": "0.5",
+      "unit": "ч. л.",
+      "section": null
+    },
+    {
+      "raw": "· 1 стакан кипятка",
+      "name": "Кипяток",
+      "amount": "1",
+      "unit": "стакан",
+      "section": null
+    },
+    {
+      "raw": "· 2 столовые ложки растительного масла",
+      "name": "Растительное масло",
+      "amount": "2",
+      "unit": "ст. л.",
+      "section": null
+    }
+  ],
+  "steps": [
+    "В миску высыпаю стакан кефира, стакан муки, сахарный песок и яйцо. Пробиваю всё блендером до однородности.",
+    "В отдельной кружке засыпаю соду и заливаю её стаканом кипятка. Смесь красиво шипит — это нормально!",
+    "Выливаю эту шипучую смесь в миску с тестом и снова всё пробиваю блендером.",
+    "Добавляю растительное масло, последний раз перемешиваю — и можно жарить!"
+  ],
+  "notes": "Title line 'Рецепт «3 стакана» (моя версия):' → strip 'Рецепт', the parenthetical and the colon; the dish (thin блинчики) is only implied. Middle-dot '·' bullets. 'стакан' as a unit with an ml hint in parentheses '(200-250 мл)' — a converter could use it. Unicode '⅓' and '½' with spelled-out 'чайной ложки' (genitive singular after a fraction) and 'столовые ложки' (plural after 2). Steps header 'Техника приготовления:'; the closing paragraph is commentary, not a step."
+}

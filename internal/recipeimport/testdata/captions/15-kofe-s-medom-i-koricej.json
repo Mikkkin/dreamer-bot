@@ -1,0 +1,49 @@
+{
+  "source_url": "https://www.instagram.com/reel/DZu7T5yIWKA/",
+  "title": null,
+  "servings": null,
+  "ingredients": [
+    {
+      "raw": "• эспрессо — 40 мл;",
+      "name": "Эспрессо",
+      "amount": "40",
+      "unit": "мл",
+      "section": null
+    },
+    {
+      "raw": "• корица — щепотка;",
+      "name": "Корица",
+      "amount": "1",
+      "unit": "щепотка",
+      "section": null
+    },
+    {
+      "raw": "• кардамон — щепотка;",
+      "name": "Кардамон",
+      "amount": "1",
+      "unit": "щепотка",
+      "section": null
+    },
+    {
+      "raw": "• мёд — 1 ч. л.;",
+      "name": "Мёд",
+      "amount": "1",
+      "unit": "ч. л.",
+      "section": null
+    },
+    {
+      "raw": "• горячее молоко — ⅓ стакана.",
+      "name": "Горячее молоко",
+      "amount": "0.33",
+      "unit": "стакан",
+      "section": null
+    }
+  ],
+  "steps": [
+    "Приготовьте эспрессо.",
+    "Добавьте в кофе мёд и специи, взбейте ручным капучинатором до однородности.",
+    "Отдельно взбейте молоко до лёгкой пены.",
+    "Соедините кофейную смесь с молоком, вдохните аромат, улыбнитесь и сделайте глоток — пусть четверг принесёт удачу!"
+  ],
+  "notes": "Brand post from a coffee roaster: three paragraphs of chit-chat (weather, 'денежная магия четверга') before the recipe; the drink is only named in the closing question ('денежный четверговый кофе') → title null. Ingredient lines end with ';' and the last with '.' (list punctuation). Unicode '⅓' → 0.33 стакан. Steps header is 'Рецепт:'. The 'По желанию: … прошептать …' paragraph is a joke, not a step."
+}

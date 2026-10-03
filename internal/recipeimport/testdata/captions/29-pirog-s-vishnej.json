@@ -1,0 +1,53 @@
+{
+  "source_url": "https://www.instagram.com/reel/DUqXnNgiP9d/",
+  "title": null,
+  "servings": null,
+  "ingredients": [
+    {
+      "raw": "- 300 гр муки",
+      "name": "Мука",
+      "amount": "300",
+      "unit": "г",
+      "section": "Для теста"
+    },
+    {
+      "raw": "- 120 гр сливочного масла из холодильника",
+      "name": "Сливочное масло",
+      "amount": "120",
+      "unit": "г",
+      "section": "Для теста"
+    },
+    {
+      "raw": "- 70 гр сахара",
+      "name": "Сахар",
+      "amount": "70",
+      "unit": "г",
+      "section": "Для теста"
+    },
+    {
+      "raw": "- 400 гр вишни (можно любые ягоды)",
+      "name": "Вишня",
+      "amount": "400",
+      "unit": "г",
+      "section": "Начинка"
+    },
+    {
+      "raw": "- 100 гр сахара",
+      "name": "Сахар",
+      "amount": "100",
+      "unit": "г",
+      "section": "Начинка"
+    },
+    {
+      "raw": "- 2 ст.ложки кукурузного крахмала",
+      "name": "Кукурузный крахмал",
+      "amount": "2",
+      "unit": "ст. л.",
+      "section": "Начинка"
+    }
+  ],
+  "steps": [
+    "Духовка 180 градусов - 30 минут."
+  ],
+  "notes": "No title ('Рецепт ⤵️'; dish only in hashtag #пирог) → null. Dash bullets + amount-first + genitive names, with a trailing qualifier phrase ('сливочного масла из холодильника'). Spoon spelled 'ст.ложки'. Sugar appears twice (dough + filling) — sections keep them apart. The only instruction is an oven setting line 'Духовка 180 градусов - 30 минут.' which contains ' - ' and numbers like an ingredient line but is a step."
+}

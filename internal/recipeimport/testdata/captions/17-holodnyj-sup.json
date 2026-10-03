@@ -1,0 +1,93 @@
+{
+  "source_url": "https://www.instagram.com/reel/DNyAz9v2FAO/",
+  "title": "Холодный суп с очень неожиданной заправкой",
+  "servings": 4,
+  "ingredients": [
+    {
+      "raw": "1. Огурцы - 600 гр.",
+      "name": "Огурцы",
+      "amount": "600",
+      "unit": "г",
+      "section": null
+    },
+    {
+      "raw": "2. Помидоры - 400 гр.",
+      "name": "Помидоры",
+      "amount": "400",
+      "unit": "г",
+      "section": null
+    },
+    {
+      "raw": "3. Сметана - 4-5 ст.л.",
+      "name": "Сметана",
+      "amount": "4",
+      "unit": "ст. л.",
+      "section": null
+    },
+    {
+      "raw": "4. Мясо - 300 гр. Я использовал свиную шею, но сюда отлично подойдёт и говядина, и курица, но самый лучший вариант - отварной язык",
+      "name": "Мясо",
+      "amount": "300",
+      "unit": "г",
+      "section": null
+    },
+    {
+      "raw": "5. Картофель - 400 гр.",
+      "name": "Картофель",
+      "amount": "400",
+      "unit": "г",
+      "section": null
+    },
+    {
+      "raw": "6. Хлеб - 100 гр.",
+      "name": "Хлеб",
+      "amount": "100",
+      "unit": "г",
+      "section": null
+    },
+    {
+      "raw": "7. Зелень лука и укропа",
+      "name": "Зелень лука и укропа",
+      "amount": null,
+      "unit": null,
+      "section": null
+    },
+    {
+      "raw": "8. Хрен - 1 ч.л.",
+      "name": "Хрен",
+      "amount": "1",
+      "unit": "ч. л.",
+      "section": null
+    },
+    {
+      "raw": "9. Горчица - 1 ч.л.",
+      "name": "Горчица",
+      "amount": "1",
+      "unit": "ч. л.",
+      "section": null
+    },
+    {
+      "raw": "9. Минеральная вода ~ 500 мл.",
+      "name": "Минеральная вода",
+      "amount": "500",
+      "unit": "мл",
+      "section": null
+    },
+    {
+      "raw": "10. Соль, черный перец.",
+      "name": "Соль",
+      "amount": null,
+      "unit": null,
+      "section": null
+    },
+    {
+      "raw": "10. Соль, черный перец.",
+      "name": "Черный перец",
+      "amount": null,
+      "unit": null,
+      "section": null
+    }
+  ],
+  "steps": [],
+  "notes": "INGREDIENTS are numbered '1.'…'10.' (with a duplicate '9.') — the numbering must not make them steps. Item 4 has a long trailing commentary sentence after the amount (and a ' - ' inside it). '~ 500 мл.' uses '~' instead of a dash. 'Соль, черный перец.' — two names, no amount, not 'по вкусу'. No steps (video). Servings stated in the header 'Ингредиенты на 4 порции:'."
+}

@@ -1,0 +1,72 @@
+{
+  "source_url": "https://www.instagram.com/reel/DSVHf5SDViH/",
+  "title": "Суп с фрикадельками",
+  "servings": null,
+  "ingredients": [
+    {
+      "raw": "Любой фарш ( я люблю побольше)",
+      "name": "Фарш",
+      "amount": null,
+      "unit": null,
+      "section": null
+    },
+    {
+      "raw": "2 картошки",
+      "name": "Картофель",
+      "amount": "2",
+      "unit": "шт",
+      "section": null
+    },
+    {
+      "raw": "1 морковь",
+      "name": "Морковь",
+      "amount": "1",
+      "unit": "шт",
+      "section": null
+    },
+    {
+      "raw": "2 луковицы",
+      "name": "Лук",
+      "amount": "2",
+      "unit": "шт",
+      "section": null
+    },
+    {
+      "raw": "Можно грибы добавить",
+      "name": "Грибы",
+      "amount": null,
+      "unit": null,
+      "section": null
+    },
+    {
+      "raw": "Чеснок",
+      "name": "Чеснок",
+      "amount": null,
+      "unit": null,
+      "section": null
+    },
+    {
+      "raw": "Зелень",
+      "name": "Зелень",
+      "amount": null,
+      "unit": null,
+      "section": null
+    },
+    {
+      "raw": "Соль и перец по вкусу",
+      "name": "Соль",
+      "amount": null,
+      "unit": "по вкусу",
+      "section": null
+    },
+    {
+      "raw": "Соль и перец по вкусу",
+      "name": "Перец",
+      "amount": null,
+      "unit": "по вкусу",
+      "section": null
+    }
+  ],
+  "steps": [],
+  "notes": "Home-style list with mostly NO quantities. Optional ingredient phrased as a sentence ('Можно грибы добавить') → Грибы, no amount. 'Любой фарш' → Фарш (qualifier 'любой' dropped). Bare counts in genitive ('2 картошки', '2 луковицы') normalised to the product (Картофель, Лук). 'Соль и перец по вкусу' → two ingredients sharing 'по вкусу'. Header 'Ингредиенты 📌' has an emoji instead of a colon. No steps."
+}

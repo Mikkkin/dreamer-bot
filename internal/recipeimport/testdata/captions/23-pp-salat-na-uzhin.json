@@ -1,0 +1,65 @@
+{
+  "source_url": "https://www.instagram.com/reel/C-lESd7IwiM/",
+  "title": "Идеальный салат на ужин",
+  "servings": 1,
+  "ingredients": [
+    {
+      "raw": "- Капуста свежая 100 гр.",
+      "name": "Капуста свежая",
+      "amount": "100",
+      "unit": "г",
+      "section": null
+    },
+    {
+      "raw": "- Морковь сырая 50 гр.",
+      "name": "Морковь сырая",
+      "amount": "50",
+      "unit": "г",
+      "section": null
+    },
+    {
+      "raw": "- Ветчина 60 гр. (в моей 90ккал/100 гр.)",
+      "name": "Ветчина",
+      "amount": "60",
+      "unit": "г",
+      "section": null
+    },
+    {
+      "raw": "- Кукуруза консервированная 50 гр.",
+      "name": "Кукуруза консервированная",
+      "amount": "50",
+      "unit": "г",
+      "section": null
+    },
+    {
+      "raw": "- Сметана 10% 30 гр.",
+      "name": "Сметана 10%",
+      "amount": "30",
+      "unit": "г",
+      "section": null
+    },
+    {
+      "raw": "- Майонез 10 гр.",
+      "name": "Майонез",
+      "amount": "10",
+      "unit": "г",
+      "section": null
+    },
+    {
+      "raw": "- Чеснок 1 зубчик",
+      "name": "Чеснок",
+      "amount": "1",
+      "unit": "зубчик",
+      "section": null
+    },
+    {
+      "raw": "- Соль",
+      "name": "Соль",
+      "amount": null,
+      "unit": null,
+      "section": null
+    }
+  ],
+  "steps": [],
+  "notes": "КБЖУ-oriented PP post: 'Всего 76 ккал на 100 гр.' and a per-ingredient calorie hint '(в моей 90ккал/100 гр.)' — numbers that must not be read as amounts. 'Сметана 10% 30 гр.' — the % number comes right before the amount with no separator. Servings from 'Ингредиенты (одна порция на 300 гр.)' → 1 (number word inside the header). 'Приготовление на видео.' → no steps. Heavy CTA, author credit, U+2800 blank lines and a hashtag."
+}

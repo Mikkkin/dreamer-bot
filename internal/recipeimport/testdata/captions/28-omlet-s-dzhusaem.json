@@ -1,0 +1,58 @@
+{
+  "source_url": "https://www.instagram.com/reel/DWl4MT4AnbK/",
+  "title": null,
+  "servings": 3,
+  "ingredients": [
+    {
+      "raw": "📌яйцо :4 шт",
+      "name": "Яйцо",
+      "amount": "4",
+      "unit": "шт",
+      "section": null
+    },
+    {
+      "raw": "📌джусай :4 пучка",
+      "name": "Джусай",
+      "amount": "4",
+      "unit": "пучок",
+      "section": null
+    },
+    {
+      "raw": "📌чёрный перец:1/5 ч.л",
+      "name": "Чёрный перец",
+      "amount": "0.2",
+      "unit": "ч. л.",
+      "section": null
+    },
+    {
+      "raw": "📌красный перец:1/5 ч.л",
+      "name": "Красный перец",
+      "amount": "0.2",
+      "unit": "ч. л.",
+      "section": null
+    },
+    {
+      "raw": "📌хуаджо ( сичуаньский перец):1/5 ч.л",
+      "name": "Хуаджо",
+      "amount": "0.2",
+      "unit": "ч. л.",
+      "section": null
+    },
+    {
+      "raw": "📌соль по вкусу",
+      "name": "Соль",
+      "amount": null,
+      "unit": "по вкусу",
+      "section": null
+    },
+    {
+      "raw": "📌масло для жарки :50 мл",
+      "name": "Масло для жарки",
+      "amount": "50",
+      "unit": "мл",
+      "section": null
+    }
+  ],
+  "steps": [],
+  "notes": "COLON as the name/amount separator, with irregular spacing ('яйцо :4 шт', 'перец:1/5 ч.л'). The caption starts with 'Ингредиенты' — no title (dish: яичница/омлет с джусаем) → null. Servings come AFTER the list as 'Выход :3-4 порции' → 3. '1/5 ч.л' → 0.2. A parenthetical inside the name before the colon ('хуаджо ( сичуаньский перец)'). CTA in mixed Kyrgyz/Russian ('Рецепт аткан чай есть на странице'). No steps."
+}

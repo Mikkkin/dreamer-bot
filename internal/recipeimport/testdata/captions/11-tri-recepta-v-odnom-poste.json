@@ -1,0 +1,72 @@
+{
+  "source_url": "https://www.instagram.com/reel/C9PFLKoN2wm/",
+  "title": null,
+  "servings": null,
+  "ingredients": [
+    {
+      "raw": "Белки-6 шт",
+      "name": "Белки",
+      "amount": "6",
+      "unit": "шт",
+      "section": null
+    },
+    {
+      "raw": "Сахар(мелкии‌)-260 гр",
+      "name": "Сахар",
+      "amount": "260",
+      "unit": "г",
+      "section": null
+    },
+    {
+      "raw": "Соль-щепотка",
+      "name": "Соль",
+      "amount": "1",
+      "unit": "щепотка",
+      "section": null
+    },
+    {
+      "raw": "Лимонный сок-1 ч л",
+      "name": "Лимонный сок",
+      "amount": "1",
+      "unit": "ч. л.",
+      "section": null
+    },
+    {
+      "raw": "Кукурузный крахмал-40 гр",
+      "name": "Кукурузный крахмал",
+      "amount": "40",
+      "unit": "г",
+      "section": null
+    },
+    {
+      "raw": "Сливки-300 мл (33%) холодные",
+      "name": "Сливки",
+      "amount": "300",
+      "unit": "мл",
+      "section": "Крем"
+    },
+    {
+      "raw": "Сахарная пудра-200гр",
+      "name": "Сахарная пудра",
+      "amount": "200",
+      "unit": "г",
+      "section": "Крем"
+    },
+    {
+      "raw": "Творожныи‌ сыр -180 гр",
+      "name": "Творожный сыр",
+      "amount": "180",
+      "unit": "г",
+      "section": "Крем"
+    },
+    {
+      "raw": "Клубника для украшения",
+      "name": "Клубника",
+      "amount": null,
+      "unit": null,
+      "section": "Крем"
+    }
+  ],
+  "steps": [],
+  "notes": "MULTI-RECIPE caption: three recipes back to back. Expected parse covers only the FIRST recipe (it ends at the first 'Приготовление на видео ☝️'); recipe 2 is '🔥 Чизкейк Сникерс 🔥' with sections Для основы / Начинка / Карамель, recipe 3 is an unnamed sponge with NO header at all (amount-first lines). The parser should stop at the first recipe or flag multiple recipes. Header is misspelled 'Ингридиенты:'. Hyphen separator with no spaces ('Белки-6 шт'). Zero-width non-joiner U+200C after 'и' in 'мелкии‌' and 'Творожныи‌' (broken 'й') → normalise to 'й'. 'Сливки-300 мл (33%) холодные' has the fat % in parentheses AFTER the amount. 'Клубника для украшения' has no amount. First recipe is unnamed ('Самый идеальный рецепт' is praise) → title null. No steps in caption."
+}

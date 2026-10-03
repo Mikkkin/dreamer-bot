@@ -1,0 +1,86 @@
+{
+  "source_url": "https://www.instagram.com/reel/DDel-pfoRpF/",
+  "title": "Салат коул-слоу",
+  "servings": null,
+  "ingredients": [
+    {
+      "raw": "150 г белокочанной капусты",
+      "name": "Белокочанная капуста",
+      "amount": "150",
+      "unit": "г",
+      "section": null
+    },
+    {
+      "raw": "100 г красной капусты",
+      "name": "Красная капуста",
+      "amount": "100",
+      "unit": "г",
+      "section": null
+    },
+    {
+      "raw": "1 средняя морковь",
+      "name": "Морковь",
+      "amount": "1",
+      "unit": "шт",
+      "section": null
+    },
+    {
+      "raw": "1 ст.л. измельчённой петрушки",
+      "name": "Измельчённая петрушка",
+      "amount": "1",
+      "unit": "ст. л.",
+      "section": null
+    },
+    {
+      "raw": "2 ст.л. майонеза",
+      "name": "Майонез",
+      "amount": "2",
+      "unit": "ст. л.",
+      "section": null
+    },
+    {
+      "raw": "1 ст.л. сметаны",
+      "name": "Сметана",
+      "amount": "1",
+      "unit": "ст. л.",
+      "section": null
+    },
+    {
+      "raw": "1 ч.л. горчицы",
+      "name": "Горчица",
+      "amount": "1",
+      "unit": "ч. л.",
+      "section": null
+    },
+    {
+      "raw": "2 ч.л. яблочного уксуса",
+      "name": "Яблочный уксус",
+      "amount": "2",
+      "unit": "ч. л.",
+      "section": null
+    },
+    {
+      "raw": "1 ч.л. сахара",
+      "name": "Сахар",
+      "amount": "1",
+      "unit": "ч. л.",
+      "section": null
+    },
+    {
+      "raw": "1 ч.л. соли (без горки)",
+      "name": "Соль",
+      "amount": "1",
+      "unit": "ч. л.",
+      "section": null
+    },
+    {
+      "raw": "Черный перец по вкусу",
+      "name": "Черный перец",
+      "amount": null,
+      "unit": "по вкусу",
+      "section": null
+    }
+  ],
+  "steps": [],
+  "notes": "Pure amount-first list with genitive names → nominative ('белокочанной капусты' → 'Белокочанная капуста'). Size adjective dropped ('1 средняя морковь' → Морковь, 1 шт). '(без горки)' is a tip. No steps."
+}

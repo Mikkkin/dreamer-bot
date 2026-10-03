@@ -1,0 +1,112 @@
+{
+  "source_url": "https://www.instagram.com/reel/DEk1fnstxQI/",
+  "title": null,
+  "servings": 4,
+  "ingredients": [
+    {
+      "raw": "4 красных перца",
+      "name": "Красный перец",
+      "amount": "4",
+      "unit": "шт",
+      "section": "Запеченные в духовке овощи"
+    },
+    {
+      "raw": "1 луковица чеснока",
+      "name": "Чеснок",
+      "amount": "1",
+      "unit": null,
+      "section": "Запеченные в духовке овощи"
+    },
+    {
+      "raw": "3 лука-шалота",
+      "name": "Лук-шалот",
+      "amount": "3",
+      "unit": "шт",
+      "section": "Запеченные в духовке овощи"
+    },
+    {
+      "raw": "20 помидоров черри",
+      "name": "Помидоры черри",
+      "amount": "20",
+      "unit": "шт",
+      "section": "Запеченные в духовке овощи"
+    },
+    {
+      "raw": "1 ч.л. соли",
+      "name": "Соль",
+      "amount": "1",
+      "unit": "ч. л.",
+      "section": "Запеченные в духовке овощи"
+    },
+    {
+      "raw": "500 г макарон",
+      "name": "Макароны",
+      "amount": "500",
+      "unit": "г",
+      "section": "Кроме того"
+    },
+    {
+      "raw": "150 г веганского сливочного сыра",
+      "name": "Веганский сливочный сыр",
+      "amount": "150",
+      "unit": "г",
+      "section": "Кроме того"
+    },
+    {
+      "raw": "200 мл воды для пасты",
+      "name": "Вода",
+      "amount": "200",
+      "unit": "мл",
+      "section": "Кроме того"
+    },
+    {
+      "raw": "1 горсть базилика",
+      "name": "Базилик",
+      "amount": "1",
+      "unit": null,
+      "section": "Кроме того"
+    },
+    {
+      "raw": "1 ч.л. итальянских трав",
+      "name": "Итальянские травы",
+      "amount": "1",
+      "unit": "ч. л.",
+      "section": "Кроме того"
+    },
+    {
+      "raw": "Щепотка соли/перца",
+      "name": "Соль",
+      "amount": "1",
+      "unit": "щепотка",
+      "section": "Кроме того"
+    },
+    {
+      "raw": "Щепотка соли/перца",
+      "name": "Перец",
+      "amount": "1",
+      "unit": "щепотка",
+      "section": "Кроме того"
+    },
+    {
+      "raw": "Добавки: веганский пармезан, базилик",
+      "name": "Веганский пармезан",
+      "amount": null,
+      "unit": null,
+      "section": "Добавки"
+    },
+    {
+      "raw": "Добавки: веганский пармезан, базилик",
+      "name": "Базилик",
+      "amount": null,
+      "unit": null,
+      "section": "Добавки"
+    }
+  ],
+  "steps": [
+    "Выложите все ингредиенты для овощей на противень, посыпьте маслом и солью и поставьте в духовку на 35 минут (200 градусов/вентилятор).",
+    "Тем временем отварите пасту.",
+    "Смешайте овощи из духовки с остальными ингредиентами, чтобы получился соус.",
+    "Смешайте пасту с соусом и наслаждайтесь"
+  ],
+  "notes": "Machine-translated (author credit is a German vegan account). No title: line 1 is 'Рецепт на 4 порции' → title null, servings 4. Line 2 'Пищевая ценность: 612 ккал' is a stated calorie figure (useful КБЖУ cross-check; per portion is implied, not stated). Sections are named by content ('Запеченные в духовке овощи:', 'Кроме того:'), not 'Для …'. Inline label line 'Добавки: веганский пармезан, базилик' = section + comma list on ONE line. 'луковица чеснока' (= head of garlic) and 'горсть' are out-of-vocabulary units → unit null, amount kept. 'Щепотка соли/перца' = one shared pinch for two items split by '/'. Step 1 mentions oil that is not in the list."
+}

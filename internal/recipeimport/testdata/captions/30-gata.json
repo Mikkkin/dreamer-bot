@@ -1,0 +1,74 @@
+{
+  "source_url": "https://www.instagram.com/reel/DXUhx8qDTKI/",
+  "title": "Гата",
+  "servings": null,
+  "ingredients": [
+    {
+      "raw": "450 г муки",
+      "name": "Мука",
+      "amount": "450",
+      "unit": "г",
+      "section": "Тесто"
+    },
+    {
+      "raw": "250 г молока",
+      "name": "Молоко",
+      "amount": "250",
+      "unit": "г",
+      "section": "Тесто"
+    },
+    {
+      "raw": "120 г сахара",
+      "name": "Сахар",
+      "amount": "120",
+      "unit": "г",
+      "section": "Тесто"
+    },
+    {
+      "raw": "150 г сливочного масла",
+      "name": "Сливочное масло",
+      "amount": "150",
+      "unit": "г",
+      "section": "Тесто"
+    },
+    {
+      "raw": "2 яйца",
+      "name": "Яйца",
+      "amount": "2",
+      "unit": "шт",
+      "section": "Тесто"
+    },
+    {
+      "raw": "10 г дрожжей",
+      "name": "Дрожжи",
+      "amount": "10",
+      "unit": "г",
+      "section": "Тесто"
+    },
+    {
+      "raw": "1 ч.л. соли",
+      "name": "Соль",
+      "amount": "1",
+      "unit": "ч. л.",
+      "section": "Тесто"
+    },
+    {
+      "raw": "300 г масла",
+      "name": "Масло",
+      "amount": "300",
+      "unit": "г",
+      "section": "Начинка"
+    },
+    {
+      "raw": "180 г сахара",
+      "name": "Сахар",
+      "amount": "180",
+      "unit": "г",
+      "section": "Начинка"
+    }
+  ],
+  "steps": [
+    "Муку добавляем постепенно, чтобы получилась рассыпается масса."
+  ],
+  "notes": "Section headers prefixed with an emoji ('🧾 Тесто:', '🧾 Начинка:'). Milk measured in grams. The filling's flour has NO line of its own — it is only implied by the sentence 'Муку добавляем постепенно…' (amount unknown) → not listed. Optional add-ins are given in prose ('Также я добавляю в хор из цукаты, изюм, курагу, орехи…') — not ingredients and not a step. No dough instructions at all."
+}

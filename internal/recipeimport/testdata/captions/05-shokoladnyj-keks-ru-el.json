@@ -1,0 +1,40 @@
+{
+  "source_url": "https://www.instagram.com/reel/DVc5aleDL04/",
+  "title": "Шоколадный кекс без яиц, сахара и муки за 5 минут",
+  "servings": null,
+  "ingredients": [
+    {
+      "raw": "1 банан",
+      "name": "Банан",
+      "amount": "1",
+      "unit": "шт",
+      "section": null
+    },
+    {
+      "raw": "1 ст. л. какао",
+      "name": "Какао",
+      "amount": "1",
+      "unit": "ст. л.",
+      "section": null
+    },
+    {
+      "raw": "1 ст. л. арахисовой пасты",
+      "name": "Арахисовая паста",
+      "amount": "1",
+      "unit": "ст. л.",
+      "section": null
+    },
+    {
+      "raw": "1/2 ч. л. разрыхлителя",
+      "name": "Разрыхлитель",
+      "amount": "0.5",
+      "unit": "ч. л.",
+      "section": null
+    }
+  ],
+  "steps": [
+    "Смешать все ингредиенты до однородной массы.",
+    "Выпекать при 180° в разогретой духовке или в аэрогриле 15–20’."
+  ],
+  "notes": "Title is the second sentence of line 1 (first is the exclamation 'Как же это вкусно!🤤'). Bare count '1 банан' → 1 шт. Prose tips after the steps ('Если печь меньше…', 'Я сверху добавила…') are not steps. The whole recipe is repeated in Greek ('Υλικά', '1 κ.σ. κακάο', '1/2 κ.γ.') — the Greek block must be ignored, not parsed as a second ingredient list. Time written with a prime: '15–20’'."
+}

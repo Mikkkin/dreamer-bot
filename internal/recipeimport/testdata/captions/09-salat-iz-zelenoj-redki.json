@@ -1,0 +1,80 @@
+{
+  "source_url": "https://www.instagram.com/reel/DVD3UGgjDf2/",
+  "title": "Салат из Редьки",
+  "servings": null,
+  "ingredients": [
+    {
+      "raw": "•\t3-4 шт зелёной редьки",
+      "name": "Зелёная редька",
+      "amount": "3",
+      "unit": "шт",
+      "section": null
+    },
+    {
+      "raw": "•\t2 шт моркови 🥕",
+      "name": "Морковь",
+      "amount": "2",
+      "unit": "шт",
+      "section": null
+    },
+    {
+      "raw": "•\t1 шт лук🧅",
+      "name": "Лук",
+      "amount": "1",
+      "unit": "шт",
+      "section": null
+    },
+    {
+      "raw": "•\t3 зубчика чеснока 🧄",
+      "name": "Чеснок",
+      "amount": "3",
+      "unit": "зубчик",
+      "section": null
+    },
+    {
+      "raw": "•\t0,5 ч. л. соли🧂",
+      "name": "Соль",
+      "amount": "0.5",
+      "unit": "ч. л.",
+      "section": null
+    },
+    {
+      "raw": "•\t0,5 ч л. уксуса 80%🍶",
+      "name": "Уксус 80%",
+      "amount": "0.5",
+      "unit": "ч. л.",
+      "section": null
+    },
+    {
+      "raw": "•\t1 ч л красного острого перца 🌶️",
+      "name": "Красный острый перец",
+      "amount": "1",
+      "unit": "ч. л.",
+      "section": null
+    },
+    {
+      "raw": "•\t0,5 ч л кориандра🫚",
+      "name": "Кориандр",
+      "amount": "0.5",
+      "unit": "ч. л.",
+      "section": null
+    },
+    {
+      "raw": "•\t0,5 пучка кинзы🥬",
+      "name": "Кинза",
+      "amount": "0.5",
+      "unit": "пучок",
+      "section": null
+    }
+  ],
+  "steps": [
+    "Редьку и морковь натереть на тёрке для корейской моркови.",
+    "Посолить редьку, добавить уксус,перемешать и оставить на 10–15 минут, чтобы вышел лишний сок.",
+    "Слить сок и слегка отжать.",
+    "обжарить лук и чеснок",
+    "добавить красный перец",
+    "все соединить,добавить кориандр и свежую кинзу",
+    "Дать настояться хотя бы 20–30 минут — станет ещё вкуснее."
+  ],
+  "notes": "Bullets are TAB + '•' + TAB (copied from a notes app). Amount-first with a unit before a genitive name ('3-4 шт зелёной редьки'), but '1 шт лук' keeps the nominative. Decorative emoji glued to the END of names ('соли🧂', 'кинзы🥬'). Mixed spellings in one list: 'ч. л.', 'ч л.', 'ч л'. The indented line ' Можно заменить на паприку' is a note on the previous ingredient, not an ingredient. Title cut at the first emoji. 'Дать настояться…' after the keycap list is still an instruction (step 7). 'Аш болсун🩷' (Kyrgyz 'bon appétit'), a supermarket-app ad and glued hashtags are noise."
+}

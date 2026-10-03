@@ -1,0 +1,49 @@
+{
+  "source_url": "https://www.instagram.com/reel/DdyYHheIQxz/",
+  "title": null,
+  "servings": null,
+  "ingredients": [
+    {
+      "raw": "• рикотта - 250 гр",
+      "name": "Рикотта",
+      "amount": "250",
+      "unit": "г",
+      "section": null
+    },
+    {
+      "raw": "• сахар - 1 ст. л.",
+      "name": "Сахар",
+      "amount": "1",
+      "unit": "ст. л.",
+      "section": null
+    },
+    {
+      "raw": "• щепотка соли",
+      "name": "Соль",
+      "amount": "1",
+      "unit": "щепотка",
+      "section": null
+    },
+    {
+      "raw": "• мука (у меня рисовая) - 5 ст. л.",
+      "name": "Мука",
+      "amount": "5",
+      "unit": "ст. л.",
+      "section": null
+    },
+    {
+      "raw": "• яйцо - 1 шт",
+      "name": "Яйцо",
+      "amount": "1",
+      "unit": "шт",
+      "section": null
+    }
+  ],
+  "steps": [
+    "Все ингриденты смешиваем кроме муки.",
+    "Муку добавляем в два этапа, перемешиваем.",
+    "Обжариваем на сковородке с двух сторон, до золотистой корочки.",
+    "Ставим в духовку, разогретую до 180° на 10 минут."
+  ],
+  "notes": "Dish is never named ('Рецепт👇🏻' only) → title null (it is сырники из рикотты). Parenthetical in the middle of the name ('мука (у меня рисовая) - 5 ст. л.'). 'щепотка соли' unit-first without number → 1 щепотка. Steps are un-numbered prose lines with no header. A lone '•' line at the very end is noise."
+}

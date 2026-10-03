@@ -22,6 +22,15 @@ t [ "$(stat -c %a "$e")" = 600 ]
 t [ "$(env_get DOMAIN)" = dreams.mooo.com ]
 FORCE_ENV=1 DOMAIN_MODE=none DOMAIN='' configure_env >/dev/null 2>&1
 t grep -qx "COMPOSE_PROFILES=" "$e"; t grep -qx "WEBAPP_URL=" "$e"
+# The optional model key: written when given, kept on a re-run together with
+# the other LLM_* settings, and validated.
+t grep -qx "LLM_API_KEY=" "$e"
+printf 'LLM_MODEL=gemini-3.6-flash\n' >> "$e"
+FORCE_ENV=1 DOMAIN_MODE=none DOMAIN='' LLM_API_KEY=AQ.ExampleExampleExample_1234 configure_env >/dev/null 2>&1
+t grep -qx "LLM_API_KEY=AQ.ExampleExampleExample_1234" "$e"; t grep -qx "LLM_MODEL=gemini-3.6-flash" "$e"
+FORCE_ENV=1 DOMAIN_MODE=none DOMAIN='' configure_env >/dev/null 2>&1
+t grep -qx "LLM_API_KEY=AQ.ExampleExampleExample_1234" "$e"; t grep -qx "LLM_MODEL=gemini-3.6-flash" "$e"
+t valid_llm_key ""; t valid_llm_key "AIzaSyExampleExampleExample1234"; n valid_llm_key "short"; n valid_llm_key "has space in the key here"
 # GitHub host keys: from the API, else the published ones (CI runners share
 # IPs and hit the unauthenticated rate limit).
 kh=$(mktemp)

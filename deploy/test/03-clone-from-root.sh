@@ -1,7 +1,7 @@
 # Cloning when the script is started from /root (not readable by the admin).
 # Variables below are read by the sourced setup-vds.sh functions; mocks are
 # called indirectly by them.
-# shellcheck disable=SC2034,SC2329,SC1091
+# shellcheck disable=SC2034,SC2317,SC2329,SC1091
 # shellcheck source=lib.sh
 source /s/test/lib.sh
 useradd -m deploy; chmod 700 /root; mkdir -p /root/dreamer-bot/deploy; cd /root/dreamer-bot/deploy || exit 1

@@ -99,7 +99,7 @@ confirm() {
   [[ $answer =~ ^[YyДд] ]]
 }
 
-pause() { interactive && read -r -p "  $1" _ <"$TTY" || true; }
+pause() { if interactive; then read -r -p "  $1" _ <"$TTY" || true; fi; }
 
 # --------------------------------------------------------------- validators --
 # Called indirectly through ask_valid (see the file-level shellcheck directive).

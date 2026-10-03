@@ -1,7 +1,7 @@
 # Validators and .env generation.
 # Variables below are read by the sourced setup-vds.sh functions; mocks are
 # called indirectly by them.
-# shellcheck disable=SC2034,SC2329,SC1091
+# shellcheck disable=SC2034,SC2317,SC2329,SC1091
 # shellcheck source=lib.sh
 source /s/test/lib.sh
 t valid_token "123456789:AAEXAMPLEexampleEXAMPLEexample_-12345"; n valid_token "123:abc"; n valid_token "x"

@@ -1,7 +1,7 @@
 # Data backup and restore with a faked docker volume.
 # Variables below are read by the sourced setup-vds.sh functions; mocks are
 # called indirectly by them.
-# shellcheck disable=SC2034,SC2329,SC1091
+# shellcheck disable=SC2034,SC2317,SC2329,SC1091
 # shellcheck source=lib.sh
 source /s/test/lib.sh
 VOL=$(mktemp -d); BACKUP_DIR=$(mktemp -d)/backups; BACKUP_KEEP=3; ADMIN_USER=root; ASSUME_YES=1

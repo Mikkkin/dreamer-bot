@@ -1,8 +1,7 @@
 {
-  "source_url": "https://www.instagram.com/reel/DVZbhznjD1H/",
-  "title": "Новый салат из Редька",
+  "title": "Весенний салат из редьки",
   "servings": null,
   "ingredients": [],
   "steps": [],
-  "notes": "NO_RECIPE_TEXT: the whole caption is one line — a title glued to hashtags with a double hash ('Новый салат из Редька!##рецепты #салаты #салат'). Title = text before '!' / the first '#'. No ingredients or steps in the caption."
+  "notes": "NO_RECIPE_TEXT: the whole caption is one line, a title glued to hashtags with a double hash ('Весенний салат из редьки!##салатынакаждыйдень …'). Title = the text before '!' and the first '#'. No ingredients or steps in the caption."
 }

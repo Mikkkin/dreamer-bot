@@ -131,7 +131,7 @@ func splitList(s string) []string {
 	return append(parts, s[start:])
 }
 
-// splitAnd splits «30-40 гр крахмала и 2-3 ст л воды» into two
+// splitAnd splits «20-30 гр крахмала и 3-4 ст л воды» into two
 // ingredients when both halves carry their own amount.
 func splitAnd(part string) []item {
 	left, right, ok := strings.Cut(part, " и ")
@@ -358,7 +358,7 @@ func nameFirstNoSeparator(part, low string) (item, bool) {
 			continue
 		}
 		raw := part[:i]
-		// «ботва от 3 пучков редиски»: the food is «ботва редиски».
+		// «ботва от 4 пучков редиса»: the food is «ботва редиса».
 		if words := strings.Fields(lowerKeep(raw)); len(words) > 1 {
 			if last := words[len(words)-1]; last == "от" || last == "из" {
 				tail := strings.Fields(trimPunct(part[i+q.end:]))

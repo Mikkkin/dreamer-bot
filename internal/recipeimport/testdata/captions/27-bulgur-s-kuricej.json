@@ -1,106 +1,105 @@
 {
-  "source_url": "https://www.instagram.com/reel/DOpov-mAGHs/",
-  "title": "Сливочный булгур с курицей",
+  "title": "Сочный булгур с курицей и овощами",
   "servings": 2,
   "ingredients": [
     {
-      "raw": "🥄 Булгур - 150 г",
+      "raw": "🥄 Булгур - 160 г",
       "name": "Булгур",
+      "amount": "160",
+      "unit": "г",
+      "section": null
+    },
+    {
+      "raw": "🍗 Куриные бедра - 2 шт",
+      "name": "Куриные бедра",
+      "amount": "2",
+      "unit": "шт",
+      "section": null
+    },
+    {
+      "raw": "🍅 Помидоры - 150 г",
+      "name": "Помидоры",
       "amount": "150",
       "unit": "г",
       "section": null
     },
     {
-      "raw": "🍗 Куриная грудка - 1 шт",
-      "name": "Куриная грудка",
-      "amount": "1",
-      "unit": "шт",
-      "section": null
-    },
-    {
-      "raw": "🍅 Вяленые томаты - 50 г",
-      "name": "Вяленые томаты",
-      "amount": "50",
-      "unit": "г",
-      "section": null
-    },
-    {
-      "raw": "🥛 Сливки 20% - 200 мл",
-      "name": "Сливки 20%",
-      "amount": "200",
+      "raw": "🥛 Сливки 10% - 150 мл",
+      "name": "Сливки 10%",
+      "amount": "150",
       "unit": "мл",
       "section": null
     },
     {
-      "raw": "🧄 Чеснок - 2 зуб.",
+      "raw": "🧄 Чеснок - 3 зуб.",
       "name": "Чеснок",
-      "amount": "2",
+      "amount": "3",
       "unit": "зубчик",
       "section": null
     },
     {
-      "raw": "🥬 Шпинат - горсть",
-      "name": "Шпинат",
+      "raw": "🌿 Зелень - горсть",
+      "name": "Зелень",
       "amount": null,
       "unit": null,
       "section": null
     },
     {
-      "raw": "🧀 Твердый сыр - для подачи",
-      "name": "Твердый сыр",
+      "raw": "🧀 Пармезан - для подачи",
+      "name": "Пармезан",
       "amount": null,
       "unit": null,
       "section": null
     },
     {
-      "raw": "🍲 Бульон (или вода) - 250 мл",
-      "name": "Бульон",
-      "amount": "250",
+      "raw": "🍲 Вода (или бульон) - 300 мл",
+      "name": "Вода",
+      "amount": "300",
       "unit": "мл",
       "section": null
     },
     {
-      "raw": "🧈 Сливочное масло - 1 ч.л.",
-      "name": "Сливочное масло",
-      "amount": "1",
+      "raw": "🫒 Оливковое масло - 2 ч.л.",
+      "name": "Оливковое масло",
+      "amount": "2",
       "unit": "ч. л.",
       "section": null
     },
     {
-      "raw": "🧂 Специи: соль, паприка, чеснок сушеный, приправа для курицы.",
+      "raw": "🧂 Специи: соль, куркума, перец черный, сушеный базилик.",
       "name": "Соль",
       "amount": null,
       "unit": null,
       "section": "Специи"
     },
     {
-      "raw": "🧂 Специи: соль, паприка, чеснок сушеный, приправа для курицы.",
-      "name": "Паприка",
+      "raw": "🧂 Специи: соль, куркума, перец черный, сушеный базилик.",
+      "name": "Куркума",
       "amount": null,
       "unit": null,
       "section": "Специи"
     },
     {
-      "raw": "🧂 Специи: соль, паприка, чеснок сушеный, приправа для курицы.",
-      "name": "Чеснок сушеный",
+      "raw": "🧂 Специи: соль, куркума, перец черный, сушеный базилик.",
+      "name": "Перец черный",
       "amount": null,
       "unit": null,
       "section": "Специи"
     },
     {
-      "raw": "🧂 Специи: соль, паприка, чеснок сушеный, приправа для курицы.",
-      "name": "Приправа для курицы",
+      "raw": "🧂 Специи: соль, куркума, перец черный, сушеный базилик.",
+      "name": "Сушеный базилик",
       "amount": null,
       "unit": null,
       "section": "Специи"
     }
   ],
   "steps": [
-    "Курицу режем кубиком, обжариваем со специями до корочки.",
-    "Добавляем мелко резанные томаты, давленый чеснок и булгур. Обжариваем 2 минуты.",
-    "Вливаем бульон, солим, накрываем крышкой и томим на медленном огне 20 минут.",
-    "Вливаем сливки, добавляем шпинат и тертый сыр. Перемешиваем и греем еще 3 минуты!",
-    "Сервируем и немедленно приступаем к дегустации!"
+    "Бедра нарезаем кусочками и обжариваем на масле со специями минут 5-6.",
+    "Кладем помидоры кубиком, рубленый чеснок и промытый булгур. Готовим вместе 3 минуты.",
+    "Заливаем горячей водой, накрываем и тушим на слабом огне 15 минут, пока крупа не впитает жидкость.",
+    "Вливаем сливки, бросаем зелень, перемешиваем и прогреваем еще пару минут!",
+    "Раскладываем по тарелкам, посыпаем пармезаном и зовем всех к столу!"
   ],
-  "notes": "Store/marketing post: title is inside the first sentence ('Этот сливочный булгур с курицей стал…'). 'ИНГРЕДИЕНТЫ (2 порции) 👇' — servings in parentheses in a caps header; steps header 'ШАГИ 👇'. A different food emoji per line. Non-quantities in the amount slot: 'горсть' (out-of-vocab unit, no number), 'для подачи' (purpose). 'зуб.' abbreviation → зубчик. Inline label line 'Специи: соль, паприка, …' → four ingredients, section 'Специи'. Ad with a shop domain and a phone number ('+7 708 832 31 38' — digits that must not become amounts) after the steps."
+  "notes": "Store/marketing post: the title sits inside the first sentence ('Этот сочный булгур с курицей и овощами стал…'). 'ИНГРЕДИЕНТЫ (2 порции) 👇': servings in parentheses in a caps header; steps header 'ШАГИ 👇' with keycap-numbered steps. A different food emoji per line. Non-quantities in the amount slot: 'горсть' (out-of-vocab measure, no number), 'для подачи' (purpose). 'зуб.' abbreviation → зубчик. '(или бульон)' is an alternative in parentheses, dropped from the name. Inline label line 'Специи: соль, куркума, …' → four ingredients, section 'Специи'. After the steps comes a shop ad (with и + U+0306 combining breve for й) and a phone number ('+7 000 000 00 00', digits that must not become amounts)."
 }

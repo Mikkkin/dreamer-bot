@@ -1,8 +1,7 @@
 {
-  "source_url": "https://www.instagram.com/reel/DdrKDifIDhK/",
   "title": null,
   "servings": null,
   "ingredients": [],
   "steps": [],
-  "notes": "NEGATIVE (advert): sells an e-book of 62 dinner recipes. Bullet lines look like an ingredient list ('• 62 рецепта без повтора', '• идеи из курицы, мяса, фарша и рыбы') — '62' must not become an amount and 'курица/мясо/фарш/рыба' must not become ingredients. Expected: not-a-recipe."
+  "notes": "NEGATIVE (advert): sells an e-book of 45 breakfast recipes. The bullet lines look like an ingredient list ('• 45 проверенных рецептов', '• блюда из яиц, творога, овсянки и муки'): '45' must not become an amount and 'яйца/творог/овсянка/мука' must not become ingredients. Expected: not-a-recipe."
 }

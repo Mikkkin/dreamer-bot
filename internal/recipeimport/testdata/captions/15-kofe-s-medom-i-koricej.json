@@ -1,12 +1,11 @@
 {
-  "source_url": "https://www.instagram.com/reel/DZu7T5yIWKA/",
   "title": null,
   "servings": null,
   "ingredients": [
     {
-      "raw": "• эспрессо — 40 мл;",
-      "name": "Эспрессо",
-      "amount": "40",
+      "raw": "• крепкий кофе — 60 мл;",
+      "name": "Крепкий кофе",
+      "amount": "60",
       "unit": "мл",
       "section": null
     },
@@ -18,32 +17,32 @@
       "section": null
     },
     {
-      "raw": "• кардамон — щепотка;",
-      "name": "Кардамон",
+      "raw": "• мускатный орех — щепотка;",
+      "name": "Мускатный орех",
       "amount": "1",
       "unit": "щепотка",
       "section": null
     },
     {
-      "raw": "• мёд — 1 ч. л.;",
+      "raw": "• мёд — 2 ч. л.;",
       "name": "Мёд",
-      "amount": "1",
+      "amount": "2",
       "unit": "ч. л.",
       "section": null
     },
     {
-      "raw": "• горячее молоко — ⅓ стакана.",
-      "name": "Горячее молоко",
+      "raw": "• тёплые сливки — ⅓ стакана.",
+      "name": "Тёплые сливки",
       "amount": "0.33",
       "unit": "стакан",
       "section": null
     }
   ],
   "steps": [
-    "Приготовьте эспрессо.",
-    "Добавьте в кофе мёд и специи, взбейте ручным капучинатором до однородности.",
-    "Отдельно взбейте молоко до лёгкой пены.",
-    "Соедините кофейную смесь с молоком, вдохните аромат, улыбнитесь и сделайте глоток — пусть четверг принесёт удачу!"
+    "Сварите крепкий кофе в турке или кофеварке.",
+    "Пока кофе горячий, размешайте в нём мёд, корицу и мускатный орех, чтобы мёд полностью растворился.",
+    "Сливки подогрейте, не доводя до кипения, и вспеньте венчиком.",
+    "Влейте сливки в чашку с кофе, обхватите её ладонями и пейте неспешно — пусть день станет хоть чуточку теплее!"
   ],
-  "notes": "Brand post from a coffee roaster: three paragraphs of chit-chat (weather, 'денежная магия четверга') before the recipe; the drink is only named in the closing question ('денежный четверговый кофе') → title null. Ingredient lines end with ';' and the last with '.' (list punctuation). Unicode '⅓' → 0.33 стакан. Steps header is 'Рецепт:'. The 'По желанию: … прошептать …' paragraph is a joke, not a step."
+  "notes": "Chatty post in the voice of a small coffee corner (no brand named): three paragraphs about rainy autumn weather and a 'cosy ritual' before the recipe; the drink is only named in the closing question ('осенний медовый кофе') → title null. Ingredient lines are '• name — amount' and end with ';', the last with '.' (list punctuation). 'щепотка' without a number → amount 1. Unicode '⅓' → 0.33 стакан. Steps header is 'Рецепт:'; the trailing '✨' of step 4 is dropped. The 'По желанию: … шепнуть …' paragraph is a joke, not a step, and the closing question is CTA."
 }

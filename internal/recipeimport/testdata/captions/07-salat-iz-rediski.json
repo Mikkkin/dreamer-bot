@@ -1,19 +1,18 @@
 {
-  "source_url": "https://www.instagram.com/reel/DZQd20xMAwg/",
-  "title": "Салат из редиски",
+  "title": "Салат из редиски со сметаной",
   "servings": null,
   "ingredients": [
     {
-      "raw": "- редис 200г",
-      "name": "Редис",
-      "amount": "200",
+      "raw": "- редиска 250г",
+      "name": "Редиска",
+      "amount": "250",
       "unit": "г",
       "section": null
     },
     {
-      "raw": "- огурец 200г",
+      "raw": "- огурец 150г",
       "name": "Огурец",
-      "amount": "200",
+      "amount": "150",
       "unit": "г",
       "section": null
     },
@@ -25,48 +24,48 @@
       "section": null
     },
     {
-      "raw": "- зелень кинза петрушка",
-      "name": "Кинза",
+      "raw": "- зелень укроп петрушка",
+      "name": "Укроп",
       "amount": null,
       "unit": null,
       "section": null
     },
     {
-      "raw": "- зелень кинза петрушка",
+      "raw": "- зелень укроп петрушка",
       "name": "Петрушка",
       "amount": null,
       "unit": null,
       "section": null
     },
     {
-      "raw": "- сахар 1 ст л",
-      "name": "Сахар",
-      "amount": "1",
+      "raw": "- сметана 3 ст л",
+      "name": "Сметана",
+      "amount": "3",
       "unit": "ст. л.",
       "section": null
     },
     {
-      "raw": "- соль 1 ч л",
-      "name": "Соль",
-      "amount": "1",
-      "unit": "ч. л.",
-      "section": null
-    },
-    {
-      "raw": "- уксус 1 ч л",
-      "name": "Уксус",
-      "amount": "1",
-      "unit": "ч. л.",
-      "section": null
-    },
-    {
-      "raw": "- масло растительное 2 ст л",
-      "name": "Масло растительное",
+      "raw": "- лимонный сок 2 ч л",
+      "name": "Лимонный сок",
       "amount": "2",
+      "unit": "ч. л.",
+      "section": null
+    },
+    {
+      "raw": "- горчица 1 ч л",
+      "name": "Горчица",
+      "amount": "1",
+      "unit": "ч. л.",
+      "section": null
+    },
+    {
+      "raw": "- масло оливковое 1 ст л",
+      "name": "Масло оливковое",
+      "amount": "1",
       "unit": "ст. л.",
       "section": null
     }
   ],
   "steps": [],
-  "notes": "Units without dots ('ст л', 'ч л') and glued to the number ('200г'). Lower-case names → capitalise. 'чеснок головка' = unit word without a number and 'головка' is out of vocabulary → amount null, unit null. 'зелень кинза петрушка' is a category word followed by two herbs separated only by spaces → split into Кинза and Петрушка (acceptable alternative: a single 'Зелень'). ALL-CAPS title with a trailing dot. The last line is a hashtag block whose FIRST word has no '#' ('рецепты #редиска …') — must not be read as an ingredient. No steps."
+  "notes": "Units without dots ('ст л', 'ч л') and glued to the number ('250г'). Lower-case names → capitalise. 'чеснок головка' = unit word without a number and 'головка' is out of vocabulary → amount null, unit null. 'зелень укроп петрушка' is a category word followed by two herbs separated only by spaces → split into Укроп and Петрушка (acceptable alternative: a single 'Зелень'). ALL-CAPS title with a trailing dot and a trailing space. The last line is a hashtag block whose FIRST word has no '#' ('вкусно #редиска …') and that mixes bare words and a double space — must not be read as an ingredient. No steps."
 }

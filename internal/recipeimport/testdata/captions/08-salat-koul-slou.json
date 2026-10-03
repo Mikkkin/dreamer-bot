@@ -1,86 +1,85 @@
 {
-  "source_url": "https://www.instagram.com/reel/DDel-pfoRpF/",
-  "title": "Салат коул-слоу",
+  "title": "Салат коул-слоу с яблоком",
   "servings": null,
   "ingredients": [
     {
-      "raw": "150 г белокочанной капусты",
+      "raw": "200 г белокочанной капусты",
       "name": "Белокочанная капуста",
-      "amount": "150",
+      "amount": "200",
       "unit": "г",
       "section": null
     },
     {
-      "raw": "100 г красной капусты",
-      "name": "Красная капуста",
-      "amount": "100",
+      "raw": "80 г краснокочанной капусты",
+      "name": "Краснокочанная капуста",
+      "amount": "80",
       "unit": "г",
       "section": null
     },
     {
-      "raw": "1 средняя морковь",
-      "name": "Морковь",
+      "raw": "1 крупное яблоко",
+      "name": "Яблоко",
       "amount": "1",
       "unit": "шт",
       "section": null
     },
     {
-      "raw": "1 ст.л. измельчённой петрушки",
-      "name": "Измельчённая петрушка",
+      "raw": "1 ст.л. рубленого укропа",
+      "name": "Рубленый укроп",
       "amount": "1",
       "unit": "ст. л.",
       "section": null
     },
     {
-      "raw": "2 ст.л. майонеза",
-      "name": "Майонез",
-      "amount": "2",
-      "unit": "ст. л.",
-      "section": null
-    },
-    {
-      "raw": "1 ст.л. сметаны",
+      "raw": "3 ст.л. сметаны",
       "name": "Сметана",
+      "amount": "3",
+      "unit": "ст. л.",
+      "section": null
+    },
+    {
+      "raw": "1 ст.л. майонеза",
+      "name": "Майонез",
       "amount": "1",
       "unit": "ст. л.",
       "section": null
     },
     {
-      "raw": "1 ч.л. горчицы",
-      "name": "Горчица",
+      "raw": "1 ч.л. зернистой горчицы",
+      "name": "Зернистая горчица",
       "amount": "1",
       "unit": "ч. л.",
       "section": null
     },
     {
-      "raw": "2 ч.л. яблочного уксуса",
-      "name": "Яблочный уксус",
-      "amount": "2",
-      "unit": "ч. л.",
-      "section": null
-    },
-    {
-      "raw": "1 ч.л. сахара",
-      "name": "Сахар",
+      "raw": "1 ч.л. лимонного сока",
+      "name": "Лимонный сок",
       "amount": "1",
       "unit": "ч. л.",
       "section": null
     },
     {
-      "raw": "1 ч.л. соли (без горки)",
+      "raw": "1 ч.л. жидкого мёда",
+      "name": "Жидкий мёд",
+      "amount": "1",
+      "unit": "ч. л.",
+      "section": null
+    },
+    {
+      "raw": "1 ч.л. соли (лучше мелкой)",
       "name": "Соль",
       "amount": "1",
       "unit": "ч. л.",
       "section": null
     },
     {
-      "raw": "Черный перец по вкусу",
-      "name": "Черный перец",
+      "raw": "Перец молотый по вкусу",
+      "name": "Перец молотый",
       "amount": null,
       "unit": "по вкусу",
       "section": null
     }
   ],
   "steps": [],
-  "notes": "Pure amount-first list with genitive names → nominative ('белокочанной капусты' → 'Белокочанная капуста'). Size adjective dropped ('1 средняя морковь' → Морковь, 1 шт). '(без горки)' is a tip. No steps."
+  "notes": "Pure amount-first list with genitive names → nominative ('белокочанной капусты' → 'Белокочанная капуста', 'рубленого укропа' → 'Рубленый укроп', 'жидкого мёда' → 'Жидкий мёд'). Size adjective dropped ('1 крупное яблоко' → Яблоко, 1 шт). '(лучше мелкой)' is a tip. ALL CAPS title cut at the emoji → sentence case. The last line keeps the author's word order ('Перец молотый'). No steps; the sign-off 'Вкусного обеда!' is not one."
 }

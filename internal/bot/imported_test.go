@@ -44,7 +44,7 @@ func pendingImportDue(n *notifier, id domain.RecipeID) (time.Time, bool) {
 // importedRecipe is a recipe as an Instagram import leaves it.
 func (e *notifyEnv) importedRecipe(t *testing.T) domain.Recipe {
 	t.Helper()
-	link := "https://www.instagram.com/reel/DItfAhKCJ3h/"
+	link := "https://www.instagram.com/reel/DEMOreel001/"
 	servings := 4
 	r, err := e.svc.recipes.Create(context.Background(), alice, domain.RecipeDraft{
 		Title: "Сырники",

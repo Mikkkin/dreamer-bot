@@ -1,74 +1,73 @@
 {
-  "source_url": "https://www.instagram.com/reel/DXUhx8qDTKI/",
   "title": "Гата",
   "servings": null,
   "ingredients": [
     {
-      "raw": "450 г муки",
+      "raw": "500 г муки",
       "name": "Мука",
-      "amount": "450",
+      "amount": "500",
       "unit": "г",
       "section": "Тесто"
     },
     {
-      "raw": "250 г молока",
-      "name": "Молоко",
-      "amount": "250",
+      "raw": "200 г кефира",
+      "name": "Кефир",
+      "amount": "200",
       "unit": "г",
       "section": "Тесто"
     },
     {
-      "raw": "120 г сахара",
+      "raw": "100 г сметаны",
+      "name": "Сметана",
+      "amount": "100",
+      "unit": "г",
+      "section": "Тесто"
+    },
+    {
+      "raw": "80 г сахара",
       "name": "Сахар",
-      "amount": "120",
+      "amount": "80",
       "unit": "г",
       "section": "Тесто"
     },
     {
-      "raw": "150 г сливочного масла",
+      "raw": "200 г сливочного масла",
       "name": "Сливочное масло",
-      "amount": "150",
+      "amount": "200",
       "unit": "г",
       "section": "Тесто"
     },
     {
-      "raw": "2 яйца",
-      "name": "Яйца",
-      "amount": "2",
+      "raw": "1 яйцо",
+      "name": "Яйцо",
+      "amount": "1",
       "unit": "шт",
       "section": "Тесто"
     },
     {
-      "raw": "10 г дрожжей",
-      "name": "Дрожжи",
-      "amount": "10",
-      "unit": "г",
-      "section": "Тесто"
-    },
-    {
-      "raw": "1 ч.л. соли",
-      "name": "Соль",
+      "raw": "1 ч.л. разрыхлителя",
+      "name": "Разрыхлитель",
       "amount": "1",
       "unit": "ч. л.",
       "section": "Тесто"
     },
     {
-      "raw": "300 г масла",
+      "raw": "250 г масла",
       "name": "Масло",
-      "amount": "300",
+      "amount": "250",
       "unit": "г",
       "section": "Начинка"
     },
     {
-      "raw": "180 г сахара",
-      "name": "Сахар",
-      "amount": "180",
+      "raw": "150 г сахарной пудры",
+      "name": "Сахарная пудра",
+      "amount": "150",
       "unit": "г",
       "section": "Начинка"
     }
   ],
   "steps": [
-    "Муку добавляем постепенно, чтобы получилась рассыпается масса."
+    "Муку подсыпаем понемногу и растираем руками, пока не выйдет мягкая крошка."
   ],
-  "notes": "Section headers prefixed with an emoji ('🧾 Тесто:', '🧾 Начинка:'). Milk measured in grams. The filling's flour has NO line of its own — it is only implied by the sentence 'Муку добавляем постепенно…' (amount unknown) → not listed. Optional add-ins are given in prose ('Также я добавляю в хор из цукаты, изюм, курагу, орехи…') — not ingredients and not a step. No dough instructions at all."
+  "notes": "Title cut at ', которая …'. Section headers carry an emoji prefix and a trailing space ('🧾 Тесто: ', '🧾 Начинка: '); most lines end with a space. Kefir is measured in grams. The filling's flour has NO line of its own: it is only implied by the sentence 'Муку подсыпаем понемногу…' (amount unknown), so it is not listed; that sentence is the only step. The plain 'масла' in the filling is kept as 'Масло'. Optional add-ins are given in prose ('А ещё можно положить в начинку рубленые грецкие орехи или щепотку корицы…'), so they are neither ingredients nor a step. No dough instructions at all."
 }

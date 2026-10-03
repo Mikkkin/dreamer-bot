@@ -1,69 +1,68 @@
 {
-  "source_url": "https://www.instagram.com/reel/C_DwG_wNK0-/",
-  "title": "Запеченный ароматный цукини",
+  "title": "Запеченный цукини с сыром",
   "servings": null,
   "ingredients": [
     {
-      "raw": "Цукини - 1 шт.",
+      "raw": "Цукини - 2 шт.",
       "name": "Цукини",
-      "amount": "1",
+      "amount": "2",
       "unit": "шт",
       "section": null
     },
     {
-      "raw": "Орегано сушеный - 1/2 ч.л.",
-      "name": "Орегано сушеный",
+      "raw": "Паприка сладкая - 1/2 ч.л.",
+      "name": "Паприка сладкая",
       "amount": "0.5",
       "unit": "ч. л.",
       "section": null
     },
     {
-      "raw": "Базилик сушеный - 1/2 ч.л.",
-      "name": "Базилик сушеный",
+      "raw": "Чеснок молотый - 1/2 ч.л.",
+      "name": "Чеснок молотый",
       "amount": "0.5",
       "unit": "ч. л.",
       "section": null
     },
     {
-      "raw": "Чеснок сушеный - 1/2 ч.л.",
-      "name": "Чеснок сушеный",
+      "raw": "Тимьян сухой - 1/2 ч.л.",
+      "name": "Тимьян сухой",
       "amount": "0.5",
       "unit": "ч. л.",
       "section": null
     },
     {
-      "raw": "Пармезан - 50 гр.",
-      "name": "Пармезан",
-      "amount": "50",
+      "raw": "Сыр твердый - 60 гр.",
+      "name": "Сыр твердый",
+      "amount": "60",
       "unit": "г",
       "section": null
     },
     {
-      "raw": "Яйцо - 1 шт.",
+      "raw": "Яйцо - 2 шт.",
       "name": "Яйцо",
-      "amount": "1",
+      "amount": "2",
       "unit": "шт",
       "section": null
     },
     {
-      "raw": "Перец черный молотый по вкусу",
-      "name": "Перец черный молотый",
+      "raw": "Перец черный по вкусу",
+      "name": "Перец черный",
       "amount": null,
       "unit": "по вкусу",
       "section": null
     },
     {
-      "raw": "Соль по вкусу",
-      "name": "Соль",
+      "raw": "Соль морская по вкусу",
+      "name": "Соль морская",
       "amount": null,
       "unit": "по вкусу",
       "section": null
     }
   ],
   "steps": [
-    "Цукини промыть, нарезать на брусочки. Пармезан натереть на мелкой терке. В глубокой чаше смешать специи, перец соль, тертый сыр и яйцо. Обвалять в полученной смеси цукини.",
-    "Противень выстелить пергаментом. Выложить сверху брусочки. Выпекать при температуре 180 градусов 20 минут. Затем еще на 2-3 минуты можно включить режим «Гриль».",
-    "Подавать можно со сметаной и зеленью или с сырным соусом."
+    "Цукини вымыть, разрезать вдоль на четвертинки, а каждую четвертинку еще пополам. Сыр натереть на средней терке. В миске взболтать яйца с паприкой, тимьяном, чесноком, солью и перцем. Каждый брусочек окунуть в яичную смесь, а затем обвалять в сыре.",
+    "Застелить противень бумагой для выпечки и разложить цукини срезом вверх. Запекать в духовке при 200 градусах около 25 минут, до румяной сырной корочки. Для более яркого цвета в конце на 3-4 минуты включите режим «Конвекция».",
+    "Дать цукини постоять на противне пару минут, чтобы корочка схватилась."
   ],
-  "notes": "No 'Ингредиенты' or 'Приготовление' headers at all: blocks are separated by lines containing only U+2800 (Braille blank, used on Instagram as an invisible spacer — not whitespace for most regex engines). Title line ends with ' Рецепт⤵️' which must be cut. Steps are prose paragraphs. 'Приятного аппетита!' excluded."
+  "notes": "No 'Ингредиенты' or 'Приготовление' headers at all: blocks are separated by lines holding only U+2800 (Braille blank, an invisible spacer that most regex engines do not treat as whitespace). The title line ends with ' Рецепт⤵️', which must be cut. Steps are prose paragraphs, one per block; the third is a short resting step. 'Приятного аппетита!' and the hashtags are excluded."
 }

@@ -222,7 +222,7 @@ func ogMeta(page []byte) map[string]string {
 }
 
 var (
-	// wrapperRe matches `323 likes, 4 comments - v_ogorod on April 21,
+	// wrapperRe matches `323 likes, 4 comments - demo_kitchen on April 21,
 	// 2025: "caption".` with counts like 1,234 or 12K and either count
 	// missing.
 	wrapperRe = regexp.MustCompile(`(?is)^\s*(?:[\d.,]+\s*[kmb]?\s+(?:likes?|comments?)\s*[,-]?\s*)*-?\s*([^\s"]+)\s+on\s+([^:"\n]{4,40}?)\s*:\s*["“](.*)["”]\s*\.?\s*$`)

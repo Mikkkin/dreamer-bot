@@ -134,14 +134,14 @@ func TestImportFromURL(t *testing.T) {
 	e.couple(t)
 	ctx := context.Background()
 
-	r, report, err := e.svc.Recipes.Import(ctx, dima, service.ImportInput{URL: "  Смотри https://instagram.com/reels/DItfAhKCJ3h/?igsh=abc  "})
+	r, report, err := e.svc.Recipes.Import(ctx, dima, service.ImportInput{URL: "  Смотри https://instagram.com/reels/DEMOreel001/?igsh=abc  "})
 	if err != nil {
 		t.Fatalf("Import: %v", err)
 	}
 	if r.ID == 0 || r.Title != "Маринад для шашлыка" || r.AuthorID != dima || len(r.Ingredients) != 2 || r.Servings == nil || *r.Servings != 2 {
 		t.Errorf("recipe = %+v", r)
 	}
-	if r.Link == nil || *r.Link != "https://www.instagram.com/reel/DItfAhKCJ3h/" {
+	if r.Link == nil || *r.Link != "https://www.instagram.com/reel/DEMOreel001/" {
 		t.Errorf("link = %v, want the canonical post URL", r.Link)
 	}
 	if len(r.Images) != 1 || r.Images[0].Width != 40 {
@@ -151,7 +151,7 @@ func TestImportFromURL(t *testing.T) {
 	if !reportsEqual(report, want) {
 		t.Errorf("report = %+v, want %+v", report, want)
 	}
-	if calls := im.recorded(); len(calls) != 1 || calls[0].url != "https://www.instagram.com/reel/DItfAhKCJ3h/" || calls[0].actor != dima {
+	if calls := im.recorded(); len(calls) != 1 || calls[0].url != "https://www.instagram.com/reel/DEMOreel001/" || calls[0].actor != dima {
 		t.Errorf("importer calls = %+v, want one import of the canonical URL for Dima (his video quota)", calls)
 	}
 	stored, err := e.svc.Recipes.Get(ctx, r.ID)
@@ -202,7 +202,7 @@ func TestImportValidatesInput(t *testing.T) {
 		{"long link", service.ImportInput{URL: "https://www.instagram.com/p/Abcde12345/?x=" + strings.Repeat("a", domain.MaxLinkLen)}, "url"},
 		{"long text", service.ImportInput{Text: strings.Repeat("щ", service.MaxImportTextLen+1)}, "text"},
 		{"not a post", service.ImportInput{URL: "https://example.com/reel/Abcde12345/"}, "url"},
-		{"profile", service.ImportInput{URL: "https://www.instagram.com/v_ogorod/"}, "url"},
+		{"profile", service.ImportInput{URL: "https://www.instagram.com/demo_kitchen/"}, "url"},
 	}
 	for _, c := range cases {
 		_, _, err := e.svc.Recipes.Import(ctx, dima, c.in)
@@ -222,11 +222,11 @@ func TestImportReturnsTheRecipeOfAnImportedPost(t *testing.T) {
 	e.couple(t)
 	ctx := context.Background()
 
-	first, _, err := e.svc.Recipes.Import(ctx, dima, service.ImportInput{URL: "https://www.instagram.com/reel/DItfAhKCJ3h/"})
+	first, _, err := e.svc.Recipes.Import(ctx, dima, service.ImportInput{URL: "https://www.instagram.com/reel/DEMOreel001/"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	again, report, err := e.svc.Recipes.Import(ctx, anya, service.ImportInput{URL: "https://m.instagram.com/reel/DItfAhKCJ3h?igsh=xyz#c"})
+	again, report, err := e.svc.Recipes.Import(ctx, anya, service.ImportInput{URL: "https://m.instagram.com/reel/DEMOreel001?igsh=xyz#c"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -368,18 +368,18 @@ func TestImportFindsAPostUnderAnotherLinkForm(t *testing.T) {
 	e.couple(t)
 	ctx := context.Background()
 
-	first, _, err := e.svc.Recipes.Import(ctx, dima, service.ImportInput{URL: "https://www.instagram.com/reel/DItfAhKCJ3h/"})
+	first, _, err := e.svc.Recipes.Import(ctx, dima, service.ImportInput{URL: "https://www.instagram.com/reel/DEMOreel001/"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	// The same post as a /p/ link from a profile grid is a duplicate.
-	again, report, err := e.svc.Recipes.Import(ctx, anya, service.ImportInput{URL: "https://instagram.com/p/DItfAhKCJ3h/"})
+	again, report, err := e.svc.Recipes.Import(ctx, anya, service.ImportInput{URL: "https://instagram.com/p/DEMOreel001/"})
 	if err != nil || !report.Duplicate || again.ID != first.ID {
 		t.Fatalf("/p/ link of an imported reel = %d, %+v, %v; want the same recipe as a duplicate", again.ID, report, err)
 	}
 	// A caption pasted for that post finds it too, before any parsing.
 	calls := len(im.recorded())
-	again, report, err = e.svc.Recipes.Import(ctx, anya, service.ImportInput{Text: "Сырники\nТворог — 400 г", Link: "https://www.instagram.com/p/DItfAhKCJ3h/"})
+	again, report, err = e.svc.Recipes.Import(ctx, anya, service.ImportInput{Text: "Сырники\nТворог — 400 г", Link: "https://www.instagram.com/p/DEMOreel001/"})
 	if err != nil || !report.Duplicate || again.ID != first.ID || len(im.recorded()) != calls {
 		t.Fatalf("caption for an imported post = %d, %+v, %v", again.ID, report, err)
 	}
@@ -390,11 +390,11 @@ func TestImportOfACaptionKeepsItsPostLink(t *testing.T) {
 	e := newEnv(t, withImporter(im), withMedia(realMedia(t)))
 	e.couple(t)
 	r, _, err := e.svc.Recipes.Import(context.Background(), dima,
-		service.ImportInput{Text: "Сырники\nТворог — 400 г", Link: "  https://instagram.com/reels/DItfAhKCJ3h/?igsh=x "})
+		service.ImportInput{Text: "Сырники\nТворог — 400 г", Link: "  https://instagram.com/reels/DEMOreel001/?igsh=x "})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if r.Link == nil || *r.Link != "https://www.instagram.com/reel/DItfAhKCJ3h/" {
+	if r.Link == nil || *r.Link != "https://www.instagram.com/reel/DEMOreel001/" {
 		t.Errorf("link = %v, want the post's canonical link", r.Link)
 	}
 	// A bad link is ignored: the text still imports, without a link.
@@ -425,10 +425,10 @@ func TestImportsAreThrottledPerUser(t *testing.T) {
 		t.Fatalf("the partner's import: %v", err)
 	}
 	// A duplicate costs nothing.
-	if _, _, err := e.svc.Recipes.Import(ctx, anya, service.ImportInput{URL: "https://www.instagram.com/reel/DItfAhKCJ3h/"}); err != nil {
+	if _, _, err := e.svc.Recipes.Import(ctx, anya, service.ImportInput{URL: "https://www.instagram.com/reel/DEMOreel001/"}); err != nil {
 		t.Fatal(err)
 	}
-	if _, r, err := e.svc.Recipes.Import(ctx, dima, service.ImportInput{URL: "https://www.instagram.com/p/DItfAhKCJ3h/"}); err != nil || !r.Duplicate {
+	if _, r, err := e.svc.Recipes.Import(ctx, dima, service.ImportInput{URL: "https://www.instagram.com/p/DEMOreel001/"}); err != nil || !r.Duplicate {
 		t.Fatalf("a duplicate over the limit = %+v, %v; want the duplicate", r, err)
 	}
 }

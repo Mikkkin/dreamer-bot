@@ -43,7 +43,7 @@ func (h *harness) importAs(draft domain.RecipeDraft, report service.ImportReport
 
 func TestImportRecipe(t *testing.T) {
 	h := newHarness(t)
-	link := "https://www.instagram.com/reel/DItfAhKCJ3h/"
+	link := "https://www.instagram.com/reel/DEMOreel001/"
 	four := 4
 	seen := h.importAs(domain.RecipeDraft{
 		Title: "Маринад для шашлыка",
@@ -57,7 +57,7 @@ func TestImportRecipe(t *testing.T) {
 		Servings: &four,
 	}, service.ImportReport{Source: "instagram", Parser: "rules", Confidence: 0.95, Image: true, Warnings: []string{"1 строка не распознана"}})
 
-	rec := h.call(http.MethodPost, "/api/recipes/import", alice, map[string]string{"url": "https://instagram.com/reel/DItfAhKCJ3h/?igsh=abc"})
+	rec := h.call(http.MethodPost, "/api/recipes/import", alice, map[string]string{"url": "https://instagram.com/reel/DEMOreel001/?igsh=abc"})
 	expectStatus(t, rec, http.StatusCreated)
 	var raw struct {
 		Recipe map[string]json.RawMessage `json:"recipe"`
@@ -72,7 +72,7 @@ func TestImportRecipe(t *testing.T) {
 	if got := mustJSON(t, raw.Import); got != `{"confidence":0.95,"duplicate":false,"image":true,"parser":"rules","source":"instagram","warnings":["1 строка не распознана"]}` {
 		t.Errorf("import = %s", got)
 	}
-	if len(*seen) != 1 || (*seen)[0] != (service.ImportInput{URL: "https://instagram.com/reel/DItfAhKCJ3h/?igsh=abc"}) {
+	if len(*seen) != 1 || (*seen)[0] != (service.ImportInput{URL: "https://instagram.com/reel/DEMOreel001/?igsh=abc"}) {
 		t.Errorf("service got %+v", *seen)
 	}
 

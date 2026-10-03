@@ -191,7 +191,7 @@ func TestFromURLVideoAddsStepsToACaptionList(t *testing.T) {
 	}
 	// The caption's 9 quantified foods beat the video's 3; the caption's
 	// title stays; the steps come from the video.
-	if len(d.Ingredients) != 9 || d.Ingredients[0].Name != "Морковь" || d.Title != "Секретная морковка по-корейски за 10 минут" || !strings.HasPrefix(d.Body, "1. Натереть свеклу.") {
+	if len(d.Ingredients) != 9 || d.Ingredients[0].Name != "Морковь" || d.Title != "Пикантная морковка по-корейски за 15 минут" || !strings.HasPrefix(d.Body, "1. Натереть свеклу.") {
 		t.Errorf("draft = %+v", d)
 	}
 

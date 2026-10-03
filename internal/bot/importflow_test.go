@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	reelLink      = "https://www.instagram.com/reel/DItfAhKCJ3h/"
+	reelLink      = "https://www.instagram.com/reel/DEMOreel001/"
 	recipeMessage = "Сырники\nТворог — 400 г\nЯйцо — 2 шт\nСахар — 2 ст. л."
 )
 
@@ -76,7 +76,7 @@ func TestImportLinkAnswersWithPhotoCard(t *testing.T) {
 	e.svc.images.data[7] = []byte("jpeg")
 	e.importsAs(syrniki(t), 7, []string{"2 строки не распознаны"}, nil)
 
-	e.handle(textUpdate(alice, "Смотри, что нашла! https://instagram.com/reels/DItfAhKCJ3h?igsh=abc123"))
+	e.handle(textUpdate(alice, "Смотри, что нашла! https://instagram.com/reels/DEMOreel001?igsh=abc123"))
 	e.settle()
 
 	reactions := e.api.of("SetMessageReaction")
@@ -158,10 +158,10 @@ func TestImportLinkBehindTextLink(t *testing.T) {
 	e := newTestEnv(t)
 	e.importsAs(syrniki(t), 0, nil, nil)
 	u := textUpdate(alice, "вот этот рецепт")
-	u.Message.Entities = []models.MessageEntity{{Type: models.MessageEntityTypeTextLink, Offset: 4, Length: 4, URL: "https://m.instagram.com/p/DVs8ssPihOG/"}}
+	u.Message.Entities = []models.MessageEntity{{Type: models.MessageEntityTypeTextLink, Offset: 4, Length: 4, URL: "https://m.instagram.com/p/DEMOpost002/"}}
 	e.handle(u)
 	e.settle()
-	if in := e.svc.recipes.importInputs(); len(in) != 1 || in[0].URL != "https://www.instagram.com/p/DVs8ssPihOG/" {
+	if in := e.svc.recipes.importInputs(); len(in) != 1 || in[0].URL != "https://www.instagram.com/p/DEMOpost002/" {
 		t.Errorf("imported %+v", in)
 	}
 }
@@ -577,9 +577,9 @@ func TestRecipeSummary(t *testing.T) {
 func TestInstagramLinkAndRecipeText(t *testing.T) {
 	for text, want := range map[string]string{
 		reelLink: reelLink,
-		"instagram.com/p/DVs8ssPihOG/?igsh=1 — вкусно":      "https://www.instagram.com/p/DVs8ssPihOG/",
+		"instagram.com/p/DEMOpost002/?igsh=1 — вкусно":      "https://www.instagram.com/p/DEMOpost002/",
 		"https://www.instagram.com/stories/user/123/":       "",
-		"https://instagram.com.evil.example/p/DVs8ssPihOG/": "",
+		"https://instagram.com.evil.example/p/DEMOpost002/": "",
 		"https://youtube.com/watch?v=x":                     "",
 	} {
 		got, ok := instagramLink(text, nil)
@@ -636,14 +636,14 @@ func TestEndToEndImportReactsThroughLibraryClient(t *testing.T) {
 		return r, service.ImportReport{}, err
 	}
 	b.Attach(svc.services())
-	api.push(privateTextUpdate(1, int64(alice), "https://www.instagram.com/p/DVs8ssPihOG/?igsh=abc"))
+	api.push(privateTextUpdate(1, int64(alice), "https://www.instagram.com/p/DEMOpost002/?igsh=abc"))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
 	go func() { done <- b.Run(ctx) }()
 	select {
 	case in := <-imported:
-		if in.URL != "https://www.instagram.com/p/DVs8ssPihOG/" {
+		if in.URL != "https://www.instagram.com/p/DEMOpost002/" {
 			t.Errorf("imported %+v", in)
 		}
 	case <-time.After(5 * time.Second):

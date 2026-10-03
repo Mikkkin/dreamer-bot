@@ -1,19 +1,18 @@
 {
-  "source_url": "https://www.instagram.com/reel/C9PFLKoN2wm/",
   "title": null,
   "servings": null,
   "ingredients": [
     {
-      "raw": "Белки-6 шт",
+      "raw": "Белки-5 шт",
       "name": "Белки",
-      "amount": "6",
+      "amount": "5",
       "unit": "шт",
       "section": null
     },
     {
-      "raw": "Сахар(мелкии‌)-260 гр",
+      "raw": "Сахар(белыи\u200c)-220 гр",
       "name": "Сахар",
-      "amount": "260",
+      "amount": "220",
       "unit": "г",
       "section": null
     },
@@ -25,48 +24,48 @@
       "section": null
     },
     {
-      "raw": "Лимонный сок-1 ч л",
-      "name": "Лимонный сок",
+      "raw": "Яблочный уксус-1 ч л",
+      "name": "Яблочный уксус",
       "amount": "1",
       "unit": "ч. л.",
       "section": null
     },
     {
-      "raw": "Кукурузный крахмал-40 гр",
-      "name": "Кукурузный крахмал",
-      "amount": "40",
+      "raw": "Картофельный крахмал-30 гр",
+      "name": "Картофельный крахмал",
+      "amount": "30",
       "unit": "г",
       "section": null
     },
     {
-      "raw": "Сливки-300 мл (33%) холодные",
+      "raw": "Сливки-250 мл (35%) охлаждённые",
       "name": "Сливки",
-      "amount": "300",
+      "amount": "250",
       "unit": "мл",
       "section": "Крем"
     },
     {
-      "raw": "Сахарная пудра-200гр",
+      "raw": "Сахарная пудра-80гр",
       "name": "Сахарная пудра",
+      "amount": "80",
+      "unit": "г",
+      "section": "Крем"
+    },
+    {
+      "raw": "Сливочныи\u200c сыр -200 гр",
+      "name": "Сливочный сыр",
       "amount": "200",
       "unit": "г",
       "section": "Крем"
     },
     {
-      "raw": "Творожныи‌ сыр -180 гр",
-      "name": "Творожный сыр",
-      "amount": "180",
-      "unit": "г",
-      "section": "Крем"
-    },
-    {
-      "raw": "Клубника для украшения",
-      "name": "Клубника",
+      "raw": "Черника для украшения",
+      "name": "Черника",
       "amount": null,
       "unit": null,
       "section": "Крем"
     }
   ],
   "steps": [],
-  "notes": "MULTI-RECIPE caption: three recipes back to back. Expected parse covers only the FIRST recipe (it ends at the first 'Приготовление на видео ☝️'); recipe 2 is '🔥 Чизкейк Сникерс 🔥' with sections Для основы / Начинка / Карамель, recipe 3 is an unnamed sponge with NO header at all (amount-first lines). The parser should stop at the first recipe or flag multiple recipes. Header is misspelled 'Ингридиенты:'. Hyphen separator with no spaces ('Белки-6 шт'). Zero-width non-joiner U+200C after 'и' in 'мелкии‌' and 'Творожныи‌' (broken 'й') → normalise to 'й'. 'Сливки-300 мл (33%) холодные' has the fat % in parentheses AFTER the amount. 'Клубника для украшения' has no amount. First recipe is unnamed ('Самый идеальный рецепт' is praise) → title null. No steps in caption."
+  "notes": "MULTI-RECIPE caption: three recipes back to back. Expected parse covers only the FIRST recipe (it ends at the first 'Приготовление на видео ☝️'); recipe 2 is '🔥 Шоколадный чизкейк с арахисом 🔥' with sections Для основы / Начинка / Карамель, recipe 3 is an unnamed sponge with NO header at all (amount-first lines). The parser should stop at the first recipe or flag multiple recipes. Header is misspelled 'Ингридиенты:'. Hyphen separator with no spaces ('Белки-5 шт', 'Соль-щепотка' = 1 щепотка). Zero-width non-joiner U+200C after 'и' in 'белыи\u200c' and 'Сливочныи\u200c' (broken 'й') → normalise to 'й'. 'Сливки-250 мл (35%) охлаждённые' has the fat % in parentheses AFTER the amount, then a trailing participle. 'Черника для украшения' has no amount. First recipe is unnamed ('Лучший рецепт для праздничного стола' is praise) → title null. No steps in caption."
 }

@@ -1,112 +1,111 @@
 {
-  "source_url": "https://www.instagram.com/reel/DEk1fnstxQI/",
   "title": null,
-  "servings": 4,
+  "servings": 3,
   "ingredients": [
     {
-      "raw": "4 красных перца",
-      "name": "Красный перец",
-      "amount": "4",
+      "raw": "2 болгарских перца",
+      "name": "Болгарский перец",
+      "amount": "2",
       "unit": "шт",
-      "section": "Запеченные в духовке овощи"
+      "section": "Овощи для запекания"
     },
     {
-      "raw": "1 луковица чеснока",
+      "raw": "1 головка чеснока",
       "name": "Чеснок",
       "amount": "1",
       "unit": null,
-      "section": "Запеченные в духовке овощи"
+      "section": "Овощи для запекания"
     },
     {
-      "raw": "3 лука-шалота",
-      "name": "Лук-шалот",
-      "amount": "3",
+      "raw": "1 небольшой баклажан",
+      "name": "Баклажан",
+      "amount": "1",
       "unit": "шт",
-      "section": "Запеченные в духовке овощи"
+      "section": "Овощи для запекания"
     },
     {
-      "raw": "20 помидоров черри",
+      "raw": "15 помидоров черри",
       "name": "Помидоры черри",
-      "amount": "20",
+      "amount": "15",
       "unit": "шт",
-      "section": "Запеченные в духовке овощи"
+      "section": "Овощи для запекания"
     },
     {
-      "raw": "1 ч.л. соли",
-      "name": "Соль",
+      "raw": "1 ч.л. паприки",
+      "name": "Паприка",
       "amount": "1",
       "unit": "ч. л.",
-      "section": "Запеченные в духовке овощи"
+      "section": "Овощи для запекания"
     },
     {
-      "raw": "500 г макарон",
-      "name": "Макароны",
-      "amount": "500",
+      "raw": "300 г спагетти",
+      "name": "Спагетти",
+      "amount": "300",
       "unit": "г",
-      "section": "Кроме того"
+      "section": "Остальное"
     },
     {
-      "raw": "150 г веганского сливочного сыра",
-      "name": "Веганский сливочный сыр",
-      "amount": "150",
+      "raw": "120 г творожного сыра",
+      "name": "Творожный сыр",
+      "amount": "120",
       "unit": "г",
-      "section": "Кроме того"
+      "section": "Остальное"
     },
     {
-      "raw": "200 мл воды для пасты",
+      "raw": "150 мл воды для соуса",
       "name": "Вода",
-      "amount": "200",
+      "amount": "150",
       "unit": "мл",
-      "section": "Кроме того"
+      "section": "Остальное"
     },
     {
-      "raw": "1 горсть базилика",
-      "name": "Базилик",
+      "raw": "1 горсть шпината",
+      "name": "Шпинат",
       "amount": "1",
       "unit": null,
-      "section": "Кроме того"
+      "section": "Остальное"
     },
     {
-      "raw": "1 ч.л. итальянских трав",
-      "name": "Итальянские травы",
+      "raw": "1 ч.л. сушёного базилика",
+      "name": "Сушёный базилик",
       "amount": "1",
       "unit": "ч. л.",
-      "section": "Кроме того"
+      "section": "Остальное"
     },
     {
       "raw": "Щепотка соли/перца",
       "name": "Соль",
       "amount": "1",
       "unit": "щепотка",
-      "section": "Кроме того"
+      "section": "Остальное"
     },
     {
       "raw": "Щепотка соли/перца",
       "name": "Перец",
       "amount": "1",
       "unit": "щепотка",
-      "section": "Кроме того"
+      "section": "Остальное"
     },
     {
-      "raw": "Добавки: веганский пармезан, базилик",
-      "name": "Веганский пармезан",
+      "raw": "Добавки: пармезан, руккола",
+      "name": "Пармезан",
       "amount": null,
       "unit": null,
       "section": "Добавки"
     },
     {
-      "raw": "Добавки: веганский пармезан, базилик",
-      "name": "Базилик",
+      "raw": "Добавки: пармезан, руккола",
+      "name": "Руккола",
       "amount": null,
       "unit": null,
       "section": "Добавки"
     }
   ],
   "steps": [
-    "Выложите все ингредиенты для овощей на противень, посыпьте маслом и солью и поставьте в духовку на 35 минут (200 градусов/вентилятор).",
-    "Тем временем отварите пасту.",
-    "Смешайте овощи из духовки с остальными ингредиентами, чтобы получился соус.",
-    "Смешайте пасту с соусом и наслаждайтесь"
+    "Нарежьте овощи крупными кусками, разложите на противне, сбрызните маслом, посолите и запекайте 30 минут при 210 градусах (верх-низ).",
+    "Пока овощи в духовке, сварите спагетти до состояния аль денте.",
+    "Пробейте запечённые овощи блендером со всеми остальными продуктами из списка до гладкого соуса.",
+    "Перемешайте спагетти с соусом и сразу подавайте"
   ],
-  "notes": "Machine-translated (author credit is a German vegan account). No title: line 1 is 'Рецепт на 4 порции' → title null, servings 4. Line 2 'Пищевая ценность: 612 ккал' is a stated calorie figure (useful КБЖУ cross-check; per portion is implied, not stated). Sections are named by content ('Запеченные в духовке овощи:', 'Кроме того:'), not 'Для …'. Inline label line 'Добавки: веганский пармезан, базилик' = section + comma list on ONE line. 'луковица чеснока' (= head of garlic) and 'горсть' are out-of-vocabulary units → unit null, amount kept. 'Щепотка соли/перца' = one shared pinch for two items split by '/'. Step 1 mentions oil that is not in the list."
+  "notes": "No title: line 1 is 'Рецепт на 3 порции' → title null, servings 3. Line 2 'Пищевая ценность: 540 ккал' is a stated calorie figure (useful КБЖУ cross-check; per portion is implied, not stated). Sections are named by content ('Овощи для запекания:', 'Остальное:'), not 'Для …'. Inline label line 'Добавки: пармезан, руккола' = section + comma list on ONE line. 'головка чеснока' and 'горсть' are out-of-vocabulary units → unit null, amount kept. '1 небольшой баклажан' → size word dropped. '150 мл воды для соуса' → Вода (the purpose 'для соуса' is trailing commentary). 'Щепотка соли/перца' = one shared pinch for two items split by '/'. Step 1 mentions oil and salt that are not in the list. The 'Автор:' line is a credit, not a step."
 }

@@ -1,41 +1,54 @@
 {
-  "source_url": "https://www.instagram.com/p/DEutP15K8bi/",
-  "title": "Цветная капуста в панировке",
+  "title": "Цветная капуста в хрустящей панировке",
   "servings": null,
   "ingredients": [
     {
-      "raw": "3 стакана панировочных сухарей",
+      "raw": "2 стакана панировочных сухарей",
       "name": "Панировочные сухари",
-      "amount": "3",
+      "amount": "2",
       "unit": "стакан",
       "section": null
     },
     {
-      "raw": "1 ч. л. паприки",
-      "name": "Паприка",
-      "amount": "1",
-      "unit": "ч. л.",
-      "section": null
-    },
-    {
-      "raw": "1½ ч. л. чесночного порошка",
-      "name": "Чесночный порошок",
-      "amount": "1.5",
-      "unit": "ч. л.",
-      "section": null
-    },
-    {
-      "raw": "1½ ч. л. лукового порошка",
-      "name": "Луковый порошок",
-      "amount": "1.5",
-      "unit": "ч. л.",
-      "section": null
-    },
-    {
-      "raw": "½–1½ ч. л. молотого перца",
-      "name": "Молотый перец",
+      "raw": "½ ч. л. куркумы",
+      "name": "Куркума",
       "amount": "0.5",
       "unit": "ч. л.",
+      "section": null
+    },
+    {
+      "raw": "1½ ч. л. сушёного чеснока",
+      "name": "Сушёный чеснок",
+      "amount": "1.5",
+      "unit": "ч. л.",
+      "section": null
+    },
+    {
+      "raw": "1½ ч. л. копчёной паприки",
+      "name": "Копчёная паприка",
+      "amount": "1.5",
+      "unit": "ч. л.",
+      "section": null
+    },
+    {
+      "raw": "½–1½ ч. л. чёрного перца",
+      "name": "Чёрный перец",
+      "amount": "0.5",
+      "unit": "ч. л.",
+      "section": null
+    },
+    {
+      "raw": "1 стакан пшеничной муки",
+      "name": "Пшеничная мука",
+      "amount": "1",
+      "unit": "стакан",
+      "section": null
+    },
+    {
+      "raw": "1 стакан ледяной воды",
+      "name": "Ледяная вода",
+      "amount": "1",
+      "unit": "стакан",
       "section": null
     },
     {
@@ -46,42 +59,28 @@
       "section": null
     },
     {
-      "raw": "1 стакан газированной воды",
-      "name": "Газированная вода",
-      "amount": "1",
-      "unit": "стакан",
-      "section": null
-    },
-    {
-      "raw": "1 стакан универсальной муки",
-      "name": "Универсальная мука",
-      "amount": "1",
-      "unit": "стакан",
-      "section": null
-    },
-    {
-      "raw": "1 кочан цветной капусты, нарезанный на кусочки",
+      "raw": "1 кочан цветной капусты, разобранный на соцветия",
       "name": "Цветная капуста",
       "amount": "1",
       "unit": null,
       "section": null
     },
     {
-      "raw": "Растительное масло",
-      "name": "Растительное масло",
+      "raw": "Оливковое масло",
+      "name": "Оливковое масло",
       "amount": null,
       "unit": null,
       "section": null
     }
   ],
   "steps": [
-    "Разогрейте духовку до 230°C. Застелите противень пергаментной бумагой.",
-    "В миске смешайте панировочные сухари и приправы.",
-    "Смешайте газированную воду и муку. Обваляйте цветную капусту в получившемся тесте, удалив излишки.",
-    "Обваляйте покрытую цветную капусту в приправленных панировочных сухарях.",
-    "Выложите цветную капусту на противень. Слегка сбрызните цветную капусту маслом.",
-    "Выпекайте 9–12 минут или пока панировка не подрумянится и не станет хрустящей.",
-    "Подавайте вместе с соусом на ваш вкус."
+    "Включите духовку на 220°C. Выстелите противень бумагой для выпечки.",
+    "Смешайте сухари со всеми специями в широкой тарелке.",
+    "Взбейте муку с ледяной водой до густоты сметаны. Окуните каждое соцветие в кляр и дайте стечь лишнему.",
+    "Затем обваляйте соцветия в пряных сухарях, слегка прижимая.",
+    "Разложите капусту на противне в один слой. Сбрызните сверху маслом.",
+    "Запекайте 20–25 минут, перевернув на середине, до золотистой корочки.",
+    "Подавайте горячей с чесночным или сырным соусом."
   ],
-  "notes": "ALL-CAPS title → sentence case. Amount-first lines with the name in genitive ('чесночного порошка' → 'Чесночный порошок'). Mixed unicode fractions '1½' → 1.5 and a fraction range '½–1½' → lower bound 0.5. 'кочан' is not in the unit vocabulary → unit null, amount kept. The steps header is 'Рецепт:' (usually that word introduces ingredients). Hashtag glued to the end of step 7; 'Фото: myvega.com' credit excluded."
+  "notes": "ALL-CAPS title → sentence case. Amount-first lines with the name in the genitive ('сушёного чеснока' → 'Сушёный чеснок', 'ледяной воды' → 'Ледяная вода'). Mixed unicode fractions '1½' → 1.5 and a fraction range '½–1½' → lower bound 0.5. 'кочан' is not in the unit vocabulary → unit null, amount kept; the trailing prep ', разобранный на соцветия' is dropped from the name. 'Оливковое масло' has no quantity → amount and unit null. The steps header is 'Рецепт:' (usually that word introduces ingredients). A hashtag is glued to the end of step 7; the closing 'Фото: …' credit is excluded."
 }

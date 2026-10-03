@@ -302,7 +302,7 @@ behind switches and sends `null` when a switch is off.
 `POST /api/recipes/import` makes a recipe from an Instagram post or reel, or from pasted text, and saves it right away: the client opens it in the edit form for a check. The partner's notice waits until the recipe has stayed unchanged for three minutes (deleting it cancels the notice).
 
 ```json
-{ "url": "https://www.instagram.com/reel/DItfAhKCJ3h/?igsh=…" }
+{ "url": "https://www.instagram.com/reel/DEMOreel001/?igsh=…" }
 { "text": "Маринад для шашлыка\nЛук — 3 шт\n…" }
 ```
 
@@ -314,7 +314,7 @@ behind switches and sends `null` when a switch is off.
 
 ```json
 {
-  "recipe": { "id": 41, "title": "Маринад для шашлыка", "link": "https://www.instagram.com/reel/DItfAhKCJ3h/", "…": "a Recipe" },
+  "recipe": { "id": 41, "title": "Маринад для шашлыка", "link": "https://www.instagram.com/reel/DEMOreel001/", "…": "a Recipe" },
   "import": {
     "source": "instagram",
     "parser": "rules",

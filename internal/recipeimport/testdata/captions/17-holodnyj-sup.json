@@ -1,93 +1,92 @@
 {
-  "source_url": "https://www.instagram.com/reel/DNyAz9v2FAO/",
-  "title": "Холодный суп с очень неожиданной заправкой",
-  "servings": 4,
+  "title": "Холодный суп на кефире с хрустящим сюрпризом",
+  "servings": 6,
   "ingredients": [
     {
-      "raw": "1. Огурцы - 600 гр.",
+      "raw": "1. Свёкла - 500 гр.",
+      "name": "Свёкла",
+      "amount": "500",
+      "unit": "г",
+      "section": null
+    },
+    {
+      "raw": "2. Огурцы - 300 гр.",
       "name": "Огурцы",
-      "amount": "600",
-      "unit": "г",
-      "section": null
-    },
-    {
-      "raw": "2. Помидоры - 400 гр.",
-      "name": "Помидоры",
-      "amount": "400",
-      "unit": "г",
-      "section": null
-    },
-    {
-      "raw": "3. Сметана - 4-5 ст.л.",
-      "name": "Сметана",
-      "amount": "4",
-      "unit": "ст. л.",
-      "section": null
-    },
-    {
-      "raw": "4. Мясо - 300 гр. Я использовал свиную шею, но сюда отлично подойдёт и говядина, и курица, но самый лучший вариант - отварной язык",
-      "name": "Мясо",
       "amount": "300",
       "unit": "г",
       "section": null
     },
     {
-      "raw": "5. Картофель - 400 гр.",
+      "raw": "3. Сметана - 2-3 ст.л.",
+      "name": "Сметана",
+      "amount": "2",
+      "unit": "ст. л.",
+      "section": null
+    },
+    {
+      "raw": "4. Курица - 250 гр. Беру отварное филе, хотя можно взять и ветчину, и варёную колбасу, но с курицей всё же легче - и по вкусу, и по калориям",
+      "name": "Курица",
+      "amount": "250",
+      "unit": "г",
+      "section": null
+    },
+    {
+      "raw": "5. Картофель - 350 гр.",
       "name": "Картофель",
-      "amount": "400",
+      "amount": "350",
       "unit": "г",
       "section": null
     },
     {
-      "raw": "6. Хлеб - 100 гр.",
-      "name": "Хлеб",
-      "amount": "100",
+      "raw": "6. Редис - 150 гр.",
+      "name": "Редис",
+      "amount": "150",
       "unit": "г",
       "section": null
     },
     {
-      "raw": "7. Зелень лука и укропа",
-      "name": "Зелень лука и укропа",
+      "raw": "7. Зелень мяты и укропа",
+      "name": "Зелень мяты и укропа",
       "amount": null,
       "unit": null,
       "section": null
     },
     {
-      "raw": "8. Хрен - 1 ч.л.",
-      "name": "Хрен",
+      "raw": "8. Лимонный сок - 2 ч.л.",
+      "name": "Лимонный сок",
+      "amount": "2",
+      "unit": "ч. л.",
+      "section": null
+    },
+    {
+      "raw": "9. Сахар - 1 ч.л.",
+      "name": "Сахар",
       "amount": "1",
       "unit": "ч. л.",
       "section": null
     },
     {
-      "raw": "9. Горчица - 1 ч.л.",
-      "name": "Горчица",
-      "amount": "1",
-      "unit": "ч. л.",
-      "section": null
-    },
-    {
-      "raw": "9. Минеральная вода ~ 500 мл.",
-      "name": "Минеральная вода",
-      "amount": "500",
+      "raw": "9. Кефир ~ 800 мл.",
+      "name": "Кефир",
+      "amount": "800",
       "unit": "мл",
       "section": null
     },
     {
-      "raw": "10. Соль, черный перец.",
+      "raw": "10. Соль, зелёный лук.",
       "name": "Соль",
       "amount": null,
       "unit": null,
       "section": null
     },
     {
-      "raw": "10. Соль, черный перец.",
-      "name": "Черный перец",
+      "raw": "10. Соль, зелёный лук.",
+      "name": "Зелёный лук",
       "amount": null,
       "unit": null,
       "section": null
     }
   ],
   "steps": [],
-  "notes": "INGREDIENTS are numbered '1.'…'10.' (with a duplicate '9.') — the numbering must not make them steps. Item 4 has a long trailing commentary sentence after the amount (and a ' - ' inside it). '~ 500 мл.' uses '~' instead of a dash. 'Соль, черный перец.' — two names, no amount, not 'по вкусу'. No steps (video). Servings stated in the header 'Ингредиенты на 4 порции:'."
+  "notes": "INGREDIENTS are numbered '1.'…'10.' (with a duplicate '9.') — the numbering must not make them steps. Item 4 has a long trailing commentary sentence after the amount (and a ' - ' inside it). '2-3 ст.л.' is a range → 2. '~ 800 мл.' uses '~' instead of a dash. 'Зелень мяты и укропа' is one item (the greens of both), not split on 'и'. 'Соль, зелёный лук.' — two names, no amount, not 'по вкусу'. No steps (video). The sign-off line 'Хорошего лета и приятного аппетита!' follows the list with no blank line. Servings stated in the header 'Ингредиенты на 6 порций:'."
 }

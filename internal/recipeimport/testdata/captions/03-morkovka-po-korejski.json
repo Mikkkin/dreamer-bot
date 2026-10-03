@@ -1,72 +1,71 @@
 {
-  "source_url": "https://www.instagram.com/reel/DCjGOmwo84T/",
-  "title": "Секретная морковка по-корейски за 10 минут",
+  "title": "Пикантная морковка по-корейски за 15 минут",
   "servings": null,
   "ingredients": [
     {
-      "raw": "🥕Морковь 1 кг.",
+      "raw": "🥕Морковь 1,5 кг.",
       "name": "Морковь",
-      "amount": "1",
+      "amount": "1.5",
       "unit": "кг",
       "section": null
     },
     {
-      "raw": "🥕Соль 0,5 ст. л",
+      "raw": "🥕Соль 1 ст. л",
       "name": "Соль",
-      "amount": "0.5",
-      "unit": "ст. л.",
-      "section": null
-    },
-    {
-      "raw": "🥕Молотый кориандр 0,5 ч. л",
-      "name": "Молотый кориандр",
-      "amount": "0.5",
-      "unit": "ч. л.",
-      "section": null
-    },
-    {
-      "raw": "🥕Черный перец 0,5 ч. л",
-      "name": "Черный перец",
-      "amount": "0.5",
-      "unit": "ч. л.",
-      "section": null
-    },
-    {
-      "raw": "🥕Паприка 0,5 ч. л",
-      "name": "Паприка",
-      "amount": "0.5",
-      "unit": "ч. л.",
-      "section": null
-    },
-    {
-      "raw": "🥕Острый красный перец 0,5 ч.л",
-      "name": "Острый красный перец",
-      "amount": "0.5",
-      "unit": "ч. л.",
-      "section": null
-    },
-    {
-      "raw": "🥕Сахар 1 ст. л",
-      "name": "Сахар",
       "amount": "1",
       "unit": "ст. л.",
       "section": null
     },
     {
-      "raw": "🥕Уксус рисовый 3 ст. л",
-      "name": "Уксус рисовый",
-      "amount": "3",
+      "raw": "🥕Сахар 1,5 ст. л",
+      "name": "Сахар",
+      "amount": "1.5",
       "unit": "ст. л.",
       "section": null
     },
     {
-      "raw": "🥕Чеснок 6 зубчиков",
+      "raw": "🥕Кориандр молотый 1 ч. л",
+      "name": "Кориандр молотый",
+      "amount": "1",
+      "unit": "ч. л.",
+      "section": null
+    },
+    {
+      "raw": "🥕Перец черный 0,5 ч. л",
+      "name": "Перец черный",
+      "amount": "0.5",
+      "unit": "ч. л.",
+      "section": null
+    },
+    {
+      "raw": "🥕Паприка сладкая 0,5 ч. л",
+      "name": "Паприка сладкая",
+      "amount": "0.5",
+      "unit": "ч. л.",
+      "section": null
+    },
+    {
+      "raw": "🥕Перец чили 0,5 ч.л",
+      "name": "Перец чили",
+      "amount": "0.5",
+      "unit": "ч. л.",
+      "section": null
+    },
+    {
+      "raw": "🥕Яблочный уксус 4 ст. л",
+      "name": "Яблочный уксус",
+      "amount": "4",
+      "unit": "ст. л.",
+      "section": null
+    },
+    {
+      "raw": "🥕Чеснок 5 зубчиков",
       "name": "Чеснок",
-      "amount": "6",
+      "amount": "5",
       "unit": "зубчик",
       "section": null
     }
   ],
   "steps": [],
-  "notes": "The same emoji (🥕) is the bullet on every line, glued to the name with no space. 'Название количество' order with no separator. Units written 'ст. л' / 'ч. л' / 'ч.л' without the final dot; decimal comma '0,5'. No cooking steps in the caption (video only) → steps []. Trailing CTA plus 15 hashtag-only lines."
+  "notes": "The same emoji (🥕) is the bullet on every line, glued to the name with no space. 'Название количество' order with no separator. Units written 'ст. л' / 'ч. л' / 'ч.л' without the final dot, and 'кг.' with one; decimal comma '1,5' / '0,5'. The list header is 'Ингредиенты :' with a space before the colon. The title is cut at the glued emoji '🥕✨'. No cooking steps in the caption (video only) → steps []. Trailing CTA plus 15 hashtag-only lines."
 }

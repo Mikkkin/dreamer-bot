@@ -14,15 +14,15 @@ import (
 func TestImporterCanonicalLinks(t *testing.T) {
 	a := newRecipeImporter(nil, nil)
 	for raw, want := range map[string]string{
-		"https://www.instagram.com/reel/DItfAhKCJ3h/":                   "https://www.instagram.com/reel/DItfAhKCJ3h/",
-		"Смотри https://instagram.com/reels/DItfAhKCJ3h?igsh=abc#c":     "https://www.instagram.com/reel/DItfAhKCJ3h/",
-		"https://m.instagram.com/p/DVs8ssPihOG/?utm_source=ig_web_copy": "https://www.instagram.com/p/DVs8ssPihOG/",
+		"https://www.instagram.com/reel/DEMOreel001/":                   "https://www.instagram.com/reel/DEMOreel001/",
+		"Смотри https://instagram.com/reels/DEMOreel001?igsh=abc#c":     "https://www.instagram.com/reel/DEMOreel001/",
+		"https://m.instagram.com/p/DEMOpost002/?utm_source=ig_web_copy": "https://www.instagram.com/p/DEMOpost002/",
 	} {
 		if got, ok := a.Canonical(raw); !ok || got != want {
 			t.Errorf("Canonical(%q) = %q, %v; want %q", raw, got, ok, want)
 		}
 	}
-	for _, raw := range []string{"", "https://example.com/reel/DItfAhKCJ3h/", "https://www.instagram.com/v_ogorod/", "https://instagram.com.evil.example/p/DVs8ssPihOG/"} {
+	for _, raw := range []string{"", "https://example.com/reel/DEMOreel001/", "https://www.instagram.com/demo_kitchen/", "https://instagram.com.evil.example/p/DEMOpost002/"} {
 		if got, ok := a.Canonical(raw); ok {
 			t.Errorf("Canonical(%q) = %q, want no link", raw, got)
 		}

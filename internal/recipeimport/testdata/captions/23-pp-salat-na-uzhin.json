@@ -1,47 +1,46 @@
 {
-  "source_url": "https://www.instagram.com/reel/C-lESd7IwiM/",
-  "title": "Идеальный салат на ужин",
+  "title": "Хрустящий салат к ужину",
   "servings": 1,
   "ingredients": [
     {
-      "raw": "- Капуста свежая 100 гр.",
-      "name": "Капуста свежая",
-      "amount": "100",
+      "raw": "- Капуста пекинская 120 гр.",
+      "name": "Капуста пекинская",
+      "amount": "120",
       "unit": "г",
       "section": null
     },
     {
-      "raw": "- Морковь сырая 50 гр.",
-      "name": "Морковь сырая",
-      "amount": "50",
-      "unit": "г",
-      "section": null
-    },
-    {
-      "raw": "- Ветчина 60 гр. (в моей 90ккал/100 гр.)",
-      "name": "Ветчина",
+      "raw": "- Огурец свежий 60 гр.",
+      "name": "Огурец свежий",
       "amount": "60",
       "unit": "г",
       "section": null
     },
     {
-      "raw": "- Кукуруза консервированная 50 гр.",
-      "name": "Кукуруза консервированная",
-      "amount": "50",
+      "raw": "- Курица отварная 70 гр. (в моей 120ккал/100 гр.)",
+      "name": "Курица отварная",
+      "amount": "70",
       "unit": "г",
       "section": null
     },
     {
-      "raw": "- Сметана 10% 30 гр.",
-      "name": "Сметана 10%",
-      "amount": "30",
+      "raw": "- Горошек консервированный 40 гр.",
+      "name": "Горошек консервированный",
+      "amount": "40",
       "unit": "г",
       "section": null
     },
     {
-      "raw": "- Майонез 10 гр.",
-      "name": "Майонез",
-      "amount": "10",
+      "raw": "- Сметана 15% 25 гр.",
+      "name": "Сметана 15%",
+      "amount": "25",
+      "unit": "г",
+      "section": null
+    },
+    {
+      "raw": "- Горчица 5 гр.",
+      "name": "Горчица",
+      "amount": "5",
       "unit": "г",
       "section": null
     },
@@ -53,13 +52,13 @@
       "section": null
     },
     {
-      "raw": "- Соль",
-      "name": "Соль",
+      "raw": "- Зелень",
+      "name": "Зелень",
       "amount": null,
       "unit": null,
       "section": null
     }
   ],
   "steps": [],
-  "notes": "КБЖУ-oriented PP post: 'Всего 76 ккал на 100 гр.' and a per-ingredient calorie hint '(в моей 90ккал/100 гр.)' — numbers that must not be read as amounts. 'Сметана 10% 30 гр.' — the % number comes right before the amount with no separator. Servings from 'Ингредиенты (одна порция на 300 гр.)' → 1 (number word inside the header). 'Приготовление на видео.' → no steps. Heavy CTA, author credit, U+2800 blank lines and a hashtag."
+  "notes": "КБЖУ-oriented PP post: 'Всего 54 ккал в 100 гр.' and a per-ingredient calorie hint '(в моей 120ккал/100 гр.)', numbers that must not be read as amounts. 'Сметана 15% 25 гр.': the % number comes right before the amount with no separator. Servings from 'Ингредиенты (одна порция весом 320 гр.)' → 1 (number word inside the header). ALL CAPS title glued to an emoji. 'Приготовление на видео.' → no steps. CTA, an author credit, U+2800 blank lines and a hashtag."
 }

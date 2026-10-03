@@ -1,62 +1,68 @@
 {
-  "source_url": "https://www.instagram.com/reel/DV81PzBDa9c/",
-  "title": "Домашние кексы на кефире",
+  "title": "Кексы на кефире с изюмом",
   "servings": null,
   "ingredients": [
     {
-      "raw": "🥚 Яйца — 3 шт",
+      "raw": "🥚 Яйца — 2 шт",
       "name": "Яйца",
-      "amount": "3",
+      "amount": "2",
       "unit": "шт",
       "section": null
     },
     {
-      "raw": "🍬 Сахар — 150 г",
+      "raw": "🍬 Сахар — 130 г",
       "name": "Сахар",
-      "amount": "150",
+      "amount": "130",
       "unit": "г",
       "section": null
     },
     {
-      "raw": "🥛 Кефир — 60 г",
+      "raw": "🥛 Кефир — 200 г",
       "name": "Кефир",
-      "amount": "60",
+      "amount": "200",
       "unit": "г",
       "section": null
     },
     {
-      "raw": "🫒 Растительное масло — 70 г",
-      "name": "Растительное масло",
+      "raw": "🧈 Сливочное масло — 90 г",
+      "name": "Сливочное масло",
+      "amount": "90",
+      "unit": "г",
+      "section": null
+    },
+    {
+      "raw": "🌾 Мука — 240 г",
+      "name": "Мука",
+      "amount": "240",
+      "unit": "г",
+      "section": null
+    },
+    {
+      "raw": "🍇 Изюм — 70 г",
+      "name": "Изюм",
       "amount": "70",
       "unit": "г",
       "section": null
     },
     {
-      "raw": "🌾 Мука — 180 г",
-      "name": "Мука",
-      "amount": "180",
-      "unit": "г",
-      "section": null
-    },
-    {
-      "raw": "🥄 Крахмал — 50 г",
-      "name": "Крахмал",
-      "amount": "50",
-      "unit": "г",
-      "section": null
-    },
-    {
-      "raw": "✨ Разрыхлитель — 1 ч. л.",
+      "raw": "🎈 Разрыхлитель — 2 ч. л.",
       "name": "Разрыхлитель",
-      "amount": "1",
+      "amount": "2",
       "unit": "ч. л.",
       "section": null
     },
     {
-      "raw": "🥄 Сода — ¼ ч. л.",
-      "name": "Сода",
+      "raw": "🫚 Молотый имбирь — ¼ ч. л.",
+      "name": "Молотый имбирь",
       "amount": "0.25",
       "unit": "ч. л.",
+      "section": null
+    },
+    {
+      "raw": "🤎 Корица — по вкусу",
+      "name": "Корица",
+      "amount": null,
+      "unit": "по вкусу",
       "section": null
     },
     {
@@ -65,17 +71,10 @@
       "amount": "1",
       "unit": "щепотка",
       "section": null
-    },
-    {
-      "raw": "🌼 Ваниль — по вкусу",
-      "name": "Ваниль",
-      "amount": null,
-      "unit": "по вкусу",
-      "section": null
     }
   ],
   "steps": [
-    "Выпекать при 170–180°C около 20 минут."
+    "Печь при 175°C 25–30 минут, до сухой шпажки."
   ],
-  "notes": "Caption opens with two CTA lines ('Подписывайся @…', 'Обязательно сохраняй рецепт 😌') before the real title '🧁 Домашние кексы на кефире (12 шт.)'. '(12 шт.)' is a yield in pieces, not servings → servings null (a scaler could use 12 pieces). A different emoji on every ingredient line. Unicode '¼' → 0.25. Only one instruction line."
+  "notes": "Caption opens with two CTA lines ('Подпишись, чтобы не потерять ✨', 'Сохрани себе, пригодится 😌') before the real title '🧁 Кексы на кефире с изюмом (12 шт.)'. '(12 шт.)' is a yield in pieces, not servings → servings null (a scaler could use 12 pieces). A different emoji on every ingredient line, em dash separator. Unicode '¼' → 0.25. Only one instruction line; its '25–30 минут' is a time range, not an amount."
 }

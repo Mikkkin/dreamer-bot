@@ -14,11 +14,12 @@ import (
 	"github.com/Mikkkin/dreamer-bot/internal/domain"
 )
 
-// The golden corpus: real captions with hand-written expected parses (see
-// testdata/captions/README.md). The targets come from the build brief:
-// at least 90 % of the expected ingredients matched by name, amount and
-// unit, and at least 80 % of the recipe captions with the exact number of
-// steps. Non-recipes must be rejected.
+// The golden corpus: captions laid out like real recipe posts, with
+// hand-written expected parses (see testdata/captions/README.md). The
+// targets come from the build brief: at least 90 % of the expected
+// ingredients matched by name, amount and unit, and at least 80 % of the
+// recipe captions with the exact number of steps. Non-recipes must be
+// rejected.
 const (
 	targetIngredients = 0.90
 	targetSteps       = 0.80
@@ -33,7 +34,6 @@ type goldenIngredient struct {
 }
 
 type goldenFixture struct {
-	SourceURL   string             `json:"source_url"`
 	Title       *string            `json:"title"`
 	Servings    *int               `json:"servings"`
 	Ingredients []goldenIngredient `json:"ingredients"`

@@ -1,80 +1,79 @@
 {
-  "source_url": "https://www.instagram.com/reel/DVD3UGgjDf2/",
-  "title": "Салат из Редьки",
+  "title": "Салат из Зелёной Редьки",
   "servings": null,
   "ingredients": [
     {
-      "raw": "•\t3-4 шт зелёной редьки",
+      "raw": "•\t1-2 шт зелёной редьки",
       "name": "Зелёная редька",
-      "amount": "3",
+      "amount": "1",
       "unit": "шт",
       "section": null
     },
     {
-      "raw": "•\t2 шт моркови 🥕",
-      "name": "Морковь",
+      "raw": "•\t2 шт огурца 🥒",
+      "name": "Огурец",
       "amount": "2",
       "unit": "шт",
       "section": null
     },
     {
-      "raw": "•\t1 шт лук🧅",
-      "name": "Лук",
+      "raw": "•\t1 шт морковь🥕",
+      "name": "Морковь",
       "amount": "1",
       "unit": "шт",
       "section": null
     },
     {
-      "raw": "•\t3 зубчика чеснока 🧄",
+      "raw": "•\t2 зубчика чеснока 🧄",
       "name": "Чеснок",
-      "amount": "3",
+      "amount": "2",
       "unit": "зубчик",
       "section": null
     },
     {
-      "raw": "•\t0,5 ч. л. соли🧂",
-      "name": "Соль",
+      "raw": "•\t1,5 ч л. яблочного уксуса 6%🍶",
+      "name": "Яблочный уксус 6%",
+      "amount": "1.5",
+      "unit": "ч. л.",
+      "section": null
+    },
+    {
+      "raw": "•\t0,5 ч. л. сахара🍬",
+      "name": "Сахар",
       "amount": "0.5",
       "unit": "ч. л.",
       "section": null
     },
     {
-      "raw": "•\t0,5 ч л. уксуса 80%🍶",
-      "name": "Уксус 80%",
-      "amount": "0.5",
-      "unit": "ч. л.",
-      "section": null
-    },
-    {
-      "raw": "•\t1 ч л красного острого перца 🌶️",
-      "name": "Красный острый перец",
+      "raw": "•\t1 ч л сладкой паприки 🌶️",
+      "name": "Сладкая паприка",
       "amount": "1",
       "unit": "ч. л.",
       "section": null
     },
     {
-      "raw": "•\t0,5 ч л кориандра🫚",
-      "name": "Кориандр",
+      "raw": "•\t0,5 пучка петрушки🌿",
+      "name": "Петрушка",
       "amount": "0.5",
-      "unit": "ч. л.",
+      "unit": "пучок",
       "section": null
     },
     {
-      "raw": "•\t0,5 пучка кинзы🥬",
-      "name": "Кинза",
+      "raw": "•\t0,5 ч л соли🧂",
+      "name": "Соль",
       "amount": "0.5",
-      "unit": "пучок",
+      "unit": "ч. л.",
       "section": null
     }
   ],
   "steps": [
-    "Редьку и морковь натереть на тёрке для корейской моркови.",
-    "Посолить редьку, добавить уксус,перемешать и оставить на 10–15 минут, чтобы вышел лишний сок.",
-    "Слить сок и слегка отжать.",
-    "обжарить лук и чеснок",
-    "добавить красный перец",
-    "все соединить,добавить кориандр и свежую кинзу",
-    "Дать настояться хотя бы 20–30 минут — станет ещё вкуснее."
+    "Редьку почистить и нарезать тонкой соломкой.",
+    "Посыпать солью, сбрызнуть уксусом,размешать и подождать минут 10, пока редька не пустит воду.",
+    "Лишнюю жидкость слить, редьку чуть отжать руками.",
+    "огурец и морковь натереть",
+    "чеснок пропустить через пресс",
+    "всё смешать,посыпать паприкой, сахаром и рубленой петрушкой",
+    "Убрать в холодильник на 15–20 минут — салат станет сочнее."
   ],
-  "notes": "Bullets are TAB + '•' + TAB (copied from a notes app). Amount-first with a unit before a genitive name ('3-4 шт зелёной редьки'), but '1 шт лук' keeps the nominative. Decorative emoji glued to the END of names ('соли🧂', 'кинзы🥬'). Mixed spellings in one list: 'ч. л.', 'ч л.', 'ч л'. The indented line ' Можно заменить на паприку' is a note on the previous ingredient, not an ingredient. Title cut at the first emoji. 'Дать настояться…' after the keycap list is still an instruction (step 7). 'Аш болсун🩷' (Kyrgyz 'bon appétit'), a supermarket-app ad and glued hashtags are noise."
+  "notes": "Bullets are TAB + '•' + TAB (copied from a notes app). Amount-first with a unit before a genitive name ('1-2 шт зелёной редьки', a range → lower bound 1), but '1 шт морковь' keeps the nominative. Decorative emoji glued to the END of names ('сахара🍬', 'петрушки🌿', 'соли🧂'); the garlic line also ends with a space after its emoji. Mixed spellings in one list: 'ч. л.', 'ч л.', 'ч л'; decimal commas ('0,5', '1,5'). The indented line ' Можно заменить молотым чили' is a note on the previous ingredient, not an ingredient. Title cut at the first emoji, the author's capitals ('Зелёной Редьки') kept. 'Убрать в холодильник…' after the keycap list is still an instruction (step 7). 'Ас болсын💚' (Kazakh 'bon appétit'), a store-app ad and glued hashtags are noise."
 }

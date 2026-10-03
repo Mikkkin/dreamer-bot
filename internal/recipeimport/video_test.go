@@ -24,7 +24,7 @@ var fakeMP4 = append([]byte("\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom"),
 func embedPage(rawValue string) string {
 	return `<html><head><title>Instagram</title></head><body><script>requireLazy(["TimeSliceImpl"],function(){});</script>` +
 		`<script type="application/json">{"require":[["PolarisEmbedSimple","init",[],[{"contextJSON":"{\"context\":{\"is_video\":true,` +
-		`\"owner\":{\"username\":\"v_ogorod\"},\"video_url\":\"` + rawValue + `\"}}"}]]]}</script></body></html>`
+		`\"owner\":{\"username\":\"demo_kitchen\"},\"video_url\":\"` + rawValue + `\"}}"}]]]}</script></body></html>`
 }
 
 // realEmbedPage lays a post out like the real embed page: the caption as
@@ -36,7 +36,7 @@ func realEmbedPage(t *testing.T, caption, videoURL string, isVideo bool) string 
 	t.Helper()
 	media := map[string]any{
 		"__typename":            "GraphVideo",
-		"shortcode":             "DItfAhKCJ3h",
+		"shortcode":             "DEMOreel001",
 		"is_video":              isVideo,
 		"edge_media_to_caption": map[string]any{"edges": []any{map[string]any{"node": map[string]any{"text": caption}}}},
 	}
@@ -44,7 +44,7 @@ func realEmbedPage(t *testing.T, caption, videoURL string, isVideo bool) string 
 		media["video_url"] = videoURL
 	}
 	inner, err := json.Marshal(map[string]any{
-		"context":  map[string]any{"type": "GraphVideo", "shortcode": "DItfAhKCJ3h"},
+		"context":  map[string]any{"type": "GraphVideo", "shortcode": "DEMOreel001"},
 		"gql_data": map[string]any{"shortcode_media": media},
 	})
 	if err != nil {
@@ -383,7 +383,7 @@ func TestPostReel(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		page := postPage(`5 likes - x on May 1, 2025: "Суп".`, "")
 		if r.URL.Path == "/p/REELASP01/" {
-			page = strings.Replace(page, "</head>", `<meta property="og:url" content="https://www.instagram.com/v_ogorod/reel/REELASP01/" /></head>`, 1)
+			page = strings.Replace(page, "</head>", `<meta property="og:url" content="https://www.instagram.com/demo_kitchen/reel/REELASP01/" /></head>`, 1)
 		}
 		_, _ = w.Write([]byte(page))
 	}))

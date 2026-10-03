@@ -29,9 +29,9 @@ func runMatch(t *testing.T, cases []matchCase) {
 	}
 }
 
-// Ingredient names as the caption fixtures in
-// internal/recipeimport/testdata/captions store them (fixture number in the
-// comment), so the matcher is tested on real recipe wording.
+// Ingredient names in the wording recipe captions use (grouped by the
+// caption fixture in internal/recipeimport/testdata/captions where the
+// shape first appeared), so the matcher is tested on everyday wording.
 func TestMatchCorpusNames(t *testing.T) {
 	runMatch(t, []matchCase{
 		// 01
@@ -221,31 +221,31 @@ func TestMatchCorpusNames(t *testing.T) {
 	})
 }
 
-// Whole caption lines (the fixtures' "raw"), names with amounts, units,
-// emoji, parentheticals and the broken «и» + U+200C spelling of «й».
+// Whole caption lines in the shapes the fixtures use: names with amounts,
+// units, emoji, parentheticals and the broken «и» + U+200C spelling of «й».
 func TestMatchRawLines(t *testing.T) {
 	runMatch(t, []matchCase{
-		{"1 ст.л. измельчённой петрушки", "parsley"},
-		{"· ½ чайной ложки соды", "baking_soda"},
-		{"3 стакана панировочных сухарей", "breadcrumbs"},
-		{"1½ ч. л. чесночного порошка", "garlic_powder"},
-		{"Сливки-300 мл (33%) холодные", "cream_33"},
-		{"Сахар(мелкии\u200c)-260 гр", "sugar"},
-		{"Творожныи\u200c сыр -180 гр", "curd_cheese"},
-		{"180 гр сливочного масла холодного", "butter"},
-		{"2 столовые ложки плавленного сыра (но можно и без него)", "processed_cheese"},
-		{"~800 мл. кипятка (или бульона)", "water"},
-		{"20 помидоров черри", "cherry_tomato"},
-		{"3 лука-шалота", "shallot"},
-		{"· ⅓ стакана сахарного песка", "sugar"},
-		{"🥕Черный перец 0,5 ч. л", "black_pepper"},
-		{"• рикотта - 250 гр", "ricotta"},
-		{"🍗Отварная курица-400 гр.", "chicken_whole"},
-		{"- 400 гр вишни (можно любые ягоды)", "cherry_sour"},
-		{"📌масло для жарки :50 мл", "oil_sunflower"},
-		{"4-5 средних картофелин", "potato"},
-		{"4-5 куриных голеней", "chicken_drumstick"},
-		{"•\t3 зубчика чеснока 🧄", "garlic"},
+		{"3 ст.л. мелко нарезанной петрушки", "parsley"},
+		{"· ¼ чайной ложки соды", "baking_soda"},
+		{"1 стакан панировочных сухарей", "breadcrumbs"},
+		{"2½ ч. л. чесночного порошка", "garlic_powder"},
+		{"Сливки-200 мл (33%) из холодильника", "cream_33"},
+		{"Сахар(мелкии\u200c)-150 гр", "sugar"},
+		{"Творожныи\u200c сыр -250 гр", "curd_cheese"},
+		{"100 гр сливочного масла комнатной температуры", "butter"},
+		{"3 столовые ложки плавленного сыра (по желанию)", "processed_cheese"},
+		{"~500 мл. кипятка (подойдёт и бульон)", "water"},
+		{"12 помидоров черри", "cherry_tomato"},
+		{"2 лука-шалота", "shallot"},
+		{"· ⅔ стакана сахарного песка", "sugar"},
+		{"🧂Черный перец 0,25 ч. л", "black_pepper"},
+		{"• рикотта - 200 гр", "ricotta"},
+		{"🍗Отварная курица-300 гр.", "chicken_whole"},
+		{"- 300 гр вишни (подойдёт и замороженная)", "cherry_sour"},
+		{"📌масло для жарки :30 мл", "oil_sunflower"},
+		{"6-7 средних картофелин", "potato"},
+		{"6 куриных голеней", "chicken_drumstick"},
+		{"•\t2 зубчика чеснока 🧄", "garlic"},
 		{"Сок 1 лимона", "lemon_juice"},
 	})
 }

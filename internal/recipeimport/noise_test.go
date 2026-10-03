@@ -13,7 +13,7 @@ import (
 var noiseRe = regexp.MustCompile(`(?i)(^|\s)[#@][\p{L}\d_]|сохран(и|яй)|подпис(ыв|ывайтесь|ывайся)|ссылк[аи] в (шапке|био|профиле)|пиш(и|ите) в коммент|ставь(те)? лайк`)
 
 func TestCorpusNeverLeaksHashtagsOrCTA(t *testing.T) {
-	for _, noise := range []string{"#шашлык", "Сохрани рецепт", "Подписывайтесь на канал", "ссылка в шапке профиля", "@v_ogorod"} {
+	for _, noise := range []string{"#шашлык", "Сохрани рецепт", "Подписывайтесь на канал", "ссылка в шапке профиля", "@demo_kitchen"} {
 		if !noiseRe.MatchString(noise) {
 			t.Fatalf("the noise pattern misses %q", noise)
 		}

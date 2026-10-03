@@ -52,7 +52,7 @@ func TestFromText(t *testing.T) {
 	}
 	mustBeValidDraft(t, res.Draft)
 	d := res.Draft
-	if d.Title != "Холодный суп с очень неожиданной заправкой" || d.Link != nil || d.Servings == nil || *d.Servings != 4 || len(d.Ingredients) != 12 {
+	if d.Title != "Холодный суп на кефире с хрустящим сюрпризом" || d.Link != nil || d.Servings == nil || *d.Servings != 6 || len(d.Ingredients) != 12 {
 		t.Errorf("draft = %+v", d)
 	}
 	if res.Report.Source != SourceText || res.Report.Parser != ParserRules || res.Image != nil || res.Report.Image {
@@ -66,7 +66,7 @@ func TestFromText(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.HasPrefix(res.Draft.Body, "1. Измельчите миндаль") || !strings.Contains(res.Draft.Body, "\n8. Перед подачей") {
+	if !strings.HasPrefix(res.Draft.Body, "1. Раздробите печенье") || !strings.Contains(res.Draft.Body, "\n8. Перед подачей") {
 		t.Errorf("body = %q", res.Draft.Body)
 	}
 	if strings.Contains(res.Draft.Body, sourceHeading) {
@@ -153,8 +153,8 @@ func TestFromURL(t *testing.T) {
 	caption := readFixture(t, "10-keksy-na-kefire")
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Host + r.URL.Path {
-		case "www.instagram.com/p/DV81PzBDa9c/":
-			_, _ = w.Write([]byte(postPage(`1,024 likes, 31 comments - amadalieva.l on March 1, 2026: "`+caption+`".`,
+		case "www.instagram.com/p/DEMOpost004/":
+			_, _ = w.Write([]byte(postPage(`1,024 likes, 31 comments - demo.cook on March 1, 2026: "`+caption+`".`,
 				"https://scontent-ams2-1.cdninstagram.com/v/cover.jpg")))
 		case "www.instagram.com/reel/NOIMAGE01/":
 			_, _ = w.Write([]byte(postPage(`1 like - x on March 1, 2026: "`+caption+`".`, "https://scontent.cdninstagram.com/v/missing.jpg")))
@@ -171,15 +171,15 @@ func TestFromURL(t *testing.T) {
 	im := Importer{Fetcher: testFetcher(srv, nil)}
 	ctx := context.Background()
 
-	res, err := im.FromURL(ctx, "Глянь https://instagram.com/p/DV81PzBDa9c/?igsh=abc")
+	res, err := im.FromURL(ctx, "Глянь https://instagram.com/p/DEMOpost004/?igsh=abc")
 	if err != nil {
 		t.Fatal(err)
 	}
 	mustBeValidDraft(t, res.Draft)
-	if res.Draft.Link == nil || *res.Draft.Link != "https://www.instagram.com/p/DV81PzBDa9c/" {
+	if res.Draft.Link == nil || *res.Draft.Link != "https://www.instagram.com/p/DEMOpost004/" {
 		t.Errorf("link = %v", res.Draft.Link)
 	}
-	if res.Draft.Title != "Домашние кексы на кефире" || len(res.Draft.Ingredients) != 10 || res.Draft.Body != "1. Выпекать при 170–180°C около 20 минут." {
+	if res.Draft.Title != "Кексы на кефире с изюмом" || len(res.Draft.Ingredients) != 10 || res.Draft.Body != "1. Печь при 175°C 25–30 минут, до сухой шпажки." {
 		t.Errorf("draft = %+v", res.Draft)
 	}
 	if string(res.Image) != string(jpeg) || !res.Report.Image || res.Report.Source != SourceInstagram {
@@ -190,7 +190,7 @@ func TestFromURL(t *testing.T) {
 	if err != nil || res.Image != nil || res.Report.Image || len(res.Report.Warnings) == 0 {
 		t.Errorf("a missing cover must be a warning: %+v, %v", res.Report, err)
 	}
-	if _, err := im.FromURL(ctx, "https://example.com/p/DV81PzBDa9c/"); !errors.Is(err, ErrBadURL) {
+	if _, err := im.FromURL(ctx, "https://example.com/p/DEMOpost004/"); !errors.Is(err, ErrBadURL) {
 		t.Errorf("err = %v, want ErrBadURL", err)
 	}
 	if _, err := im.FromURL(ctx, "https://www.instagram.com/p/GONE00001/"); !errors.Is(err, ErrUnavailable) || !errors.Is(err, domain.ErrExternalUnavailable) {
@@ -206,7 +206,7 @@ func TestFromURLUntitledFallback(t *testing.T) {
 		_, _ = w.Write([]byte(postPage(`1 like - x on March 1, 2026: "`+readFixture(t, "29-pirog-s-vishnej")+`".`, "")))
 	}))
 	defer srv.Close()
-	res, err := Importer{Fetcher: testFetcher(srv, nil)}.FromURL(context.Background(), "https://www.instagram.com/p/DUqXnNgiP9d/")
+	res, err := Importer{Fetcher: testFetcher(srv, nil)}.FromURL(context.Background(), "https://www.instagram.com/p/DEMOpost005/")
 	if err != nil || res.Draft.Title != FallbackTitleInstagram {
 		t.Fatalf("title = %q, %v", res.Draft.Title, err)
 	}

@@ -50,7 +50,7 @@ func postPage(description, image string) string {
 	return b.String()
 }
 
-const sampleCaption = "Маринад для шашлыка\n\nОсновные ингредиенты:\n- Соль — 23 г\n- Перец «чёрный» — 2 ч. л.\n\nПриятного аппетита ✌🏻 & \"кавычки\": тоже"
+const sampleCaption = "Маринад для шашлыка\n\nОсновные ингредиенты:\n- Соль — 20 г\n- Перец «чёрный» — 2 ч. л.\n\nПриятного аппетита ✌🏻 & \"кавычки\": тоже"
 
 func TestFetcherPost(t *testing.T) {
 	var gotUA, gotLang, gotPath string
@@ -60,40 +60,40 @@ func TestFetcherPost(t *testing.T) {
 			return
 		}
 		gotUA, gotLang, gotPath = r.UserAgent(), r.Header.Get("Accept-Language"), r.URL.Path
-		desc := `323 likes, 4 comments - v_ogorod on April 21, 2025: "` + sampleCaption + `".`
+		desc := `323 likes, 4 comments - demo_kitchen on April 21, 2025: "` + sampleCaption + `".`
 		_, _ = w.Write([]byte(postPage(desc, "https://scontent-ams2-1.cdninstagram.com/v/t51.2885-15/1.jpg?stp=dst-jpg&_nc_ht=x")))
 	}))
 	defer srv.Close()
 
-	post, err := testFetcher(srv, nil).Post(context.Background(), Ref{"reel", "DItfAhKCJ3h"})
+	post, err := testFetcher(srv, nil).Post(context.Background(), Ref{"reel", "DEMOreel001"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if post.Caption != sampleCaption {
 		t.Errorf("caption = %q, want %q", post.Caption, sampleCaption)
 	}
-	if post.Author != "v_ogorod" {
+	if post.Author != "demo_kitchen" {
 		t.Errorf("author = %q", post.Author)
 	}
 	if post.ImageURL != "https://scontent-ams2-1.cdninstagram.com/v/t51.2885-15/1.jpg?stp=dst-jpg&_nc_ht=x" {
 		t.Errorf("image = %q", post.ImageURL)
 	}
-	if gotUA != userAgent || !strings.HasPrefix(gotLang, "en-US") || gotPath != "/reel/DItfAhKCJ3h/" {
+	if gotUA != userAgent || !strings.HasPrefix(gotLang, "en-US") || gotPath != "/reel/DEMOreel001/" {
 		t.Errorf("request: UA %q, Accept-Language %q, path %q", gotUA, gotLang, gotPath)
 	}
 }
 
 func TestStripWrapper(t *testing.T) {
 	tests := []struct{ desc, caption, author string }{
-		{`323 likes, 4 comments - v_ogorod on April 21, 2025: "Суп"`, "Суп", "v_ogorod"},
-		{`323 likes, 4 comments - v_ogorod on April 21, 2025: "Суп".`, "Суп", "v_ogorod"},
+		{`323 likes, 4 comments - demo_kitchen on April 21, 2025: "Суп"`, "Суп", "demo_kitchen"},
+		{`323 likes, 4 comments - demo_kitchen on April 21, 2025: "Суп".`, "Суп", "demo_kitchen"},
 		{`1,234 likes, 56 comments - chef.anna on March 3, 2024: "Суп "с" фрикадельками": да."`, `Суп "с" фрикадельками": да.`, "chef.anna"},
 		{`12K likes, 1.2K comments - food_ru on December 31, 2023: "Line 1` + "\n\n" + `Line 2".`, "Line 1\n\nLine 2", "food_ru"},
 		{`3.4M likes, 10K comments - big on May 1, 2022: "Х"`, "Х", "big"},
 		{`1 like, 0 comments - solo on June 9, 2021: "Один"`, "Один", "solo"},
 		{`548 comments - nolikes on July 7, 2025: "Без лайков".`, "Без лайков", "nolikes"},
 		{`hidden_counts on July 7, 2025: "Скрытые счётчики".`, "Скрытые счётчики", "hidden_counts"},
-		{`323 likes, 4 comments - v_ogorod on April 21, 2025`, "", "v_ogorod"},
+		{`323 likes, 4 comments - demo_kitchen on April 21, 2025`, "", "demo_kitchen"},
 		{`Просто описание без обёртки`, "Просто описание без обёртки", ""},
 	}
 	for _, tt := range tests {

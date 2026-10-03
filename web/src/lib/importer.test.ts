@@ -18,7 +18,7 @@ describe('instagramUrl finds the post and rebuilds it like the server', () => {
   })
 
   test.each([
-    'https://www.instagram.com/v_ogorod/',
+    'https://www.instagram.com/demo_kitchen/',
     'https://www.instagram.com/reel/abc/',
     'https://evil.example/instagram.com/reel/Abcde12345/',
     'https://instagram.com.evil.example/reel/Abcde12345/',

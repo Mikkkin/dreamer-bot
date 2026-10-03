@@ -1,0 +1,49 @@
+{
+  "title": "Оранжевый спритц",
+  "servings": null,
+  "ingredients": [
+    {
+      "raw": "-наполняем бокал льдом доверху",
+      "name": "Лед",
+      "amount": null,
+      "unit": null,
+      "section": null
+    },
+    {
+      "raw": "-белое вино (идеально игристое, но подойдёт и тихое)~75 мл",
+      "name": "Белое вино",
+      "amount": "75",
+      "unit": "мл",
+      "section": null
+    },
+    {
+      "raw": "-Биттер ~50 мл",
+      "name": "Биттер",
+      "amount": "50",
+      "unit": "мл",
+      "section": null
+    },
+    {
+      "raw": "-газированная вода,тоник ~25 мл",
+      "name": "Газированная вода, тоник",
+      "amount": "25",
+      "unit": "мл",
+      "section": null
+    },
+    {
+      "raw": "-напоследок кладём ломтик грейпфрута",
+      "name": "Грейпфрут",
+      "amount": null,
+      "unit": null,
+      "section": null
+    }
+  ],
+  "steps": [
+    "наполняем бокал льдом доверху",
+    "белое вино (идеально игристое, но подойдёт и тихое)~75 мл",
+    "Биттер ~50 мл",
+    "газированная вода,тоник ~25 мл",
+    "напоследок кладём ломтик грейпфрута"
+  ],
+  "notes": "NO ingredient list: the only list is under 'Приготовление:' and each line is both a step and an ingredient (the same raw lines appear in both). 'Ингредиенты берём в соотношении 3:2:1' is a sentence that starts with 'Ингредиенты' but is NOT a list header, and '3:2:1' is a ratio, not amounts. '~75 мл' is glued to a closing parenthesis that holds a tip. 'газированная вода,тоник' are alternatives joined by a comma without a space and stay one ingredient. The ice and grapefruit lines name a food without a quantity. Title taken from the guillemets in 'Рецепт самого освежающего летнего коктейля «Оранжевый спритц»'."
+}

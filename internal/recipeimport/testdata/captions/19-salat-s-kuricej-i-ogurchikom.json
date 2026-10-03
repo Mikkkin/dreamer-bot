@@ -1,60 +1,59 @@
 {
-  "source_url": "https://www.instagram.com/reel/DdoDhoLArvS/",
   "title": null,
   "servings": null,
   "ingredients": [
     {
-      "raw": "🥔Картофель-4 шт (среднего размера)",
+      "raw": "🥔Картофель-3 шт (в мундире)",
       "name": "Картофель",
-      "amount": "4",
-      "unit": "шт",
-      "section": null
-    },
-    {
-      "raw": "🍗Отварная курица-400 гр.",
-      "name": "Отварная курица",
-      "amount": "400",
-      "unit": "г",
-      "section": null
-    },
-    {
-      "raw": "🧅Лук-2 шт. (Крупные ) обжарить.",
-      "name": "Лук",
-      "amount": "2",
-      "unit": "шт",
-      "section": null
-    },
-    {
-      "raw": "🥕Морковь-2 шт среднего размера.(отварить)",
-      "name": "Морковь",
-      "amount": "2",
-      "unit": "шт",
-      "section": null
-    },
-    {
-      "raw": "🥒Кислый огурчик-3 шт. ( нарезать мелким кубиком)",
-      "name": "Кислый огурчик",
       "amount": "3",
       "unit": "шт",
       "section": null
     },
     {
-      "raw": "🥚Яйцо-5 шт.",
+      "raw": "🍗Куриное филе-350 гр.",
+      "name": "Куриное филе",
+      "amount": "350",
+      "unit": "г",
+      "section": null
+    },
+    {
+      "raw": "🧅Лук-1 шт. (Небольшой ) замариновать.",
+      "name": "Лук",
+      "amount": "1",
+      "unit": "шт",
+      "section": null
+    },
+    {
+      "raw": "🥕Морковь-1 шт покрупнее.(натереть)",
+      "name": "Морковь",
+      "amount": "1",
+      "unit": "шт",
+      "section": null
+    },
+    {
+      "raw": "🥒Маринованный огурчик-4 шт. ( порезать соломкой)",
+      "name": "Маринованный огурчик",
+      "amount": "4",
+      "unit": "шт",
+      "section": null
+    },
+    {
+      "raw": "🥚Яйцо-4 шт.",
       "name": "Яйцо",
-      "amount": "5",
+      "amount": "4",
       "unit": "шт",
       "section": null
     },
     {
-      "raw": "🧀Плавленный сырок-2 шт.",
-      "name": "Плавленный сырок",
-      "amount": "2",
-      "unit": "шт",
+      "raw": "🧀Твёрдый сыр-100 гр.",
+      "name": "Твёрдый сыр",
+      "amount": "100",
+      "unit": "г",
       "section": null
     },
     {
-      "raw": "Майонез по вкусу.",
-      "name": "Майонез",
+      "raw": "Сметана по вкусу.",
+      "name": "Сметана",
       "amount": null,
       "unit": "по вкусу",
       "section": null
@@ -68,5 +67,5 @@
     }
   ],
   "steps": [],
-  "notes": "Three paragraphs of story first; the salad is never named → title null. Header '✅ИНГРЕДИЕНТЫ:' in caps with an emoji. Per-ingredient emoji glued to the name, hyphen with no spaces. Prep instructions trail the amount ('обжарить.', '.(отварить)', '( нарезать мелким кубиком)') — strip them from the ingredient. One line has no emoji bullet ('Майонез по вкусу.'). Steps only in video ('СПОСОБ ПРИГОТОВЛЕНИЯ СМОТРИТЕ В ВИДЕО 📹')."
+  "notes": "Three paragraphs of story first; the salad is never named → title null. Header '✅ИНГРЕДИЕНТЫ:' in caps with an emoji. Per-ingredient emoji glued to the name, hyphen with no spaces. Prep instructions and size notes trail the amount ('(в мундире)', '(Небольшой ) замариновать.', 'покрупнее.(натереть)', '( порезать соломкой)') — strip them from the ingredient. One line has no emoji bullet ('Сметана по вкусу.'). Steps only in video ('ПРОЦЕСС СБОРКИ ПОКАЗЫВАЮ НА ВИДЕО 🎥')."
 }

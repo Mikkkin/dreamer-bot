@@ -1,19 +1,18 @@
 {
-  "source_url": "https://www.instagram.com/reel/Dcf6mO-tTtp/",
   "title": null,
   "servings": null,
   "ingredients": [
     {
-      "raw": "420 гр муки",
+      "raw": "380 гр муки",
       "name": "Мука",
-      "amount": "420",
+      "amount": "380",
       "unit": "г",
       "section": null
     },
     {
-      "raw": "180 гр сливочного масла холодного",
-      "name": "Сливочное масло",
-      "amount": "180",
+      "raw": "150 гр маргарина холодного",
+      "name": "Маргарин",
+      "amount": "150",
       "unit": "г",
       "section": null
     },
@@ -25,75 +24,75 @@
       "section": null
     },
     {
-      "raw": "1 ч л разрыхлителя",
+      "raw": "2 ч л разрыхлителя",
       "name": "Разрыхлитель",
-      "amount": "1",
+      "amount": "2",
       "unit": "ч. л.",
       "section": null
     },
     {
-      "raw": "100 гр сахара",
+      "raw": "120 гр сахара",
       "name": "Сахар",
-      "amount": "100",
+      "amount": "120",
       "unit": "г",
       "section": null
     },
     {
-      "raw": "Ванилин",
-      "name": "Ванилин",
+      "raw": "Ванильный сахар",
+      "name": "Ванильный сахар",
       "amount": null,
       "unit": null,
       "section": null
     },
     {
-      "raw": "2 яйца",
-      "name": "Яйца",
-      "amount": "2",
+      "raw": "1 яйцо",
+      "name": "Яйцо",
+      "amount": "1",
       "unit": "шт",
       "section": null
     },
     {
-      "raw": "1 ст л сметаны с горкой",
-      "name": "Сметана",
+      "raw": "1 ст л майонеза с верхом",
+      "name": "Майонез",
       "amount": "1",
       "unit": "ст. л.",
       "section": null
     },
     {
-      "raw": "500 гр любых ягод или фруктов",
-      "name": "Ягоды или фрукты",
-      "amount": "500",
+      "raw": "700 гр любых яблок или слив",
+      "name": "Яблоки или сливы",
+      "amount": "700",
       "unit": "г",
       "section": "Начинка"
     },
     {
-      "raw": "Сахар по вкусу",
-      "name": "Сахар",
+      "raw": "Корица по вкусу",
+      "name": "Корица",
       "amount": null,
       "unit": "по вкусу",
       "section": "Начинка"
     },
     {
-      "raw": "30-40 гр крахмала и 2-3 ст л воды",
-      "name": "Крахмал",
-      "amount": "30",
+      "raw": "20-30 гр манки и 1-2 ст л лимонного сока",
+      "name": "Манка",
+      "amount": "20",
       "unit": "г",
       "section": "Начинка"
     },
     {
-      "raw": "30-40 гр крахмала и 2-3 ст л воды",
-      "name": "Вода",
-      "amount": "2",
+      "raw": "20-30 гр манки и 1-2 ст л лимонного сока",
+      "name": "Лимонный сок",
+      "amount": "1",
       "unit": "ст. л.",
       "section": "Начинка"
     }
   ],
   "steps": [
-    "Перетереть в крошку",
-    "Объединить",
-    "Тесто разделить на две неравных части . Малую убрать в морозилку . Большую раскатать на противне тонко и проткнуть вилкой",
-    "Уварить до загустения",
-    "Фруктовый конфитюр намазать на тесто , кусочек из морозилки натереть на крупную терку . Выпекать при 200 С минут 25."
+    "Порубить ножом в крошку",
+    "Замесить тесто",
+    "Примерно треть теста отложить и спрятать в морозильную камеру . Остальное распределить по дну формы , сделать низкие бортики",
+    "Протомить на огне до густоты",
+    "Яблочную массу распределить по основе , замороженный кусок натереть сверху крупной стружкой . Печь при 180 С минут 40."
   ],
-  "notes": "Ingredient blocks and steps are INTERLEAVED ('Перетереть в крошку' / 'Объединить' / 'Уварить до загустения' sit between ingredient lines) — classify each line, do not split the caption into one ingredients block + one steps block. No title (only 'Рецепт ⤵️'); the dish is a тёртый пирог. '30-40 гр крахмала и 2-3 ст л воды' = two ingredients joined by 'и', each with a range. 'Щепотка соли' = unit word first. 'Начинка :' has a space before the colon. 'сливочного масла холодного' has a post-positive adjective. '(с горкой)' heaped spoon."
+  "notes": "Ingredient blocks and steps are INTERLEAVED ('Порубить ножом в крошку' / 'Замесить тесто' / 'Протомить на огне до густоты' sit between ingredient lines) — classify each line, do not split the caption into one ingredients block + one steps block. No title (only 'Рецепт ⤵️'); the dish is a тёртый пирог. '20-30 гр манки и 1-2 ст л лимонного сока' = two ingredients joined by 'и', each with a range (lower bounds). 'Щепотка соли' = unit word first. 'Ванильный сахар' is a bare name with no quantity. 'Начинка :' has a space before the colon. 'маргарина холодного' has a post-positive temperature adjective (dropped). 'любых' is a qualifier (dropped); 'яблок или слив' keeps both alternatives. 'с верхом' = heaped spoon (dropped). Every line ends with a space, and the prose puts a space before '.' and ','."
 }

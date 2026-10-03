@@ -17,7 +17,4 @@ by this project:
     web/package.json, under their respective licenses;
   - internal/nutrition/data/foods.json, derived from USDA FoodData Central
     (SR Legacy), which is in the public domain (CC0 1.0), and from typical
-    nutrition label values;
-  - the captions in internal/recipeimport/testdata/captions/, which are
-    public Instagram post texts by their authors, kept only as test data for
-    the recipe parser; they remain their authors' property.
+    nutrition label values.

@@ -1,72 +1,71 @@
 {
-  "source_url": "https://www.instagram.com/reel/DSVHf5SDViH/",
-  "title": "Суп с фрикадельками",
+  "title": "Суп с фрикадельками за полчаса",
   "servings": null,
   "ingredients": [
     {
-      "raw": "Любой фарш ( я люблю побольше)",
+      "raw": "Любой фарш ( у меня куриный)",
       "name": "Фарш",
       "amount": null,
       "unit": null,
       "section": null
     },
     {
-      "raw": "2 картошки",
+      "raw": "3 картошки",
       "name": "Картофель",
+      "amount": "3",
+      "unit": "шт",
+      "section": null
+    },
+    {
+      "raw": "2 моркови",
+      "name": "Морковь",
       "amount": "2",
       "unit": "шт",
       "section": null
     },
     {
-      "raw": "1 морковь",
-      "name": "Морковь",
+      "raw": "1 луковица",
+      "name": "Лук",
       "amount": "1",
       "unit": "шт",
       "section": null
     },
     {
-      "raw": "2 луковицы",
-      "name": "Лук",
-      "amount": "2",
-      "unit": "шт",
-      "section": null
-    },
-    {
-      "raw": "Можно грибы добавить",
-      "name": "Грибы",
+      "raw": "Можно рис добавить",
+      "name": "Рис",
       "amount": null,
       "unit": null,
       "section": null
     },
     {
-      "raw": "Чеснок",
-      "name": "Чеснок",
+      "raw": "Лавровый лист",
+      "name": "Лавровый лист",
       "amount": null,
       "unit": null,
       "section": null
     },
     {
-      "raw": "Зелень",
-      "name": "Зелень",
+      "raw": "Укроп",
+      "name": "Укроп",
       "amount": null,
       "unit": null,
       "section": null
     },
     {
-      "raw": "Соль и перец по вкусу",
+      "raw": "Соль и черный перец по вкусу",
       "name": "Соль",
       "amount": null,
       "unit": "по вкусу",
       "section": null
     },
     {
-      "raw": "Соль и перец по вкусу",
-      "name": "Перец",
+      "raw": "Соль и черный перец по вкусу",
+      "name": "Черный перец",
       "amount": null,
       "unit": "по вкусу",
       "section": null
     }
   ],
   "steps": [],
-  "notes": "Home-style list with mostly NO quantities. Optional ingredient phrased as a sentence ('Можно грибы добавить') → Грибы, no amount. 'Любой фарш' → Фарш (qualifier 'любой' dropped). Bare counts in genitive ('2 картошки', '2 луковицы') normalised to the product (Картофель, Лук). 'Соль и перец по вкусу' → two ingredients sharing 'по вкусу'. Header 'Ингредиенты 📌' has an emoji instead of a colon. No steps."
+  "notes": "Home-style list with mostly NO quantities. Optional ingredient phrased as a sentence ('Можно рис добавить') → Рис, no amount. 'Любой фарш ( у меня куриный)' → Фарш (qualifier 'любой' and the aside dropped). Bare counts in genitive ('3 картошки', '2 моркови') and the count noun '1 луковица' normalised to the product (Картофель, Морковь, Лук). 'Соль и черный перец по вкусу' → two ingredients sharing 'по вкусу'. Header 'Ингредиенты 📝' has an emoji instead of a colon. Ingredient lines end with a trailing space. No steps."
 }

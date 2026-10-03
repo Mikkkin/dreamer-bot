@@ -1,72 +1,71 @@
 {
-  "source_url": "https://www.instagram.com/reel/DM8A2r3I_he/",
-  "title": "Солнечный суп с фрикадельками",
+  "title": "Золотистый суп с фрикадельками",
   "servings": null,
   "ingredients": [
     {
-      "raw": "Вода - 1.5 л.",
+      "raw": "Вода - 2.5 л.",
       "name": "Вода",
-      "amount": "1.5",
+      "amount": "2.5",
       "unit": "л",
       "section": null
     },
     {
-      "raw": "Картофель - 4 шт.",
+      "raw": "Картофель - 3 шт.",
       "name": "Картофель",
-      "amount": "4",
+      "amount": "3",
       "unit": "шт",
       "section": null
     },
     {
-      "raw": "Лук - 1 шт.",
-      "name": "Лук",
+      "raw": "Перец болгарский - 1 шт.",
+      "name": "Перец болгарский",
       "amount": "1",
       "unit": "шт",
       "section": null
     },
     {
-      "raw": "Морковь - 1 шт.",
+      "raw": "Морковь - 2 шт.",
       "name": "Морковь",
-      "amount": "1",
+      "amount": "2",
       "unit": "шт",
       "section": null
     },
     {
-      "raw": "Фрикадельки - готовые,  либо фарш+соль/перец по вкусу (у меня 800 гр.)",
+      "raw": "Фрикадельки - покупные,  либо фарш+лук/соль по вкусу (у меня 600 гр.)",
       "name": "Фрикадельки",
-      "amount": "800",
+      "amount": "600",
       "unit": "г",
       "section": null
     },
     {
-      "raw": "Соль/перец/зелень - по-вкусу",
+      "raw": "Соль/куркума/укроп - по-вкусу",
       "name": "Соль",
       "amount": null,
       "unit": "по вкусу",
       "section": null
     },
     {
-      "raw": "Соль/перец/зелень - по-вкусу",
-      "name": "Перец",
+      "raw": "Соль/куркума/укроп - по-вкусу",
+      "name": "Куркума",
       "amount": null,
       "unit": "по вкусу",
       "section": null
     },
     {
-      "raw": "Соль/перец/зелень - по-вкусу",
-      "name": "Зелень",
+      "raw": "Соль/куркума/укроп - по-вкусу",
+      "name": "Укроп",
       "amount": null,
       "unit": "по вкусу",
       "section": null
     },
     {
-      "raw": "Макароны либо рис - 3 ст/л.",
-      "name": "Макароны либо рис",
-      "amount": "3",
+      "raw": "Вермишель либо рис - 4 ст/л.",
+      "name": "Вермишель либо рис",
+      "amount": "4",
       "unit": "ст. л.",
       "section": null
     }
   ],
   "steps": [],
-  "notes": "Decimal DOT '1.5 л.' (not a list number). The meatball line hides the only quantity inside a parenthetical '(у меня 800 гр.)' AND contains 'по вкусу' about the alternative — expected 800 г, not 'по вкусу'. 'Соль/перец/зелень' = three ingredients split by '/', with hyphenated 'по-вкусу'. Unit 'ст/л.' with a slash. 'либо' = 'или' alternative kept in the name. No steps."
+  "notes": "Decimal DOT '2.5 л.' (not a list number). The title and every list line except the last end with a space. The meatball line hides the only quantity inside the parenthetical '(у меня 600 гр.)' and also says 'по вкусу' about the mince alternative ('фарш+лук/соль'); expected 600 г, not 'по вкусу'. 'Соль/куркума/укроп' is three ingredients split by '/', with hyphenated 'по-вкусу'. Unit 'ст/л.' with a slash. 'либо' is an alternative kept in the name. No steps."
 }

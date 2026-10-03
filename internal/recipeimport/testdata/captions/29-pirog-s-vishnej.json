@@ -1,53 +1,59 @@
 {
-  "source_url": "https://www.instagram.com/reel/DUqXnNgiP9d/",
   "title": null,
   "servings": null,
   "ingredients": [
     {
-      "raw": "- 300 гр муки",
+      "raw": "- 280 гр муки",
       "name": "Мука",
-      "amount": "300",
+      "amount": "280",
       "unit": "г",
       "section": "Для теста"
     },
     {
-      "raw": "- 120 гр сливочного масла из холодильника",
+      "raw": "- 150 гр сливочного масла комнатной температуры",
       "name": "Сливочное масло",
-      "amount": "120",
+      "amount": "150",
       "unit": "г",
       "section": "Для теста"
     },
     {
-      "raw": "- 70 гр сахара",
+      "raw": "- 60 гр сахара",
       "name": "Сахар",
-      "amount": "70",
+      "amount": "60",
       "unit": "г",
       "section": "Для теста"
     },
     {
-      "raw": "- 400 гр вишни (можно любые ягоды)",
+      "raw": "- 1 яйцо",
+      "name": "Яйцо",
+      "amount": "1",
+      "unit": "шт",
+      "section": "Для теста"
+    },
+    {
+      "raw": "- 500 гр вишни (замороженную не размораживать)",
       "name": "Вишня",
-      "amount": "400",
+      "amount": "500",
       "unit": "г",
       "section": "Начинка"
     },
     {
-      "raw": "- 100 гр сахара",
+      "raw": "- 90 гр сахара",
       "name": "Сахар",
-      "amount": "100",
+      "amount": "90",
       "unit": "г",
       "section": "Начинка"
     },
     {
-      "raw": "- 2 ст.ложки кукурузного крахмала",
-      "name": "Кукурузный крахмал",
-      "amount": "2",
+      "raw": "- 3 ст.ложки картофельного крахмала",
+      "name": "Картофельный крахмал",
+      "amount": "3",
       "unit": "ст. л.",
       "section": "Начинка"
     }
   ],
   "steps": [
-    "Духовка 180 градусов - 30 минут."
+    "Духовка 190 градусов - 35 минут."
   ],
-  "notes": "No title ('Рецепт ⤵️'; dish only in hashtag #пирог) → null. Dash bullets + amount-first + genitive names, with a trailing qualifier phrase ('сливочного масла из холодильника'). Spoon spelled 'ст.ложки'. Sugar appears twice (dough + filling) — sections keep them apart. The only instruction is an oven setting line 'Духовка 180 градусов - 30 минут.' which contains ' - ' and numbers like an ingredient line but is a step."
+  "notes": "No title: the header is only 'Рецепт ⤵️' and the dish appears only in the hashtag #пирогсвишней → null, so the importer falls back to its default title. Dash bullets, amount first, genitive names; 'сливочного масла комнатной температуры' carries a trailing qualifier that is dropped from the name. Spoon spelled 'ст.ложки'. Sugar appears twice (dough and filling); the sections keep the two apart. The cherry line has a tip in parentheses. The only instruction is the oven line 'Духовка 190 градусов - 35 минут.', which has ' - ' and numbers like an ingredient line but is a step."
 }

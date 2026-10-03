@@ -972,7 +972,7 @@ func pickTitle(pre []line) string {
 		}
 		tried++
 		for i, seg := range ln.segments {
-			// «Как же это вкусно! 🤤 Шоколадный кекс…»: an exclamation
+			// «Ну просто объедение!🤤 Шоколадный кекс…»: an exclamation
 			// before the name.
 			if i+1 < len(ln.segments) && strings.HasSuffix(seg, "!") {
 				continue

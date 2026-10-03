@@ -126,6 +126,12 @@ func (n *lazyNotifier) RecipeCreated(ctx context.Context, r service.Recipients, 
 	}
 }
 
+func (n *lazyNotifier) RecipeImported(ctx context.Context, r service.Recipients, rec domain.Recipe) {
+	if t := n.get("recipe_imported"); t != nil {
+		t.RecipeImported(ctx, r, rec)
+	}
+}
+
 func (n *lazyNotifier) RecipeUpdated(ctx context.Context, r service.Recipients, rec domain.Recipe) {
 	if t := n.get("recipe_updated"); t != nil {
 		t.RecipeUpdated(ctx, r, rec)

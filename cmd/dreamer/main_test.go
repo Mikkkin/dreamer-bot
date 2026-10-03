@@ -84,3 +84,19 @@ func TestServeRejectsInvalidConfigWithoutLeakingSecrets(t *testing.T) {
 		t.Fatalf("unexpected output %s", stderr.String())
 	}
 }
+
+func TestServeRejectsInvalidLLMSettingsWithoutLeakingTheKey(t *testing.T) {
+	const key = "sk-proj-ExampleExampleExampleExample1234"
+	env := map[string]string{
+		"BOT_TOKEN":    "123456789:AAEXAMPLEexampleEXAMPLEexample_-12345",
+		"LLM_PROVIDER": "openai",
+		"LLM_API_KEY":  key,
+	}
+	var stdout, stderr bytes.Buffer
+	if code := run(nil, func(k string) string { return env[k] }, &stdout, &stderr); code != 1 {
+		t.Fatalf("exit %d, want 1", code)
+	}
+	if strings.Contains(stderr.String(), key) || !strings.Contains(stderr.String(), "LLM") {
+		t.Fatalf("unexpected output %s", stderr.String())
+	}
+}

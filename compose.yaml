@@ -50,8 +50,12 @@ services:
       INITDATA_MAX_AGE: ${INITDATA_MAX_AGE:-24h}
       MAX_IMAGE_MB: ${MAX_IMAGE_MB:-10}
       LOG_LEVEL: ${LOG_LEVEL:-info}
-      VKUSVILL_ENABLED: ${VKUSVILL_ENABLED:-true}
       TZ: ${TZ:-UTC}
+      # Optional model for recipe import (see .env.example); empty key = off.
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_PROVIDER: ${LLM_PROVIDER:-}
+      LLM_MODEL: ${LLM_MODEL:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-}
       DATA_DIR: /data
       HTTP_ADDR: ":8080"
       GOMEMLIMIT: 800MiB

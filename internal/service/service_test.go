@@ -87,6 +87,10 @@ func (n *recordingNotifier) RecipeCreated(ctx context.Context, r service.Recipie
 	n.record(event{kind: "recipe_created", r: r, recipe: rec, ctx: ctx})
 }
 
+func (n *recordingNotifier) RecipeImported(ctx context.Context, r service.Recipients, rec domain.Recipe) {
+	n.record(event{kind: "recipe_imported", r: r, recipe: rec, ctx: ctx})
+}
+
 func (n *recordingNotifier) RecipeUpdated(ctx context.Context, r service.Recipients, rec domain.Recipe) {
 	n.record(event{kind: "recipe_updated", r: r, recipe: rec, ctx: ctx})
 }

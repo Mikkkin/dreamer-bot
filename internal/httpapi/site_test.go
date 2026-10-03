@@ -95,6 +95,24 @@ func TestHealthz(t *testing.T) {
 	}
 }
 
+// wantUnitForms is Me.unit_forms: every unit code with its words for one,
+// a few, many and a fraction. Invariant units repeat the code.
+var wantUnitForms = func() map[string]unitFormsJSON {
+	out := map[string]unitFormsJSON{
+		"ст. л.":   {"столовая ложка", "столовые ложки", "столовых ложек", "столовой ложки"},
+		"ч. л.":    {"чайная ложка", "чайные ложки", "чайных ложек", "чайной ложки"},
+		"стакан":   {"стакан", "стакана", "стаканов", "стакана"},
+		"щепотка":  {"щепотка", "щепотки", "щепоток", "щепотки"},
+		"зубчик":   {"зубчик", "зубчика", "зубчиков", "зубчика"},
+		"пучок":    {"пучок", "пучка", "пучков", "пучка"},
+		"упаковка": {"упаковка", "упаковки", "упаковок", "упаковки"},
+	}
+	for _, u := range []string{"г", "кг", "мл", "л", "шт", "по вкусу"} {
+		out[u] = unitFormsJSON{u, u, u, u}
+	}
+	return out
+}()
+
 func TestMe(t *testing.T) {
 	h := newHarness(t)
 	expectStatus(t, h.call(http.MethodGet, "/api/me", bob, nil), http.StatusOK)
@@ -107,7 +125,8 @@ func TestMe(t *testing.T) {
 		`"image_max_bytes":1024,"category_name_max":32,"recipe_body_max":10000,"images_per_recipe":10,` +
 		`"ingredients_per_recipe":50,"courses_per_recipe":8,"shopping_items_max":300,"item_name_max":80,` +
 		`"rating_comment_max":280,"saving_note_max":140,"dish_weight_max_g":20000,"servings_max":50},` +
-		`"units":["г","кг","мл","л","шт","ст. л.","ч. л.","стакан","щепотка","зубчик","пучок","упаковка","по вкусу"]}`
+		`"units":["г","кг","мл","л","шт","ст. л.","ч. л.","стакан","щепотка","зубчик","пучок","упаковка","по вкусу"],` +
+		`"unit_forms":` + mustJSON(t, wantUnitForms) + `}`
 	if got := strings.TrimSpace(rec.Body.String()); got != want {
 		t.Fatalf("me =\n%s\nwant\n%s", got, want)
 	}

@@ -17,6 +17,8 @@ type shoppingItems struct {
 
 func itemPath(it shoppingItemJSON) string { return "/api/shopping/" + strconv.FormatInt(it.ID, 10) }
 
+func ptr[T any](v T) *T { return &v }
+
 func formatted(t *testing.T, amount, unit string) string {
 	t.Helper()
 	q, err := domain.ParseQuantity(amount, unit)
@@ -46,10 +48,10 @@ func TestShoppingAddAndMerge(t *testing.T) {
 		t.Fatalf("item shape: %s", rec.Body.String())
 	}
 	for i, want := range []string{
-		mustJSON(t, map[string]any{"amount": "500", "formatted": formatted(t, "500", "мл"), "unit": "мл"}),
+		mustJSON(t, map[string]any{"amount": "500", "formatted": "500\u00a0мл", "unit": "мл", "unit_label": "мл"}),
 		"null",
-		mustJSON(t, map[string]any{"amount": nil, "formatted": "по вкусу", "unit": "по вкусу"}),
-		mustJSON(t, map[string]any{"amount": "3", "formatted": "3", "unit": nil}),
+		mustJSON(t, map[string]any{"amount": nil, "formatted": "по вкусу", "unit": "по вкусу", "unit_label": "по вкусу"}),
+		mustJSON(t, map[string]any{"amount": "3", "formatted": "3", "unit": nil, "unit_label": nil}),
 	} {
 		var got any
 		_ = json.Unmarshal(raw[i]["quantity"], &got)
@@ -270,52 +272,51 @@ func TestRecipeToShopping(t *testing.T) {
 	expectError(t, h.call(http.MethodPost, path, alice, nil), http.StatusUnsupportedMediaType, "unsupported_media", "")
 }
 
-func TestStores(t *testing.T) {
-	h := newHarness(t, withVkusvill(&fakeVkusvill{}))
-	rec := h.call(http.MethodGet, "/api/stores", alice, nil)
-	expectStatus(t, rec, http.StatusOK)
-	var raw struct {
-		Stores []map[string]any `json:"stores"`
+// Amounts may be fractions and units any spelling; the list shows them
+// declined, and stores the canonical amount and unit code.
+func TestShoppingQuantityWords(t *testing.T) {
+	h := newHarness(t)
+	items := decode[shoppingItems](t, h.call(http.MethodPost, "/api/shopping", alice, `{"items":[
+		{"name":"Сахар","amount":"½","unit":"стакана"},
+		{"name":"Корица","amount":"1 1/2","unit":"ч.л."},
+		{"name":"Чеснок","amount":"5","unit":"зубчиков"},
+		{"name":"Мука","amount":"1/3","unit":"кг"}
+	]}`)).Items
+	want := []quantityJSON{
+		{Amount: ptr("0.5"), Unit: ptr("стакан"), UnitLabel: ptr("стакана"), Formatted: "½\u00a0стакана"},
+		{Amount: ptr("1.5"), Unit: ptr("ч. л."), UnitLabel: ptr("чайной ложки"), Formatted: "1½\u00a0чайной ложки"},
+		{Amount: ptr("5"), Unit: ptr("зубчик"), UnitLabel: ptr("зубчиков"), Formatted: "5\u00a0зубчиков"},
+		{Amount: ptr("0.33"), Unit: ptr("кг"), UnitLabel: ptr("кг"), Formatted: "⅓\u00a0кг"},
 	}
-	if err := json.Unmarshal(rec.Body.Bytes(), &raw); err != nil {
-		t.Fatal(err)
+	if len(items) != len(want) {
+		t.Fatalf("items: %+v", items)
 	}
-	if len(raw.Stores) < 3 {
-		t.Fatalf("stores: %s", rec.Body.String())
-	}
-	first := raw.Stores[0]
-	if first["id"] != "vkusvill" || first["name"] != "ВкусВилл" || first["emoji"] == "" || first["cart"] != true || first["opens_app"] != false || len(first) != 6 {
-		t.Fatalf("store shape: %v", first)
-	}
-	carts := 0
-	for _, s := range raw.Stores {
-		tmpl, _ := s["search_url_template"].(string)
-		if !strings.HasPrefix(tmpl, "https://") || strings.Count(tmpl, "{q}") != 1 {
-			t.Errorf("template %q", tmpl)
-		}
-		if _, ok := s["opens_app"].(bool); !ok {
-			t.Errorf("opens_app must be a boolean: %v", s)
-		}
-		if s["cart"] == true {
-			carts++
+	for i, it := range items {
+		if mustJSON(t, it.Quantity) != mustJSON(t, want[i]) {
+			t.Errorf("%s: quantity %s, want %s", it.Name, mustJSON(t, it.Quantity), mustJSON(t, want[i]))
 		}
 	}
-	if carts != 1 {
-		t.Errorf("exactly one store (ВкусВилл) has a cart integration, got %d", carts)
+	// Merging re-declines: ½ + 1 стакан = 1½ стакана.
+	merged := decode[shoppingItems](t, h.call(http.MethodPost, "/api/shopping", bob, `{"items":[{"name":"сахар","amount":"1","unit":"стакан"}]}`)).Items
+	if len(merged) != 1 || merged[0].ID != items[0].ID || merged[0].Quantity.Formatted != "1½\u00a0стакана" {
+		t.Fatalf("merged: %+v", merged)
+	}
+	e := expectError(t, h.call(http.MethodPost, "/api/shopping", alice, `{"items":[{"name":"Мука","amount":"1/8","unit":"стакан"}]}`),
+		http.StatusBadRequest, "validation", "items")
+	if !strings.Contains(e.Error.Message, "1/2, 1/3, 1/4") {
+		t.Errorf("message = %q", e.Error.Message)
 	}
 }
 
-func TestStoresWithoutVkusvillOfferNoCart(t *testing.T) {
+// The shopping list is a plain checklist: the store catalog and the
+// ВкусВилл cart are gone, and their paths are unknown API routes.
+func TestStoreEndpointsAreGone(t *testing.T) {
 	h := newHarness(t)
-	got := decode[struct {
-		Stores []storeJSON `json:"stores"`
-	}](t, h.call(http.MethodGet, "/api/stores", alice, nil))
-	if len(got.Stores) == 0 || got.Stores[0].ID != "vkusvill" {
-		t.Fatalf("stores: %+v", got.Stores)
-	}
-	for _, s := range got.Stores {
-		if s.Cart {
-			t.Errorf("%s offers a cart while ВкусВилл is switched off", s.ID)
-		}
+	for _, c := range []struct{ method, path string }{
+		{http.MethodGet, "/api/stores"},
+		{http.MethodPost, "/api/shopping/vkusvill/match"},
+		{http.MethodPost, "/api/shopping/vkusvill/cart"},
+	} {
+		expectError(t, h.call(c.method, c.path, alice, `{}`), http.StatusNotFound, "not_found", "")
 	}
 }

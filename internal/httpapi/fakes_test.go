@@ -37,6 +37,8 @@ type fakeDB struct {
 	shopping map[domain.ShoppingItemID]domain.ShoppingItem
 	// calls records what the adapter passed to the new use cases.
 	calls fakeCalls
+	// importFn answers Recipes.Import (import_test.go).
+	importFn func(ctx context.Context, actor domain.UserID, in service.ImportInput) (domain.Recipe, service.ImportReport, error)
 }
 
 type fakeCalls struct {

@@ -14,14 +14,7 @@ import (
 type recipeService struct{ *core }
 
 func (s recipeService) Create(ctx context.Context, actor domain.UserID, d domain.RecipeDraft) (domain.Recipe, error) {
-	r, err := domain.NewRecipe(d, actor, s.now())
-	if err != nil {
-		return domain.Recipe{}, err
-	}
-	if err := s.checkTags(ctx, domain.Some(r.CuisineID), domain.Some(r.CourseIDs)); err != nil {
-		return domain.Recipe{}, err
-	}
-	r, err = s.repos.InsertRecipe(ctx, r)
+	r, err := s.insert(ctx, actor, d)
 	if err != nil {
 		return domain.Recipe{}, err
 	}
@@ -30,6 +23,19 @@ func (s recipeService) Create(ctx context.Context, actor domain.UserID, d domain
 		s.notifier.RecipeCreated(ctx, rc, r)
 	})
 	return r, nil
+}
+
+// insert validates the draft and stores the new recipe; the callers log
+// and notify.
+func (s recipeService) insert(ctx context.Context, actor domain.UserID, d domain.RecipeDraft) (domain.Recipe, error) {
+	r, err := domain.NewRecipe(d, actor, s.now())
+	if err != nil {
+		return domain.Recipe{}, err
+	}
+	if err := s.checkTags(ctx, domain.Some(r.CuisineID), domain.Some(r.CourseIDs)); err != nil {
+		return domain.Recipe{}, err
+	}
+	return s.repos.InsertRecipe(ctx, r)
 }
 
 func (s recipeService) Get(ctx context.Context, id domain.RecipeID) (domain.Recipe, error) {
@@ -91,6 +97,7 @@ func sameContent(a, b domain.Recipe) bool {
 		slices.EqualFunc(a.Ingredients, b.Ingredients, func(x, y domain.Ingredient) bool {
 			return x.Name == y.Name && equalPtr(x.Quantity, y.Quantity)
 		}) &&
+		equalPtr(a.Servings, b.Servings) &&
 		equalPtr(a.Nutrition, b.Nutrition)
 }
 

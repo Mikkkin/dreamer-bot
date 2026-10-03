@@ -20,10 +20,11 @@ import (
 	"github.com/Mikkkin/dreamer-bot/internal/httpapi"
 	"github.com/Mikkkin/dreamer-bot/internal/logging"
 	"github.com/Mikkkin/dreamer-bot/internal/media"
+	"github.com/Mikkkin/dreamer-bot/internal/nutrition"
+	"github.com/Mikkkin/dreamer-bot/internal/recipeimport"
 	"github.com/Mikkkin/dreamer-bot/internal/service"
 	"github.com/Mikkkin/dreamer-bot/internal/storage/sqlite"
 	"github.com/Mikkkin/dreamer-bot/internal/tunnel"
-	"github.com/Mikkkin/dreamer-bot/internal/vkusvill"
 	"github.com/Mikkkin/dreamer-bot/internal/webapp"
 )
 
@@ -49,8 +50,8 @@ func serve(getenv func(string) string, stderr io.Writer) int {
 		return 1
 	}
 	// Redact the whole token and, separately, its secret half (after the ":"),
-	// which is sensitive on its own.
-	log := logging.New(stderr, cfg.LogLevel, cfg.BotToken, tokenSecret(cfg.BotToken))
+	// which is sensitive on its own, and the optional LLM API key.
+	log := logging.New(stderr, cfg.LogLevel, cfg.BotToken, tokenSecret(cfg.BotToken), cfg.LLM.APIKey)
 	// Route the standard library logger and any library using slog's
 	// default through the redacting handler as well.
 	slog.SetDefault(log)
@@ -88,6 +89,12 @@ func runService(ctx context.Context, cfg config.Config, log *slog.Logger) error 
 		return fmt.Errorf("open image store: %w", err)
 	}
 
+	// Validated by config.Load; nil when no API key is set.
+	llm, err := recipeimport.NewLLM(cfg.LLM)
+	if err != nil {
+		return fmt.Errorf("LLM settings: %w", err)
+	}
+
 	whitelist := auth.NewWhitelist(cfg.AllowedUsers)
 	bots := newBotSupervisor(bot.Options{
 		Token:           cfg.BotToken,
@@ -102,18 +109,13 @@ func runService(ctx context.Context, cfg config.Config, log *slog.Logger) error 
 		Repos:     db,
 		Media:     store,
 		Notifier:  bots.Notifier(),
+		Importer:  newRecipeImporter(llm, log.With("component", "import")),
 		Whitelist: cfg.AllowedUsers,
 		Log:       log.With("component", "service"),
 	})
 	if err != nil {
 		return fmt.Errorf("build services: %w", err)
 	}
-	// A nil interface, not a nil *vkusvill.Client, switches the feature off.
-	var basket httpapi.Vkusvill
-	if cfg.VkusvillEnabled {
-		basket = vkusvill.New(log.With("component", "vkusvill"))
-	}
-
 	srv := &http.Server{
 		Handler: httpapi.New(httpapi.Options{
 			Services:        services,
@@ -123,16 +125,17 @@ func runService(ctx context.Context, cfg config.Config, log *slog.Logger) error 
 			Static:          webapp.FS(),
 			DefaultCurrency: cfg.DefaultCurrency,
 			MaxImageBytes:   cfg.MaxImageBytes,
+			Nutrition:       nutrition.Default(),
 			Log:             log.With("component", "http"),
 			Health:          db.Ping,
-			Vkusvill:        basket,
 		}),
 		ReadHeaderTimeout: 5 * time.Second,
-		ReadTimeout:       60 * time.Second,
-		WriteTimeout:      60 * time.Second,
-		IdleTimeout:       120 * time.Second,
-		MaxHeaderBytes:    16 << 10,
-		ErrorLog:          slog.NewLogLogger(log.Handler(), slog.LevelWarn),
+		// The recipe import route extends both for its own requests.
+		ReadTimeout:    60 * time.Second,
+		WriteTimeout:   60 * time.Second,
+		IdleTimeout:    120 * time.Second,
+		MaxHeaderBytes: 16 << 10,
+		ErrorLog:       slog.NewLogLogger(log.Handler(), slog.LevelWarn),
 	}
 	// Listen before starting anything else so that a busy port fails fast.
 	ln, err := net.Listen("tcp", cfg.HTTPAddr)
@@ -201,7 +204,7 @@ func logStartup(cfg config.Config, log *slog.Logger) {
 		"initdata_max_age", cfg.InitDataMaxAge.String(),
 		"max_image_bytes", cfg.MaxImageBytes,
 		"log_level", cfg.LogLevel.String(),
-		"vkusvill_enabled", cfg.VkusvillEnabled,
+		"llm", llmState(cfg),
 	)
 	if cfg.SetupMode() {
 		log.Warn("setup mode: ALLOWED_USER_IDS is empty; the bot only tells /start senders their Telegram ID and the Mini App refuses everyone")
@@ -209,6 +212,21 @@ func logStartup(cfg config.Config, log *slog.Logger) {
 	if cfg.WebAppURL == "" && cfg.QuickTunnelMetricsURL == "" {
 		log.Warn("WEBAPP_URL is not set: the Mini App buttons stay hidden until a public HTTPS URL is configured")
 	}
+}
+
+// llmState names the import model for the startup log, without the key.
+func llmState(cfg config.Config) string {
+	if cfg.LLM.APIKey == "" {
+		return "off"
+	}
+	state := cfg.LLM.Provider
+	if cfg.LLM.Model != "" {
+		state += " " + cfg.LLM.Model
+	}
+	if cfg.LLM.Provider == recipeimport.ProviderGemini {
+		state += " (captions and videos)"
+	}
+	return state
 }
 
 // sleep waits for d and reports false if ctx ended first.

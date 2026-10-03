@@ -14,6 +14,7 @@ import (
 
 	"github.com/Mikkkin/dreamer-bot/internal/auth"
 	"github.com/Mikkkin/dreamer-bot/internal/domain"
+	"github.com/Mikkkin/dreamer-bot/internal/nutrition"
 	"github.com/Mikkkin/dreamer-bot/internal/service"
 )
 
@@ -28,13 +29,13 @@ type Options struct {
 	Static          fs.FS
 	DefaultCurrency domain.Currency
 	MaxImageBytes   int64
-	Log             *slog.Logger
+	// Nutrition is the food table behind nutrition_auto in recipes; nil
+	// means nutrition.Default().
+	Nutrition *nutrition.Table
+	Log       *slog.Logger
 	// Health reports readiness for /healthz, e.g. a database ping. Nil means
 	// that a running process is healthy.
 	Health func(ctx context.Context) error
-	// Vkusvill builds ВкусВилл baskets. Nil switches the feature off: both
-	// ВкусВилл endpoints answer 503 unavailable.
-	Vkusvill Vkusvill
 }
 
 const (
@@ -49,8 +50,11 @@ type tuning struct {
 	limiterIdle time.Duration
 	now         func() time.Time
 
-	// externalRate paces requests that call an external service (ВкусВилл).
+	// externalRate paces requests that make the server call an external
+	// service on the user's behalf (routes marked external).
 	externalRate rateLimit
+	// importDeadline bounds one recipe import.
+	importDeadline time.Duration
 }
 
 func defaultTuning() tuning {
@@ -63,9 +67,12 @@ func defaultTuning() tuning {
 		limiterIdle: 10 * time.Minute,
 		now:         time.Now,
 
-		// One basket takes a match and a cart call or two; the burst absorbs
-		// retries, then a call every two seconds keeps ВкусВилл calm.
+		// The burst absorbs a few retries, then a call every two seconds
+		// keeps the external service from seeing a flood from one user.
 		externalRate: rateLimit{every: 0.5, burst: 6},
+		// Reading a post takes seconds; the video path (download, upload
+		// to the model, waiting for it) may need up to ~90 s.
+		importDeadline: 120 * time.Second,
 	}
 }
 
@@ -84,6 +91,7 @@ type server struct {
 	signer      *auth.MediaSigner
 	currency    domain.Currency
 	maxImage    int64
+	food        *nutrition.Table
 	health      func(context.Context) error
 	log         *slog.Logger
 	static      *staticSite
@@ -91,8 +99,8 @@ type server struct {
 	uploadLimit *limiter
 	now         func() time.Time
 
-	vkusvill      Vkusvill // nil when the feature is off
-	externalLimit *limiter
+	externalLimit  *limiter
+	importDeadline time.Duration
 }
 
 func newServer(o Options, t tuning) *server {
@@ -111,6 +119,7 @@ func newServer(o Options, t tuning) *server {
 		signer:      o.Signer,
 		currency:    o.DefaultCurrency,
 		maxImage:    o.MaxImageBytes,
+		food:        o.Nutrition,
 		health:      o.Health,
 		log:         o.Log,
 		static:      newStaticSite(o.Static),
@@ -118,8 +127,8 @@ func newServer(o Options, t tuning) *server {
 		uploadLimit: newLimiter(t.uploadRate, t.limiterIdle, t.now),
 		now:         t.now,
 
-		vkusvill:      o.Vkusvill,
-		externalLimit: newLimiter(t.externalRate, t.limiterIdle, t.now),
+		externalLimit:  newLimiter(t.externalRate, t.limiterIdle, t.now),
+		importDeadline: t.importDeadline,
 	}
 	if s.currency == "" {
 		s.currency = domain.Currencies[0]
@@ -129,6 +138,9 @@ func newServer(o Options, t tuning) *server {
 	}
 	if s.log == nil {
 		s.log = slog.New(slog.DiscardHandler)
+	}
+	if s.food == nil {
+		s.food = nutrition.Default()
 	}
 	return s
 }
@@ -213,6 +225,7 @@ func (s *server) apiRoutes() []apiRoute {
 		{pattern: "GET /api/recipes", handler: s.listRecipes},
 		{pattern: "GET /api/recipes/random", handler: s.randomRecipe},
 		{pattern: "POST /api/recipes", handler: s.createRecipe},
+		{pattern: "POST /api/recipes/import", handler: s.importRecipe, external: true},
 		{pattern: "GET /api/recipes/{id}", handler: s.getRecipe},
 		{pattern: "PATCH /api/recipes/{id}", handler: s.patchRecipe},
 		{pattern: "DELETE /api/recipes/{id}", handler: s.deleteRecipe},
@@ -234,8 +247,5 @@ func (s *server) apiRoutes() []apiRoute {
 		{pattern: "PATCH /api/shopping/{id}", handler: s.patchShopping},
 		{pattern: "DELETE /api/shopping/{id}", handler: s.deleteShopping},
 		{pattern: "POST /api/shopping/clear-checked", handler: s.clearChecked},
-		{pattern: "GET /api/stores", handler: s.listStores},
-		{pattern: "POST /api/shopping/vkusvill/match", handler: s.vkusvillMatch, external: true},
-		{pattern: "POST /api/shopping/vkusvill/cart", handler: s.vkusvillCart, external: true},
 	}
 }

@@ -7,7 +7,9 @@ import (
 )
 
 // itemInput is one ingredient or shopping-list line as the client sends it:
-// a name plus an optional decimal amount ("1.5" or "1,5") and unit.
+// a name plus an optional amount ("1.5", "1,5", "1/2", "1 1/2", "1½") and
+// unit (a code such as "ч. л." or a spelling such as "чайные ложки"; the
+// server stores the code).
 type itemInput struct {
 	Name   string  `json:"name"`
 	Amount *string `json:"amount"`

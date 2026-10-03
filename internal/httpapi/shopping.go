@@ -7,7 +7,6 @@ import (
 
 	"github.com/Mikkkin/dreamer-bot/internal/auth"
 	"github.com/Mikkkin/dreamer-bot/internal/domain"
-	"github.com/Mikkkin/dreamer-bot/internal/stores"
 )
 
 // maxItemsPerRequest bounds one POST /api/shopping; the whole list is
@@ -194,21 +193,5 @@ func (s *server) writeShoppingItems(w http.ResponseWriter, r *http.Request, stat
 	writeJSON(w, status, struct {
 		Items []shoppingItemJSON `json:"items"`
 	}{p.shoppingItems(items)})
-	return nil
-}
-
-// listStores returns the fixed store catalog. The templates are opened by
-// the client; the server never fetches them. The ВкусВилл cart is offered
-// only while its integration is switched on (VKUSVILL_ENABLED).
-func (s *server) listStores(w http.ResponseWriter, _ *http.Request, _ auth.WebAppUser) error {
-	all := stores.All()
-	out := make([]storeJSON, len(all))
-	for i, st := range all {
-		st.Cart = st.Cart && s.vkusvill != nil
-		out[i] = storeOf(st)
-	}
-	writeJSON(w, http.StatusOK, struct {
-		Stores []storeJSON `json:"stores"`
-	}{out})
 	return nil
 }

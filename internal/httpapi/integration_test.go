@@ -326,13 +326,6 @@ func TestRealStackKitchen(t *testing.T) {
 	if len(items.Items) != 2 {
 		t.Fatalf("list after clearing: %+v", items.Items)
 	}
-	var stores struct {
-		Stores []storeJSON `json:"stores"`
-	}
-	st.json(alice, http.MethodGet, "/api/stores", "", http.StatusOK, &stores)
-	if len(stores.Stores) == 0 || stores.Stores[0].SearchURLTemplate == "" {
-		t.Fatalf("stores: %+v", stores)
-	}
 
 	// Deleting a tag keeps the recipe; deleting the recipe keeps the items.
 	st.json(alice, http.MethodDelete, "/api/recipe-tags/"+id(italian), "", http.StatusNoContent, nil)

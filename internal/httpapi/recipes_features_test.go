@@ -6,8 +6,6 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-
-	"github.com/Mikkkin/dreamer-bot/internal/domain"
 )
 
 type tagIDs struct{ asian, italian, dinner, breakfast int64 }
@@ -48,6 +46,7 @@ func TestRecipeFullInputShape(t *testing.T) {
 			{"name": "Соль", "amount": null, "unit": "по вкусу"},
 			{"name": "Яйца", "amount": "4", "unit": "шт"},
 			{"name": "Сливки", "amount": "0,5", "unit": "стакан"},
+			{"name": "Сахар", "amount": "1 1/2", "unit": "чайные ложки"},
 			{"name": "Лимон", "amount": "1", "unit": null},
 			{"name": "Перец"}
 		],
@@ -58,40 +57,34 @@ func TestRecipeFullInputShape(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &raw); err != nil {
 		t.Fatal(err)
 	}
-	// formatted comes from the domain, which joins amount and unit with a
-	// no-break space.
-	format := func(amount, unit string) string {
-		q, err := domain.ParseQuantity(amount, unit)
-		if err != nil || q == nil {
-			t.Fatalf("ParseQuantity(%q, %q): %v", amount, unit, err)
-		}
-		return q.Format()
-	}
-	ingredient := func(name, amount, unit string) string {
-		out := map[string]any{"name": name, "amount": nil, "unit": nil, "formatted": ""}
+	// formatted joins the amount and the declined unit with a no-break
+	// space; unit is always the code, whatever spelling was sent.
+	ingredient := func(name, amount, unit, label, formatted string) string {
+		out := map[string]any{"name": name, "amount": nil, "unit": nil, "unit_label": nil, "formatted": formatted}
 		if amount != "" {
 			out["amount"] = amount
 		}
 		if unit != "" {
-			out["unit"] = unit
-		}
-		if amount != "" || unit != "" {
-			out["formatted"] = format(amount, unit)
+			out["unit"], out["unit_label"] = unit, label
 		}
 		return `{"name":` + mustJSON(t, out["name"]) + `,"amount":` + mustJSON(t, out["amount"]) +
-			`,"unit":` + mustJSON(t, out["unit"]) + `,"formatted":` + mustJSON(t, out["formatted"]) + `}`
+			`,"unit":` + mustJSON(t, out["unit"]) + `,"unit_label":` + mustJSON(t, out["unit_label"]) +
+			`,"formatted":` + mustJSON(t, out["formatted"]) + `}`
 	}
 	for key, want := range map[string]string{
 		"cuisine_id": strconv.FormatInt(tags.italian, 10),
 		"course_ids": "[" + strconv.FormatInt(tags.dinner, 10) + "," + strconv.FormatInt(tags.breakfast, 10) + "]",
 		"ingredients": "[" + strings.Join([]string{
-			ingredient("Спагетти", "320", "г"),
-			ingredient("Соль", "", "по вкусу"),
-			ingredient("Яйца", "4", "шт"),
-			ingredient("Сливки", "0.5", "стакан"),
-			ingredient("Лимон", "1", ""),
-			ingredient("Перец", "", ""),
+			ingredient("Спагетти", "320", "г", "г", "320\u00a0г"),
+			ingredient("Соль", "", "по вкусу", "по вкусу", "по вкусу"),
+			ingredient("Яйца", "4", "шт", "шт", "4\u00a0шт"),
+			ingredient("Сливки", "0.5", "стакан", "стакана", "½\u00a0стакана"),
+			ingredient("Сахар", "1.5", "ч. л.", "чайной ложки", "1½\u00a0чайной ложки"),
+			ingredient("Лимон", "1", "", "", "1"),
+			ingredient("Перец", "", "", "", ""),
 		}, ",") + "]",
+		// Older clients send the servings inside the КБЖУ only.
+		"servings": "4",
 		"nutrition": `{"per_100g":{"kcal":"150","protein":"12.5","fat":"6","carbs":"10.4"},"weight_g":800,"servings":4,` +
 			`"per_dish":{"kcal":"1200","protein":"100","fat":"48","carbs":"83.2"},` +
 			`"per_serving":{"kcal":"300","protein":"25","fat":"12","carbs":"20.8"}}`,
@@ -165,6 +158,10 @@ func TestRecipeInputValidation(t *testing.T) {
 		{"fractional weight", `{"title":"x","nutrition":{"kcal":"1","weight_g":800.5}}`, "nutrition.weight_g"},
 		{"weight too high", `{"title":"x","nutrition":{"kcal":"1","weight_g":20001}}`, "weight_g"},
 		{"negative servings", `{"title":"x","nutrition":{"kcal":"1","servings":-1}}`, "servings"},
+		{"zero servings", `{"title":"x","servings":0}`, "servings"},
+		{"too many servings", `{"title":"x","servings":51}`, "servings"},
+		{"fractional servings", `{"title":"x","servings":2.5}`, "servings"},
+		{"unsupported fraction", `{"title":"x","ingredients":[{"name":"Мука","amount":"1/8","unit":"стакан"}]}`, "ingredients"},
 		{"amount as a number", `{"title":"x","ingredients":[{"name":"Мука","amount":200,"unit":"г"}]}`, "ingredients.0.amount"},
 		{"amount three decimals", `{"title":"x","ingredients":[{"name":"Мука","amount":"1.234","unit":"г"}]}`, "ingredients"},
 		{"amount zero", `{"title":"x","ingredients":[{"name":"Мука","amount":"0","unit":"г"}]}`, "ingredients"},
@@ -232,18 +229,43 @@ func TestRecipePatchNewFields(t *testing.T) {
 			"ingredients": []map[string]any{{"name": "Яйцо", "amount": "2", "unit": "шт"}, {"name": "Соль", "unit": "по вкусу"}},
 			"nutrition":   map[string]any{"kcal": "100", "protein": "1", "fat": "1", "carbs": "1", "weight_g": 500},
 		}))
+		// КБЖУ without servings keeps the recipe's servings.
 		if *got.CuisineID != tags.italian || len(got.CourseIDs) != 2 || got.CourseIDs[0] != tags.breakfast ||
 			len(got.Ingredients) != 2 || got.Ingredients[1].Formatted != "по вкусу" ||
-			got.Nutrition.PerDish == nil || got.Nutrition.PerDish.Kcal != "500" || got.Nutrition.PerServing != nil {
-			t.Fatalf("unexpected recipe %+v", got)
+			got.Servings == nil || *got.Servings != 2 || got.Nutrition.Servings == nil || *got.Nutrition.Servings != 2 ||
+			got.Nutrition.PerDish == nil || got.Nutrition.PerDish.Kcal != "500" ||
+			got.Nutrition.PerServing == nil || got.Nutrition.PerServing.Kcal != "250" {
+			t.Fatalf("unexpected recipe %+v, nutrition %+v", got, got.Nutrition)
 		}
 	})
+	t.Run("top-level servings", func(t *testing.T) {
+		got := decode[recipeJSON](t, h.call(http.MethodPatch, path, alice, `{"servings":5}`))
+		if got.Servings == nil || *got.Servings != 5 || *got.Nutrition.Servings != 5 || got.Nutrition.PerServing.Kcal != "100" {
+			t.Fatalf("servings = %v, nutrition %+v", got.Servings, got.Nutrition)
+		}
+		// Older clients send them inside the КБЖУ; the top-level value wins.
+		got = decode[recipeJSON](t, h.call(http.MethodPatch, path, alice,
+			`{"nutrition":{"kcal":"100","protein":"1","fat":"1","carbs":"1","weight_g":500,"servings":4}}`))
+		if *got.Servings != 4 || *got.Nutrition.Servings != 4 {
+			t.Fatalf("compat servings = %v, nutrition %+v", *got.Servings, got.Nutrition)
+		}
+		got = decode[recipeJSON](t, h.call(http.MethodPatch, path, alice,
+			`{"servings":3,"nutrition":{"kcal":"100","protein":"1","fat":"1","carbs":"1","weight_g":500,"servings":4}}`))
+		if *got.Servings != 3 || *got.Nutrition.Servings != 3 {
+			t.Fatalf("top-level servings = %v, nutrition %+v", *got.Servings, got.Nutrition)
+		}
+		got = decode[recipeJSON](t, h.call(http.MethodPatch, path, alice, `{"servings":null}`))
+		if got.Servings != nil || got.Nutrition.Servings != nil || got.Nutrition.PerServing != nil || got.Nutrition.PerDish == nil {
+			t.Fatalf("null servings = %v, nutrition %+v", got.Servings, got.Nutrition)
+		}
+		expectStatus(t, h.call(http.MethodPatch, path, alice, `{"servings":2}`), http.StatusOK)
+	})
 	t.Run("null clears", func(t *testing.T) {
-		rec := h.call(http.MethodPatch, path, alice, `{"cuisine_id":null,"nutrition":null,"course_ids":null,"ingredients":[]}`)
+		rec := h.call(http.MethodPatch, path, alice, `{"cuisine_id":null,"nutrition":null,"servings":null,"course_ids":null,"ingredients":[]}`)
 		expectStatus(t, rec, http.StatusOK)
 		var raw map[string]json.RawMessage
 		_ = json.Unmarshal(rec.Body.Bytes(), &raw)
-		for key, want := range map[string]string{"cuisine_id": "null", "nutrition": "null", "course_ids": "[]", "ingredients": "[]"} {
+		for key, want := range map[string]string{"cuisine_id": "null", "nutrition": "null", "servings": "null", "course_ids": "[]", "ingredients": "[]"} {
 			if string(raw[key]) != want {
 				t.Errorf("%s = %s, want %s", key, raw[key], want)
 			}
@@ -261,6 +283,10 @@ func TestRecipePatchNewFields(t *testing.T) {
 			{`{"nutrition":{"kcal":"1","fibre":"2"}}`, "nutrition"},
 			{`{"nutrition":{"kcal":"1.25"}}`, "kcal"},
 			{`{"nutrition":"150"}`, "nutrition"},
+			{`{"servings":0}`, "servings"},
+			{`{"servings":51}`, "servings"},
+			{`{"servings":"4"}`, "servings"},
+			{`{"servings":1.5}`, "servings"},
 			{`{"cooking":{"count":5}}`, "cooking"},
 			{`{"author":{"id":1}}`, "author"},
 		} {

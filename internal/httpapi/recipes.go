@@ -18,11 +18,14 @@ type recipeInput struct {
 	CuisineID   *domain.RecipeTagID  `json:"cuisine_id"`
 	CourseIDs   []domain.RecipeTagID `json:"course_ids"`
 	Ingredients []itemInput          `json:"ingredients"`
+	Servings    *int                 `json:"servings"`
 	Nutrition   *nutritionInput      `json:"nutrition"`
 }
 
 // nutritionInput is КБЖУ per 100 g as decimal strings, plus the optional
-// weight of the whole dish and the number of servings.
+// weight of the whole dish and the number of servings. The servings belong
+// to the recipe: here they are only read when the top-level servings are
+// absent (clients that predate them), see domain.RecipeDraft.
 type nutritionInput struct {
 	Kcal     string `json:"kcal"`
 	Protein  string `json:"protein"`
@@ -76,7 +79,7 @@ func (s *server) createRecipe(w http.ResponseWriter, r *http.Request, u auth.Web
 }
 
 func recipeDraft(in recipeInput) (domain.RecipeDraft, error) {
-	d := domain.RecipeDraft{Title: in.Title, Link: in.Link, Body: in.Body, CuisineID: in.CuisineID, CourseIDs: in.CourseIDs}
+	d := domain.RecipeDraft{Title: in.Title, Link: in.Link, Body: in.Body, CuisineID: in.CuisineID, CourseIDs: in.CourseIDs, Servings: in.Servings}
 	if err := checkCuisine(in.CuisineID); err != nil {
 		return d, err
 	}
@@ -108,7 +111,7 @@ func (s *server) patchRecipe(w http.ResponseWriter, r *http.Request, u auth.WebA
 	if err != nil {
 		return err
 	}
-	fields, err := decodePatch(w, r, "title", "link", "body", "cuisine_id", "course_ids", "ingredients", "nutrition")
+	fields, err := decodePatch(w, r, "title", "link", "body", "cuisine_id", "course_ids", "ingredients", "servings", "nutrition")
 	if err != nil {
 		return err
 	}
@@ -123,8 +126,9 @@ func (s *server) patchRecipe(w http.ResponseWriter, r *http.Request, u auth.WebA
 	return s.writeRecipe(w, r, http.StatusOK, recipe)
 }
 
-// recipePatch decodes a partial RecipeInput. null clears link, cuisine_id
-// and nutrition; for the lists (course_ids, ingredients) it means "empty".
+// recipePatch decodes a partial RecipeInput. null clears link, cuisine_id,
+// servings and nutrition; for the lists (course_ids, ingredients) it means
+// "empty".
 func recipePatch(fields patchFields) (domain.RecipePatch, error) {
 	var (
 		p   domain.RecipePatch
@@ -149,6 +153,8 @@ func recipePatch(fields patchFields) (domain.RecipePatch, error) {
 			}
 		case "ingredients":
 			p.Ingredients, err = patchIngredients(raw)
+		case "servings":
+			p.Servings, err = patchNullable[int](raw, key)
 		case "nutrition":
 			p.Nutrition, err = patchNutrition(raw)
 		}

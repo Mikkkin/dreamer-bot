@@ -75,6 +75,10 @@ func (r *recordingNotifier) RecipeCreated(context.Context, service.Recipients, d
 	r.kinds = append(r.kinds, "recipe_created")
 }
 
+func (r *recordingNotifier) RecipeImported(context.Context, service.Recipients, domain.Recipe) {
+	r.kinds = append(r.kinds, "recipe_imported")
+}
+
 func (r *recordingNotifier) RecipeUpdated(context.Context, service.Recipients, domain.Recipe) {
 	r.kinds = append(r.kinds, "recipe_updated")
 }
@@ -100,13 +104,14 @@ func TestLazyNotifierDropsUntilSetThenForwards(t *testing.T) {
 		n.WishCreated(ctx, r, domain.Wish{})
 		n.WishFulfilled(ctx, r, domain.Wish{})
 		n.RecipeCreated(ctx, r, domain.Recipe{})
+		n.RecipeImported(ctx, r, domain.Recipe{})
 		n.RecipeUpdated(ctx, r, domain.Recipe{})
 		n.RecipeCooked(ctx, r, domain.Recipe{}, domain.Cook{})
 		n.RecipeRated(ctx, r, domain.Recipe{}, domain.Cook{}, domain.Rating{})
 		n.WishSaved(ctx, r, domain.Wish{}, domain.Saving{})
 	}
 	all() // dropped before the bot exists; must not panic
-	for _, kind := range []string{"recipe_updated", "recipe_cooked", "recipe_rated", "wish_saved"} {
+	for _, kind := range []string{"recipe_imported", "recipe_updated", "recipe_cooked", "recipe_rated", "wish_saved"} {
 		if !strings.Contains(logs.String(), "kind="+kind) {
 			t.Errorf("dropped %s notice must be logged: %s", kind, logs.String())
 		}
@@ -115,7 +120,7 @@ func TestLazyNotifierDropsUntilSetThenForwards(t *testing.T) {
 	rec := &recordingNotifier{}
 	n.set(rec)
 	all()
-	want := []string{"wish_created", "wish_fulfilled", "recipe_created", "recipe_updated", "recipe_cooked", "recipe_rated", "wish_saved"}
+	want := []string{"wish_created", "wish_fulfilled", "recipe_created", "recipe_imported", "recipe_updated", "recipe_cooked", "recipe_rated", "wish_saved"}
 	if !slices.Equal(rec.kinds, want) {
 		t.Fatalf("forwarded %v, want %v", rec.kinds, want)
 	}

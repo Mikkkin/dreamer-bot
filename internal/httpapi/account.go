@@ -38,6 +38,17 @@ type meJSON struct {
 	DefaultCurrency string         `json:"default_currency"`
 	Limits          limitsJSON     `json:"limits"`
 	Units           []string       `json:"units"`
+	// UnitForms are the words of every unit by amount, keyed by its code.
+	UnitForms map[string]unitFormsJSON `json:"unit_forms"`
+}
+
+// unitFormsJSON is domain.UnitForms: «1 чайная ложка», «2 чайные ложки»,
+// «5 чайных ложек», «½ чайной ложки». Invariant units repeat their code.
+type unitFormsJSON struct {
+	One      string `json:"one"`
+	Few      string `json:"few"`
+	Many     string `json:"many"`
+	Fraction string `json:"fraction"`
 }
 
 // me describes the signed-in user, the partners and the input limits the
@@ -81,7 +92,8 @@ func (s *server) me(w http.ResponseWriter, r *http.Request, u auth.WebAppUser) e
 			DishWeightMaxG:       domain.MaxDishWeightGrams,
 			ServingsMax:          domain.MaxServings,
 		},
-		Units: units(),
+		Units:     units(),
+		UnitForms: unitForms(),
 	})
 	return nil
 }
@@ -101,6 +113,17 @@ func units() []string {
 	out := make([]string, len(domain.Units))
 	for i, u := range domain.Units {
 		out[i] = string(u)
+	}
+	return out
+}
+
+// unitForms lists the words of every unit, so the Mini App declines units
+// exactly like the server.
+func unitForms() map[string]unitFormsJSON {
+	out := make(map[string]unitFormsJSON, len(domain.Units))
+	for _, u := range domain.Units {
+		f := u.Forms()
+		out[string(u)] = unitFormsJSON{One: f.One, Few: f.Few, Many: f.Many, Fraction: f.Fraction}
 	}
 	return out
 }

@@ -54,6 +54,46 @@ type Recipes interface {
 	// ListCooks returns the cooking history, newest first, with ratings.
 	ListCooks(ctx context.Context, id domain.RecipeID) ([]domain.Cook, error)
 	RemoveCook(ctx context.Context, actor domain.UserID, id domain.RecipeID, cook domain.CookID) error
+	// Import creates a recipe from an Instagram post link or a pasted
+	// caption, exactly one of in.URL and in.Text. The draft goes through
+	// the same validation and storage as Create, and the post's cover is
+	// stored like an uploaded photo (a failure there is only a warning).
+	// Partners are told through Notifier.RecipeImported. A post imported
+	// before is not imported again: its recipe comes back with
+	// ImportReport.Duplicate set. Errors: a validation error on field url
+	// or text, ErrNotARecipe (ErrRecipeInVideo for a reel whose recipe is
+	// probably only in the video), or domain.ErrExternalUnavailable when
+	// Instagram does not give the post.
+	Import(ctx context.Context, actor domain.UserID, in ImportInput) (domain.Recipe, ImportReport, error)
+}
+
+// ImportInput names what to import: the link of an Instagram post or reel
+// (any form of it, with tracking parameters or text around it), or the
+// text of a recipe. Exactly one is set.
+type ImportInput struct {
+	URL  string
+	Text string
+	// Link is optional with Text: the post the text was copied from (its
+	// caption, when Instagram did not give the post). The recipe gets it,
+	// and a post imported before is found as with URL.
+	Link string
+}
+
+// ImportReport tells how an imported recipe was made. Source is
+// ImportSourceInstagram or ImportSourceText; Parser is ImportParserRules,
+// ImportParserLLM or ImportParserVideo; Confidence is the parser's score
+// (0..1); Image reports that the recipe got the post's cover; Warnings are
+// short Russian notes for the user (lines that were not read, a range
+// shortened to its lower bound…). Duplicate means the post had been
+// imported before: nothing was created, and the other fields describe the
+// existing recipe only as far as Image goes.
+type ImportReport struct {
+	Source     string
+	Parser     string
+	Confidence float64
+	Image      bool
+	Warnings   []string
+	Duplicate  bool
 }
 
 // RatingInput is a person's stars (1..5) and optional comment.
@@ -136,6 +176,12 @@ type Notifier interface {
 	WishCreated(ctx context.Context, r Recipients, w domain.Wish)
 	WishFulfilled(ctx context.Context, r Recipients, w domain.Wish)
 	RecipeCreated(ctx context.Context, r Recipients, rec domain.Recipe)
+	// RecipeImported announces a recipe made by Recipes.Import, cover
+	// included. The importer reviews it right away, so implementations
+	// hold the notice back until the recipe has stayed unchanged for a
+	// while (edits restart the wait and are not announced on their own)
+	// and drop it when the recipe is deleted meanwhile.
+	RecipeImported(ctx context.Context, r Recipients, rec domain.Recipe)
 	// RecipeUpdated fires on every change of a recipe's content (fields,
 	// tags, ingredients, КБЖУ, photos). Implementations coalesce bursts (an
 	// edit is several API calls) into one message per recipe.

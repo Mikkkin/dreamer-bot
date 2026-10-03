@@ -9,7 +9,6 @@ import (
 	"unicode/utf8"
 
 	"github.com/Mikkkin/dreamer-bot/internal/domain"
-	"github.com/Mikkkin/dreamer-bot/internal/vkusvill"
 )
 
 // apiError is a response-ready error. Message is Russian and safe to show to
@@ -37,10 +36,9 @@ var (
 	errLimit            = apiError{status: http.StatusUnprocessableEntity, code: "limit", message: "Достигнут лимит."}
 	errRateLimited      = apiError{status: http.StatusTooManyRequests, code: "rate_limited", message: "Слишком много запросов. Подождите немного."}
 	errInternal         = apiError{status: http.StatusInternalServerError, code: "internal", message: "Что-то пошло не так. Попробуйте ещё раз."}
-	// An external service (ВкусВилл) failed or is switched off; the client
-	// falls back to plain search links.
-	errVkusvillDown = apiError{status: http.StatusServiceUnavailable, code: "unavailable", message: "ВкусВилл сейчас не отвечает. Попробуйте чуть позже."}
-	errVkusvillOff  = apiError{status: http.StatusServiceUnavailable, code: "unavailable", message: "Корзина во ВкусВилле сейчас выключена."}
+	// An external service failed (domain.ErrExternalUnavailable). A handler
+	// that knows a better fallback returns its own 503 apiError instead.
+	errExternalDown = apiError{status: http.StatusServiceUnavailable, code: "unavailable", message: "Сервис сейчас не отвечает. Попробуйте чуть позже."}
 )
 
 // badRequest is a 400 validation error. field may be empty when the whole
@@ -74,10 +72,8 @@ func classify(err error) apiError {
 		return errBodyTooLarge
 	case errors.Is(err, domain.ErrImageUnsupported):
 		return errImageUnsupported
-	case errors.Is(err, vkusvill.ErrUnavailable):
-		return errVkusvillDown
-	case errors.Is(err, vkusvill.ErrInvalidCart):
-		return badRequest("lines", "Одного товара можно положить от 0,01 до 40.")
+	case errors.Is(err, domain.ErrExternalUnavailable):
+		return errExternalDown
 	default:
 		return errInternal
 	}

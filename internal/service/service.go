@@ -14,6 +14,9 @@ type Deps struct {
 	Repos    Repositories
 	Media    MediaStore
 	Notifier Notifier // nil => no-op
+	// Importer reads recipes from Instagram posts and pasted text for
+	// Recipes.Import; nil => imports fail with domain.ErrExternalUnavailable.
+	Importer RecipeImporter
 	// Whitelist lists every allowed user. Partners of a user are the other
 	// whitelisted users who have an open chat with the bot.
 	Whitelist []domain.UserID
@@ -60,6 +63,9 @@ func New(d Deps) (*Services, error) {
 		repos:     d.Repos,
 		media:     d.Media,
 		notifier:  d.Notifier,
+		importer:  d.Importer,
+		importing: newKeyedLocks(),
+		imports:   newImportLimits(),
 		whitelist: slices.Clone(d.Whitelist),
 		clock:     d.Now,
 		location:  time.Local,
@@ -79,9 +85,14 @@ func New(d Deps) (*Services, error) {
 
 // core holds the state shared by every use case.
 type core struct {
-	repos     Repositories
-	media     MediaStore
-	notifier  Notifier
+	repos    Repositories
+	media    MediaStore
+	notifier Notifier
+	importer RecipeImporter
+	// importing serializes imports of one post.
+	importing *keyedLocks
+	// imports throttles imports per user and in total (both front ends).
+	imports   *importLimits
 	whitelist []domain.UserID
 	clock     func() time.Time
 	// location defines "this year" for the statistics.

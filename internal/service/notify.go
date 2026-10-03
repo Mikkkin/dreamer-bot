@@ -15,6 +15,7 @@ func (noopNotifier) WishCreated(context.Context, Recipients, domain.Wish)       
 func (noopNotifier) WishFulfilled(context.Context, Recipients, domain.Wish)               {}
 func (noopNotifier) WishSaved(context.Context, Recipients, domain.Wish, domain.Saving)    {}
 func (noopNotifier) RecipeCreated(context.Context, Recipients, domain.Recipe)             {}
+func (noopNotifier) RecipeImported(context.Context, Recipients, domain.Recipe)            {}
 func (noopNotifier) RecipeUpdated(context.Context, Recipients, domain.Recipe)             {}
 func (noopNotifier) RecipeCooked(context.Context, Recipients, domain.Recipe, domain.Cook) {}
 func (noopNotifier) RecipeRated(context.Context, Recipients, domain.Recipe, domain.Cook, domain.Rating) {

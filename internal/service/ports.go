@@ -217,6 +217,38 @@ type MediaStore interface {
 	Delete(key string) error
 }
 
+// RecipeImporter reads recipes from outside the service: Instagram posts
+// and pasted captions (internal/recipeimport behind an adapter). It only
+// builds drafts; storing them is the use case's job.
+type RecipeImporter interface {
+	// Canonical returns the canonical link of the Instagram post or reel
+	// named in raw, or false when raw holds no such link. Two links of the
+	// same post give the same canonical link.
+	Canonical(raw string) (string, bool)
+	// PostKey identifies the post named in raw regardless of the link's
+	// form: /p/ and /reel/ links of one post share it. False when raw
+	// holds no post link.
+	PostKey(raw string) (string, bool)
+	// FromURL imports the post behind an Instagram link for actor. When
+	// the caption holds no usable recipe, a model may watch the reel's
+	// video, within actor's daily quota of such imports. Errors wrap
+	// ErrNotARecipe (ErrRecipeInVideo when the recipe is probably only in
+	// a video nobody can watch) or domain.ErrExternalUnavailable.
+	FromURL(ctx context.Context, actor domain.UserID, raw string) (ImportResult, error)
+	// FromText imports a pasted caption or recipe text; errors wrap
+	// ErrNotARecipe.
+	FromText(ctx context.Context, text string) (ImportResult, error)
+}
+
+// ImportResult is a draft for the normal recipe validation, the cover
+// picture as downloaded (nil when there is none) and the report. The
+// report's Image tells whether a cover was downloaded.
+type ImportResult struct {
+	Draft  domain.RecipeDraft
+	Image  []byte
+	Report ImportReport
+}
+
 // StoredImage describes the files written by MediaStore.Save. Width, Height
 // and Bytes describe the full variant.
 type StoredImage struct {

@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/Mikkkin/dreamer-bot/internal/domain"
+	"github.com/Mikkkin/dreamer-bot/internal/recipeimport"
 )
 
 // Config is the fully validated runtime configuration.
@@ -36,13 +37,23 @@ type Config struct {
 	InitDataMaxAge  time.Duration
 	MaxImageBytes   int64
 	LogLevel        slog.Level
-	// VkusvillEnabled switches on the ВкусВилл basket, which calls ВкусВилл's
-	// official MCP server.
-	VkusvillEnabled bool
+
+	// LLM is the optional language model that reads the recipes the import
+	// rules are unsure about (with Gemini also the video of a reel). It is
+	// off when LLM.APIKey is empty. The key is a secret like BotToken.
+	LLM recipeimport.LLMConfig
 }
 
 // SetupMode reports whether no user is whitelisted yet.
 func (c Config) SetupMode() bool { return len(c.AllowedUsers) == 0 }
+
+// LLMProviders are the accepted values of LLM_PROVIDER; the first is the
+// default.
+var LLMProviders = []string{recipeimport.ProviderGemini, recipeimport.ProviderAnthropic, recipeimport.ProviderOpenAI}
+
+// minLLMKeyLen rejects values that cannot be an API key. The key is
+// redacted from every log line, so a stray short value would garble them.
+const minLLMKeyLen = 16
 
 // botTokenPattern matches the "<bot id>:<secret>" shape issued by BotFather.
 var botTokenPattern = regexp.MustCompile(`^[0-9]{5,20}:[A-Za-z0-9_-]{30,64}$`)
@@ -113,16 +124,38 @@ func Load(getenv func(string) string) (Config, error) {
 		fail("LOG_LEVEL must be debug, info, warn or error")
 	}
 
-	vkusvill, err := strconv.ParseBool(orDefault(getenv("VKUSVILL_ENABLED"), "true"))
-	if err != nil {
-		fail("VKUSVILL_ENABLED must be true or false")
+	if err := loadLLM(getenv, &cfg.LLM); err != nil {
+		fail("%w", err)
 	}
-	cfg.VkusvillEnabled = vkusvill
 
 	if len(errs) > 0 {
 		return Config{}, errors.Join(errs...)
 	}
 	return cfg, nil
+}
+
+// loadLLM reads LLM_API_KEY, LLM_PROVIDER, LLM_MODEL and LLM_BASE_URL and
+// checks them by building the client once, so a wrong combination fails at
+// startup rather than at the first import. Messages never include the key.
+func loadLLM(getenv func(string) string, llm *recipeimport.LLMConfig) error {
+	*llm = recipeimport.LLMConfig{
+		Provider: strings.ToLower(orDefault(getenv("LLM_PROVIDER"), LLMProviders[0])),
+		APIKey:   strings.TrimSpace(getenv("LLM_API_KEY")),
+		Model:    strings.TrimSpace(getenv("LLM_MODEL")),
+		BaseURL:  strings.TrimSpace(getenv("LLM_BASE_URL")),
+	}
+	switch {
+	case !slices.Contains(LLMProviders, llm.Provider):
+		return fmt.Errorf("LLM_PROVIDER must be one of %v", LLMProviders)
+	case llm.APIKey == "":
+		return nil
+	case len(llm.APIKey) < minLLMKeyLen || strings.ContainsAny(llm.APIKey, " \t\r\n"):
+		return errors.New("LLM_API_KEY does not look like an API key")
+	}
+	if _, err := recipeimport.NewLLM(*llm); err != nil {
+		return fmt.Errorf("LLM settings: %w", err)
+	}
+	return nil
 }
 
 func parseUserIDs(raw string) ([]domain.UserID, error) {

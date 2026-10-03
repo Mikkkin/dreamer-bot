@@ -7,8 +7,8 @@ import (
 
 	"github.com/Mikkkin/dreamer-bot/internal/auth"
 	"github.com/Mikkkin/dreamer-bot/internal/domain"
+	"github.com/Mikkkin/dreamer-bot/internal/nutrition"
 	"github.com/Mikkkin/dreamer-bot/internal/service"
-	"github.com/Mikkkin/dreamer-bot/internal/stores"
 )
 
 // Wire formats of docs/API.md. IDs are JSON numbers: Telegram user IDs and
@@ -72,6 +72,7 @@ type ingredientJSON struct {
 	Name      string  `json:"name"`
 	Amount    *string `json:"amount"`
 	Unit      *string `json:"unit"`
+	UnitLabel *string `json:"unit_label"`
 	Formatted string  `json:"formatted"`
 }
 
@@ -106,12 +107,16 @@ type recipeJSON struct {
 	CuisineID   *int64           `json:"cuisine_id"`
 	CourseIDs   []int64          `json:"course_ids"`
 	Ingredients []ingredientJSON `json:"ingredients"`
+	Servings    *int             `json:"servings"`
 	Nutrition   *nutritionJSON   `json:"nutrition"`
-	Cooking     cookingJSON      `json:"cooking"`
-	Author      personJSON       `json:"author"`
-	Images      []imageJSON      `json:"images"`
-	CreatedAt   string           `json:"created_at"`
-	UpdatedAt   string           `json:"updated_at"`
+	// NutritionAuto is estimated from the ingredients; null when nothing
+	// could be counted.
+	NutritionAuto *nutritionAutoJSON `json:"nutrition_auto"`
+	Cooking       cookingJSON        `json:"cooking"`
+	Author        personJSON         `json:"author"`
+	Images        []imageJSON        `json:"images"`
+	CreatedAt     string             `json:"created_at"`
+	UpdatedAt     string             `json:"updated_at"`
 }
 
 type recipeTagJSON struct {
@@ -137,9 +142,13 @@ type cookJSON struct {
 	Ratings  []ratingJSON `json:"ratings"`
 }
 
+// quantityJSON is an optional amount with its unit code, the unit's word
+// declined for the amount («чайные ложки») and the whole for display
+// («2 чайные ложки», «½ кг»).
 type quantityJSON struct {
 	Amount    *string `json:"amount"`
 	Unit      *string `json:"unit"`
+	UnitLabel *string `json:"unit_label"`
 	Formatted string  `json:"formatted"`
 }
 
@@ -152,15 +161,6 @@ type shoppingItemJSON struct {
 	AddedBy   personJSON    `json:"added_by"`
 	CreatedAt string        `json:"created_at"`
 	UpdatedAt string        `json:"updated_at"`
-}
-
-type storeJSON struct {
-	ID                string `json:"id"`
-	Name              string `json:"name"`
-	Emoji             string `json:"emoji"`
-	SearchURLTemplate string `json:"search_url_template"`
-	OpensApp          bool   `json:"opens_app"`
-	Cart              bool   `json:"cart"`
 }
 
 type categoryJSON struct {
@@ -194,6 +194,7 @@ type statsJSON struct {
 type presenter struct {
 	signer *auth.MediaSigner
 	names  map[domain.UserID]string
+	food   *nutrition.Table
 }
 
 func (s *server) presenter(ctx context.Context) (presenter, error) {
@@ -205,7 +206,7 @@ func (s *server) presenter(ctx context.Context) (presenter, error) {
 	for _, u := range users {
 		names[u.ID] = u.DisplayName()
 	}
-	return presenter{signer: s.signer, names: names}, nil
+	return presenter{signer: s.signer, names: names, food: s.food}, nil
 }
 
 func (p presenter) author(id domain.UserID) personJSON {
@@ -280,18 +281,20 @@ func (p presenter) savings(ss []domain.Saving) []savingJSON {
 
 func (p presenter) recipe(r domain.Recipe) recipeJSON {
 	out := recipeJSON{
-		ID:          int64(r.ID),
-		Title:       r.Title,
-		Link:        r.Link,
-		Body:        r.Body,
-		CourseIDs:   make([]int64, len(r.CourseIDs)),
-		Ingredients: make([]ingredientJSON, len(r.Ingredients)),
-		Nutrition:   nutritionOf(r.Nutrition),
-		Cooking:     cookingOf(r.Cooking),
-		Author:      p.author(r.AuthorID),
-		Images:      p.images(r.Images),
-		CreatedAt:   timestamp(r.CreatedAt),
-		UpdatedAt:   timestamp(r.UpdatedAt),
+		ID:            int64(r.ID),
+		Title:         r.Title,
+		Link:          r.Link,
+		Body:          r.Body,
+		CourseIDs:     make([]int64, len(r.CourseIDs)),
+		Ingredients:   make([]ingredientJSON, len(r.Ingredients)),
+		Servings:      r.Servings,
+		Nutrition:     nutritionOf(r.Nutrition),
+		NutritionAuto: nutritionAuto(p.food, r),
+		Cooking:       cookingOf(r.Cooking),
+		Author:        p.author(r.AuthorID),
+		Images:        p.images(r.Images),
+		CreatedAt:     timestamp(r.CreatedAt),
+		UpdatedAt:     timestamp(r.UpdatedAt),
 	}
 	if r.CuisineID != nil {
 		id := int64(*r.CuisineID)
@@ -302,7 +305,7 @@ func (p presenter) recipe(r domain.Recipe) recipeJSON {
 	}
 	for i, ing := range r.Ingredients {
 		q := quantityOf(ing.Quantity)
-		out.Ingredients[i] = ingredientJSON{Name: ing.Name, Amount: q.Amount, Unit: q.Unit, Formatted: q.Formatted}
+		out.Ingredients[i] = ingredientJSON{Name: ing.Name, Amount: q.Amount, Unit: q.Unit, UnitLabel: q.UnitLabel, Formatted: q.Formatted}
 	}
 	return out
 }
@@ -384,7 +387,7 @@ func imageOf(signer *auth.MediaSigner, img domain.Image) imageJSON {
 }
 
 // quantityOf renders an optional quantity: amount is null for "по вкусу" or
-// a missing number, unit is null without a unit.
+// a missing number, unit and unit_label are null without a unit.
 func quantityOf(q *domain.Quantity) quantityJSON {
 	if q == nil {
 		return quantityJSON{}
@@ -394,14 +397,15 @@ func quantityOf(q *domain.Quantity) quantityJSON {
 		out.Amount = &amount
 	}
 	if q.Unit != "" {
-		unit := string(q.Unit)
-		out.Unit = &unit
+		unit, label := string(q.Unit), q.Label()
+		out.Unit, out.UnitLabel = &unit, &label
 	}
 	return out
 }
 
 // nutritionOf renders КБЖУ with the per-dish and per-serving values the
-// domain derives from the weight and the servings.
+// domain derives from the weight and the servings; inside a recipe the
+// servings are the recipe's.
 func nutritionOf(n *domain.Nutrition) *nutritionJSON {
 	if n == nil {
 		return nil
@@ -450,10 +454,6 @@ func cookingOf(c domain.CookingSummary) cookingJSON {
 
 func recipeTagOf(t domain.RecipeTag) recipeTagJSON {
 	return recipeTagJSON{ID: int64(t.ID), Kind: string(t.Kind), Name: t.Name, Emoji: t.Emoji, Position: t.Position}
-}
-
-func storeOf(st stores.Store) storeJSON {
-	return storeJSON{ID: st.ID, Name: st.Name, Emoji: st.Emoji, SearchURLTemplate: st.SearchTemplate, OpensApp: st.OpensApp, Cart: st.Cart}
 }
 
 func categoryOf(c domain.Category) categoryJSON {

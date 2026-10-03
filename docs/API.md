@@ -35,8 +35,8 @@ For each request the server checks:
 
 `code` is one of `validation` (400), `unauthorized` (401), `forbidden` (403),
 `not_found` (404), `conflict` (409), `too_large` (413), `unsupported_media` (415),
-`limit` (422), `rate_limited` (429), `internal` (500), `unavailable` (503, an external
-service such as ВкусВилл did not answer). `message` is in Russian and
+`limit` (422), `not_a_recipe` (422, [import](#recipe-import) found no recipe), `rate_limited` (429), `internal` (500),
+`unavailable` (503, an external service the server called for you did not answer). `message` is in Russian and
 safe to show to users. `field` is present only for validation errors.
 
 ## Objects
@@ -86,16 +86,31 @@ Every part except the title is optional. That covers a link, a hand-written reci
   "cuisine_id": 3,
   "course_ids": [9, 11],
   "ingredients": [
-    { "name": "Спагетти", "amount": "320", "unit": "г", "formatted": "320 г" },
-    { "name": "Соль", "amount": null, "unit": "по вкусу", "formatted": "по вкусу" },
-    { "name": "Яйца", "amount": "4", "unit": "шт", "formatted": "4 шт" }
+    { "name": "Спагетти", "amount": "320", "unit": "г", "unit_label": "г", "formatted": "320 г" },
+    { "name": "Соль", "amount": null, "unit": "по вкусу", "unit_label": "по вкусу", "formatted": "по вкусу" },
+    { "name": "Яйца", "amount": "4", "unit": "шт", "unit_label": "шт", "formatted": "4 шт" },
+    { "name": "Сливки", "amount": "0.5", "unit": "стакан", "unit_label": "стакана", "formatted": "½ стакана" },
+    { "name": "Гуанчале", "amount": "100", "unit": "г", "unit_label": "г", "formatted": "100 г" }
   ],
+  "servings": 4,
   "nutrition": {
     "per_100g":    { "kcal": "150", "protein": "12.5", "fat": "6", "carbs": "10.4" },
     "weight_g": 800,
     "servings": 4,
     "per_dish":    { "kcal": "1200", "protein": "100", "fat": "48", "carbs": "83.2" },
     "per_serving": { "kcal": "300", "protein": "25", "fat": "12", "carbs": "20.8" }
+  },
+  "nutrition_auto": {
+    "per_100g":    { "kcal": "266.7", "protein": "11.3", "fat": "7.1", "carbs": "38.2" },
+    "weight_g": 640,
+    "per_dish":    { "kcal": "1706.8", "protein": "72.1", "fat": "45.7", "carbs": "244.3" },
+    "per_serving": { "kcal": "426.7", "protein": "18", "fat": "11.4", "carbs": "61.1" },
+    "coverage": { "counted": 3, "total": 4, "missing": ["Гуанчале"], "no_amount": [], "skipped": ["Соль"] },
+    "items": [
+      { "name": "Спагетти", "food": "Макароны", "grams": 320, "kcal": "1187.2", "protein": "41.6", "fat": "4.8", "carbs": "239" },
+      { "name": "Яйца", "food": "Яйцо куриное", "grams": 220, "kcal": "314.6", "protein": "27.7", "fat": "20.9", "carbs": "1.5" },
+      { "name": "Сливки", "food": "Сливки 20%", "grams": 100, "kcal": "205", "protein": "2.8", "fat": "20", "carbs": "3.7" }
+    ]
   },
   "cooking": { "count": 3, "last_cooked_at": "2026-09-20T18:02:00Z", "rating_avg": "4.5", "rating_count": 4 },
   "author": { "id": 111, "name": "Дима" },
@@ -108,15 +123,22 @@ Every part except the title is optional. That covers a link, a hand-written reci
 Field rules:
 
 - **Nullable or empty fields.**
-  - `link`, `cuisine_id` and `nutrition` may be `null`.
+  - `link`, `cuisine_id`, `servings` and `nutrition` may be `null`.
   - `body` may be `""`, and `course_ids` and `ingredients` may be `[]`.
   - The body is plain text with newlines. Clients must render it as text (`white-space: pre-wrap`), never as HTML.
-- **Nutrition numbers** are decimal strings with at most one decimal place. All four (`kcal`, `protein`, `fat`, `carbs`) are required when `nutrition` is sent — a blank value is unknown, not zero, so write `"0"` for a real zero. `weight_g` and `servings` may be `null`.
+- **Servings.** `servings` (1–50, or `null` when unknown) is how many portions the recipe yields. The ingredient amounts and the КБЖУ are for the whole recipe; the Mini App rescales them for another number of portions on the client, and nothing is stored.
+- **Nutrition numbers** are decimal strings with at most one decimal place. All four (`kcal`, `protein`, `fat`, `carbs`) are required when `nutrition` is sent — a blank value is unknown, not zero, so write `"0"` for a real zero. `weight_g` may be `null`.
+  - `nutrition.servings` always equals the recipe's `servings`; it stays for older clients.
   - `per_dish` is `null` without `weight_g`.
   - `per_serving` is `null` without both `weight_g` and `servings`.
   - The server computes both and rounds to 0.1.
+- **Estimated КБЖУ.** `nutrition_auto` is computed on every read from the ingredients and a built-in food table ([`internal/nutrition`](../internal/nutrition)); nothing is stored. It is `null` when no ingredient could be counted, and it is returned even when `nutrition` is set — the manual values win in the UI.
+  - `per_dish` is the sum over the counted ingredients, `weight_g` their weight, `per_100g` per 100 g of that weight, and `per_serving` is `per_dish` divided by the recipe's `servings` (`null` without them). All are for the stored servings; the Mini App's servings scaler multiplies `per_dish` itself.
+  - `coverage`: `total` counts every ingredient except the `skipped` ones («по вкусу»), so `counted` + `missing` + `no_amount` = `total`. `missing` names the ingredients that match no food; `no_amount` those without an amount or with an amount in a unit that has no known weight for that food («2 шт» of flour). The names are as written in the recipe.
+  - `items` lists each counted ingredient, in recipe order, with the food it matched (`food`), its weight in grams and its КБЖУ as decimal strings with at most one decimal.
+  - Spoons and cups are counted level; values are estimates, so clients show them with «≈».
 - **Cooking.** `cooking.last_cooked_at` and `cooking.rating_avg` are `null` until the first cooking or rating. `rating_avg` is the average of all ratings over all cookings, with one decimal.
-- **Ingredient amounts.** `amount` is `null` when not given. `unit` is one of `Me.units` or `null`.
+- **Ingredient amounts** follow [Quantity](#quantity): `amount`, `unit`, `unit_label` and `formatted`.
 
 ### RecipeTag
 
@@ -158,49 +180,38 @@ All savings of a wish use one currency: the price currency when there is a price
 ### ShoppingItem
 
 ```json
-{ "id": 31, "name": "Молоко", "quantity": { "amount": "750", "unit": "мл", "formatted": "750 мл" },
+{ "id": 31, "name": "Молоко", "quantity": { "amount": "750", "unit": "мл", "unit_label": "мл", "formatted": "750 мл" },
   "checked": false, "recipe_id": 4, "added_by": { "id": 111, "name": "Дима" },
   "created_at": "…", "updated_at": "…" }
 ```
 
-`quantity` and `recipe_id` may be `null`. Adding an item whose name (case-insensitive) matches an **unchecked** item with the same unit, or the related one (г↔кг, мл↔л), merges the amounts into that item: 500 мл + 250 мл gives 750 мл, and 200 мл + 0,5 л gives 700 мл. A mixed sum is shown in the larger unit when it is at least 1 and has at most two decimals there (500 г + 1 кг = 1,5 кг), otherwise in the smaller one (333 г + 1 кг = 1333 г). Other units never merge.
+`quantity` (a [Quantity](#quantity)) and `recipe_id` may be `null`. Adding an item whose name (case-insensitive) matches an **unchecked** item with the same unit, or the related one (г↔кг, мл↔л), merges the amounts into that item: 500 мл + 250 мл gives 750 мл, and 200 мл + ½ л gives 700 мл. A mixed sum is shown in the larger unit when it is at least 1 and has at most two decimals there (500 г + 1 кг = 1½ кг), otherwise in the smaller one (333 г + 1 кг = 1333 г). Other units never merge.
 
-### Store
+The shopping list is a plain shared checklist. The server does not search any store and never sends the list anywhere.
 
-```json
-{ "id": "vkusvill", "name": "ВкусВилл", "emoji": "🥬", "search_url_template": "https://vkusvill.ru/search/?q={q}", "opens_app": false, "cart": true }
-```
+### Quantity
 
-- **Search links.** The client replaces `{q}` with `encodeURIComponent(name)`, using the product name only, without the quantity. It opens the result with `Telegram.WebApp.openLink`, after a user tap: Telegram allows `openLink` only from a gesture. The templates are fixed on the server.
-- **`opens_app`** is a hint: whether iOS opens the store app for such links.
-- **`cart: true`** marks the one store with a real cart integration, ВкусВилл, described below. For every other store the server fetches nothing: their sites sit behind anti-bot challenges (Servicepipe, Qrator, NGENIX), and scraping them would break their terms.
-
-### ВкусВилл cart («Собрать корзину во ВкусВилле»)
-
-ВкусВилл publishes an official, experimental MCP server at `https://mcp.vkusvill.ru/mcp`, announced on its Habr blog on 2025-12-30. The Go server calls it on the user's tap. Only this fixed host is contacted, the only input sent is product names, and results are cached. The flow:
-
-1. `POST /api/shopping/vkusvill/match` returns up to 3 candidate products with prices for every unchecked list item.
-2. The user confirms or swaps the candidates and sets the quantities.
-3. `POST /api/shopping/vkusvill/cart` creates a shared basket and returns its link. The client opens it with `openLink`: the basket appears on vkusvill.ru, and the user logs in there to order.
+An ingredient line (`ingredients[]`) and a shopping item (`quantity`) carry the same four fields:
 
 ```json
-// POST /api/shopping/vkusvill/match   body: {"item_ids":[31,32]}   (optional; default: all unchecked, at most 30)
-{ "matches": [
-    { "item_id": 31, "query": "Молоко",
-      "candidates": [ { "xml_id": 173, "name": "Молоко 3,2%, 1 л",
-                        "price": { "amount": "93", "currency": "RUB", "formatted": "93 ₽" },
-                        "unit": "шт", "weight": "1 л" } ] } ] }
-
-// POST /api/shopping/vkusvill/cart    body: {"lines":[{"xml_id":173,"quantity":"2"}]}   (1–30 lines, quantity 0.01–40)
-{ "url": "https://vkusvill.ru/?share_basket=2063312749",
-  "estimated_total": { "amount": "186", "currency": "RUB", "formatted": "186 ₽" } }
+{ "amount": "1.5", "unit": "ч. л.", "unit_label": "чайной ложки", "formatted": "1½ чайной ложки" }
 ```
 
-- When ВкусВилл is unreachable, slow (over 8 s) or disabled (`VKUSVILL_ENABLED=false`), both endpoints answer `503` with `error.code: "unavailable"`. The client then falls back to the search links.
-- The server checks that the returned basket URL is `https://vkusvill.ru/…` before passing it on.
-- `estimated_total` is approximate, because prices change. It is `null` when a price is missing.
+- **`amount`** is the machine value: a decimal string with at most two decimals (`"0.5"`, `"250"`, `"0.33"`), or `null` when there is none (always for `"по вкусу"`). It is stored in hundredths, so thirds are kept as 0.33 and 0.67.
+- **`unit`** is a code from `Me.units` (`г`, `кг`, `мл`, `л`, `шт`, `ст. л.`, `ч. л.`, `стакан`, `щепотка`, `зубчик`, `пучок`, `упаковка`, `по вкусу`), or `null` for a bare number.
+- **`unit_label`** is the unit's word declined for the amount, or `null` without a unit. Spoons, cups, pinches, cloves, bunches and packs change with the number: «1 чайная ложка», «2 чайные ложки», «5 чайных ложек», «21 чайная ложка», and every amount that is not whole takes the genitive singular: «½ чайной ложки», «1½ стакана». The abbreviations `г`, `кг`, `мл`, `л`, `шт` and `"по вкусу"` never change. `Me.unit_forms` lists every form.
+  - The rule for a whole number n: n ends in 1 but not in 11 → `one`; n ends in 2–4 but not in 12–14 → `few`; otherwise `many`. Any other amount → `fraction`.
+- **`formatted`** is the amount and the label for display, joined by a no-break space. Every unit except `г` and `мл`, and a bare number, shows .5, .25, .75, .33 and .67 as ½, ¼, ¾, ⅓ and ⅔ glued to the whole part («½ кг», «1¼ кг», «2⅔»); any other fraction, and every amount in `г` or `мл`, uses a decimal comma («0,3 л», «1,5 г»).
+- The test vectors shared by the server and the Mini App are in [`internal/domain/testdata/units.json`](../internal/domain/testdata/units.json) (formatting) and [`amounts.json`](../internal/domain/testdata/amounts.json) (parsing).
+
+**Input.** Clients send `amount` and `unit` as strings:
+
+- `amount` accepts a decimal with a comma or a dot (`"0,5"`, `"1.5"`), a fraction (`"1/2"`, `"3/4"`), a mixed number (`"1 1/2"`) and the characters ½ ⅓ ⅔ ¼ ¾ ⅕, alone or after a whole part (`"½"`, `"1½"`). Fractions may use the denominators 2, 3, 4, 5 and 10. Anything else, such as `"1/8"`, is a 400 with «Укажите дробь вида 1/2, 1/3, 1/4 или десятичную, например 0,5». The amount must be above 0 and at most 100 000.
+- `unit` accepts the code and also its forms and common spellings in any letter case: «чайные ложки», «ч.л.», «чл», «ст. ложка», «гр», «граммов», «шт.», «штук», «зуб», «уп» and so on. The server stores and returns the code.
 
 ## Endpoints
+
+Removed in iteration 3 together with the store integration: `GET /api/stores`, `POST /api/shopping/vkusvill/match` and `POST /api/shopping/vkusvill/cart` (now 404).
 
 | Method & path | Body | Response |
 |---|---|---|
@@ -220,8 +231,9 @@ All savings of a wish use one currency: the price currency when there is a price
 | `GET /api/recipes?q=&cuisine=&course=` | — | `200 {"recipes":[Recipe…]}`, newest first. `q` matches the title or the body; `cuisine` / `course` are tag ids. |
 | `GET /api/recipes/random` | — | `200` Recipe, or `404 not_found` when there are no recipes («🎲 Что приготовить?») |
 | `POST /api/recipes` | [RecipeInput](#recipeinput) | `201` Recipe |
+| `POST /api/recipes/import` | `{"url":"…"}` or `{"text":"…"}` | `201 {"recipe":Recipe,"import":ImportReport}`, or `200` with the existing recipe when the post was imported before. See [Recipe import](#recipe-import). |
 | `GET /api/recipes/{id}` | — | `200` Recipe |
-| `PATCH /api/recipes/{id}` | partial RecipeInput. `null` clears `link`, `cuisine_id` and `nutrition`. | `200` Recipe |
+| `PATCH /api/recipes/{id}` | partial RecipeInput. `null` clears `link`, `cuisine_id`, `servings` and `nutrition`. | `200` Recipe |
 | `DELETE /api/recipes/{id}` | — | `204` |
 | `POST /api/recipes/{id}/images` | `multipart/form-data`, field `file` | `201` Image |
 | `DELETE /api/recipes/{id}/images/{imageId}` | — | `204` |
@@ -242,9 +254,6 @@ All savings of a wish use one currency: the price currency when there is a price
 | `PATCH /api/shopping/{id}` | `{"name"?, "amount"?, "unit"?, "checked"?}` | `200` ShoppingItem |
 | `DELETE /api/shopping/{id}` | — | `204` |
 | `POST /api/shopping/clear-checked` | — | `200 {"removed":3}` |
-| `GET /api/stores` | — | `200 {"stores":[Store…]}` |
-| `POST /api/shopping/vkusvill/match` | `{"item_ids":[…]}` or `{}` | `200 {"matches":[…]}`, see [ВкусВилл cart](#вкусвилл-cart-собрать-корзину-во-вкусвилле); `503 unavailable` |
-| `POST /api/shopping/vkusvill/cart` | `{"lines":[{"xml_id":173,"quantity":"2"}]}` | `200 {"url":…,"estimated_total":…}`; `503 unavailable` |
 | `GET /api/stats` | — | `200` [Stats](#stats) |
 | `GET /media/{imageId}/{thumb\|full}?exp=&sig=` | — | `200 image/jpeg`. The signature is required; a bad or expired one returns `403`. |
 | `GET /healthz` | — | `200 ok`, no auth |
@@ -274,16 +283,59 @@ behind switches and sends `null` when a switch is off.
   "body": "1. Сварить пасту…",
   "cuisine_id": 3,
   "course_ids": [9, 11],
-  "ingredients": [ { "name": "Спагетти", "amount": "320", "unit": "г" }, { "name": "Соль", "amount": null, "unit": "по вкусу" } ],
-  "nutrition": { "kcal": "150", "protein": "12.5", "fat": "6", "carbs": "10.4", "weight_g": 800, "servings": 4 }
+  "ingredients": [ { "name": "Спагетти", "amount": "320", "unit": "г" }, { "name": "Сахар", "amount": "1 1/2", "unit": "ч. л." },
+                   { "name": "Соль", "amount": null, "unit": "по вкусу" } ],
+  "servings": 4,
+  "nutrition": { "kcal": "150", "protein": "12.5", "fat": "6", "carbs": "10.4", "weight_g": 800 }
 }
 ```
 
 - Only `title` is required.
+- `servings` is 1–50 or `null`. Older clients send the servings as `nutrition.servings` instead: when the top-level `servings` is absent, a non-null `nutrition.servings` sets the recipe's servings. When both are sent, the top-level value wins. A `nutrition` without `servings` keeps the recipe's servings.
 - The UI puts the link, the text, the ingredients and the КБЖУ behind switches, and sends `null` (or `[]`) when a switch is off.
 - `nutrition` always holds **per-100 g** values. When the user enters values for the whole dish, the client divides by `weight_g / 100` before sending.
 - `ingredients` and `course_ids` replace the stored lists as a whole.
 - Screenshots are uploaded afterwards through the images endpoint.
+
+### Recipe import
+
+`POST /api/recipes/import` makes a recipe from an Instagram post or reel, or from pasted text, and saves it right away: the client opens it in the edit form for a check. The partner's notice waits until the recipe has stayed unchanged for three minutes (deleting it cancels the notice).
+
+```json
+{ "url": "https://www.instagram.com/reel/DItfAhKCJ3h/?igsh=…" }
+{ "text": "Маринад для шашлыка\nЛук — 3 шт\n…" }
+```
+
+- Exactly one of `url` (at most 2048 bytes) and `text` (at most 10 000 characters) is sent. `url` may be any form of a post, reel or IGTV link (`instagram.com`, `www.`, `m.`, `/p/`, `/reel/`, `/reels/`, `/tv/`, tracking parameters, text around it); the server rebuilds the canonical `https://www.instagram.com/{p|reel|tv}/{code}/` and fetches only that and Instagram's CDN. The recipe's `link` is the canonical URL.
+- The caption is parsed by rules. With a model key configured (`LLM_API_KEY`), captions the rules are unsure about go to the model; with `LLM_PROVIDER=gemini`, a reel whose caption has no usable recipe or no steps is read from its video (speech and on-screen text). The post's cover becomes the recipe's first photo, re-encoded like an upload.
+- **Duplicates.** When a recipe already links to the same post (imported, or typed in by hand in any form), nothing is fetched or created: the answer is `200` with that recipe and `"duplicate": true`. Two imports of one post at the same time give one recipe.
+- **Time.** Most imports take a few seconds; the video path up to ~90 s. The server gives one import at most 120 s, so clients should wait about 130 s for the answer.
+- **Rate limit.** Besides the general limit, imports share the per-user limit for calls to external services: a burst of 6, then one every two seconds (`429 rate_limited`). On top of that, imports from the Mini App and the bot together allow each user a burst of 5, then one every 20 seconds (`429 rate_limited`, «Слишком много импортов подряд — подождите минуту.»), and at most 2 imports run at once on the server; a duplicate of an imported post costs nothing. Each user can have 20 videos read per day; after that the import reads only the caption and says so in `warnings`.
+
+```json
+{
+  "recipe": { "id": 41, "title": "Маринад для шашлыка", "link": "https://www.instagram.com/reel/DItfAhKCJ3h/", "…": "a Recipe" },
+  "import": {
+    "source": "instagram",
+    "parser": "rules",
+    "confidence": 0.95,
+    "image": true,
+    "warnings": ["1 строка не распознана"],
+    "duplicate": false
+  }
+}
+```
+
+- `source`: `instagram` or `text`. `parser`: `rules`, `llm` (the caption read by the model) or `video` (the video read by the model). `confidence`: the parser's score, 0–1. `image`: the recipe got the post's cover. `warnings`: short Russian notes for the user (lines that were not read, a range shortened to its lower bound, the cover or the video that failed, the daily video limit). For a duplicate, `parser` is `""`, `confidence` 0 and `warnings` empty.
+
+| Failure | Status | `error.code` | `message` |
+|---|---|---|---|
+| Neither or both of `url` and `text`, too long, not a post link | 400 | `validation` (field `url` or `text`) | e.g. «Это не ссылка на пост или рилс в Instagram» |
+| No recipe in the caption or the text | 422 | `not_a_recipe` | «Не нашли в тексте рецепт — вставьте текст с ингредиентами» |
+| A reel with no recipe in its caption and no model that reads videos | 422 | `not_a_recipe` | «Рецепт, похоже, только в видео — вставьте текст рецепта или подписи» (the server log names the setting that enables video: `LLM_PROVIDER=gemini`) |
+| Instagram did not give the post (refused, removed, private, timed out) | 503 | `unavailable` | «Instagram не отдал пост. Скопируйте текст подписи и вставьте его сюда.» |
+
+On `503` the client offers the text field; a model that fails or times out is not an error (the rules' result is kept, with a warning).
 
 ### Me
 
@@ -301,9 +353,17 @@ behind switches and sends `null` when a switch is off.
               "courses_per_recipe": 8, "shopping_items_max": 300,
               "item_name_max": 80, "rating_comment_max": 280,
               "saving_note_max": 140, "dish_weight_max_g": 20000, "servings_max": 50 },
-  "units": ["г", "кг", "мл", "л", "шт", "ст. л.", "ч. л.", "стакан", "щепотка", "зубчик", "пучок", "упаковка", "по вкусу"]
+  "units": ["г", "кг", "мл", "л", "шт", "ст. л.", "ч. л.", "стакан", "щепотка", "зубчик", "пучок", "упаковка", "по вкусу"],
+  "unit_forms": {
+    "ч. л.":  { "one": "чайная ложка", "few": "чайные ложки", "many": "чайных ложек", "fraction": "чайной ложки" },
+    "стакан": { "one": "стакан", "few": "стакана", "many": "стаканов", "fraction": "стакана" },
+    "г":      { "one": "г", "few": "г", "many": "г", "fraction": "г" },
+    "…": "every code in units"
+  }
 }
 ```
+
+`units` lists the unit codes in picker order. `unit_forms` has an entry for every code with the words a [Quantity](#quantity) uses: `one` («1 чайная ложка»), `few` («2 чайные ложки»), `many` («5 чайных ложек») and `fraction` («½ чайной ложки»). Invariant units repeat their code in all four.
 
 ### Stats
 
@@ -332,6 +392,7 @@ All three status keys are always present in `overall` and in each `by_status`.
 - **Nested `field` paths** carry indexes for JSON type errors, for example `ingredients.0.amount`, `course_ids.1`, `items.0.name` or `positions.0`. A line whose name or quantity is invalid is reported on the list field (`ingredients` or `items`), and the message names the line («Позиция №3: …»). `POST /api/shopping` takes at most 50 lines per request.
 - **Limits.** At most 30 cuisines and 30 courses, 200 contributions per wish and 500 cookings per recipe; beyond that the API answers `422 limit`.
 - **Quantities.**
+  - See [Quantity](#quantity) for the accepted amounts and unit spellings.
   - A `unit` without an `amount` is rejected. The only exception is `"по вкусу"`, which never has an amount.
   - In `PATCH /api/shopping/{id}`, `amount` and `unit` are sent **together**. Either may be `null`, but sending only one of them is a 400.
 - **Recipe → shopping.** `{}` (or `"positions": null`) adds every ingredient. `"positions": []` is a 400. Repeated indexes count once. There are at most 50 positions, each in 0–49.
@@ -339,14 +400,13 @@ All three status keys are always present in `overall` and in each `by_status`.
   - `POST …/cooks` with `{}` or `"stars": null` records a cooking without a rating.
   - A `comment` without `stars` is a 400 on `stars`.
   - Either partner may delete a cooking or a saving.
-- **Recipe input.** In `nutrition`, `weight_g` and `servings` may be `null` (unknown). `null` on `course_ids` or `ingredients` means an empty list. `null` on `title` is a 400.
+- **Recipe input.** `servings` and, in `nutrition`, `weight_g` and `servings` may be `null` (unknown). `null` on `course_ids` or `ingredients` means an empty list. `null` on `title` is a 400. `servings` outside 1–50 is a 400 on `servings`.
 - **Savings.**
   - A wish that has come true (`done`) takes no savings: 400 on field `status`.
   - Errors use the fields `amount`, `currency` and `note`.
   - Without `currency` the wish's savings currency is used, falling back to `DEFAULT_CURRENCY`.
   - `saved.count` is filled in single-wish responses and is `null` in lists, which keeps lists at one query.
 - **Tags.** `GET /api/recipe-tags` lists cuisines first, then courses, each by `position`. Tag names follow the category rules: at most `limits.category_name_max` characters, and case-insensitively unique within a kind.
-- **ВкусВилл.** A candidate's `price`, `unit` and `weight` may be `null`, so show `—`. The client builds cart lines only from candidates the match returned.
 
 ## Media URLs
 

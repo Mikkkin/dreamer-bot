@@ -17,8 +17,12 @@ A private Telegram bot and Mini App where two people keep a shared list of wishe
 - **Wishes.** Each wish gets categories, photos and one of three statuses: *Хотим* (want), *Копим* (saving up), *Сбылось ✨* (came true). Price and link are **optional**: switches in the form reveal them only when you want them. In *Копим* you log what each of you put aside, and a progress bar shows how much of the price is saved.
 - **Recipes («Что приготовить»).**
   - Add a link, write the recipe yourself, attach screenshots, or combine them.
+  - **Import from Instagram.** Paste a post or reel link (or the caption text) in the Mini App, or send the link to the bot. The title, ingredients with amounts, steps, servings and the cover photo are filled in, and the recipe opens for a quick check. Your partner hears about it a few minutes later, so there is time to fix it first. Recipes that live only in the video can be read too, with an optional Gemini key: see [Recipe import](#recipe-import).
   - Group recipes by cuisine (Русская, Азиатская…) and by meal or course (Завтрак, Ужин, Первое…). Both lists come with defaults, and you can add your own.
-  - List ingredients and enter КБЖУ per 100 g; the values for the whole dish and per serving are calculated.
+  - List ingredients with fractions as you'd write them (`1/2`, `1 1/2`, `½`, `0,5`). Units read as words and agree with the number: «1 чайная ложка», «2 чайные ложки», «5 чайных ложек», «½ стакана».
+  - Note how many servings a recipe makes and enter КБЖУ per 100 g; the values for the whole dish and per serving are calculated.
+  - **КБЖУ from the ingredients.** Without your own numbers, the app estimates КБЖУ from the ingredient list with a built-in food table (about 365 foods: USDA data and typical Russian label values). It is shown with «≈» and says what it counted («Посчитано по 5 из 6 · нет: Гуанчале»). Your own КБЖУ always wins.
+  - **Servings scaler.** «− 4 порции +» on a recipe rescales every amount (½ and ⅓ stay fractions, grams round sensibly) and the КБЖУ for the whole dish. Nothing is saved; «Как в рецепте» goes back.
   - After cooking, tap «🍳 Приготовили» and each of you rates the dish from 1 to 5 stars. The recipe stays in the list with its history, average rating and how many times you've cooked it.
   - «🎲 Что приготовить?» picks a random recipe.
 - **Mini App.** The main interface. It follows each person's Telegram theme (light or dark) and uses the native Telegram buttons and haptic feedback.
@@ -26,10 +30,8 @@ A private Telegram bot and Mini App where two people keep a shared list of wishe
 - **Shopping list.**
   - Add a recipe's ingredients in one tap. Same products merge: 500 мл + 250 мл becomes 750 мл, and 200 мл + 0,5 л becomes 700 мл.
   - Tick items off as you buy them.
-  - Search any item in ВкусВилл, Перекрёсток, Магнит, Пятёрочка, Лавка, Самокат, Купер, Лента, Ашан, METRO or Азбука вкуса.
-  - **«Собрать корзину во ВкусВилле»** matches the whole list to real products with prices, using ВкусВилл's official MCP server, and opens a ready cart. The other stores protect their sites against bots, so for them the bot offers search links only.
 - **Partner notifications.** The other person gets a message with the photo and an «Открыть ✨» button when one of you:
-  - adds a wish or a recipe;
+  - adds a wish or a recipe (an imported one after three quiet minutes, so it can be checked first);
   - edits a recipe (a burst of edits becomes one message);
   - cooks and rates something, with star buttons to rate it too;
   - puts money aside;
@@ -91,7 +93,7 @@ Caddy gets a free HTTPS certificate by itself. It uses Let's Encrypt and falls b
 
 ## Deployment options
 
-> **Do you need a domain at all?** Not for the chat bot. It only makes outbound connections to Telegram (long polling), so it works anywhere, even on a laptop behind NAT, and `docker compose up -d` without any profile is enough. The **Mini App** is different: Telegram opens it only from a public `https://` address with a valid certificate, so for the app you need one of the options below.
+> **Do you need a domain at all?** Not for the chat bot. It only makes outbound connections (to Telegram for long polling, and to Instagram and the optional model API for recipe import), so it works anywhere, even on a laptop behind NAT, and `docker compose up -d` without any profile is enough. The **Mini App** is different: Telegram opens it only from a public `https://` address with a valid certificate, so for the app you need one of the options below.
 
 Every option runs the same image, built for **linux/amd64 and linux/arm64**: an x86 VPS, a Raspberry Pi or an Apple Silicon Mac. Choose profiles with `COMPOSE_PROFILES` in `.env`, or pass `--profile` to each command.
 
@@ -132,13 +134,34 @@ Every setting is an environment variable, read from `.env` by Docker Compose. [`
 | `INITDATA_MAX_AGE` | `24h` | How long one Mini App launch stays valid (`1m`–`168h`) |
 | `MAX_IMAGE_MB` | `10` | Upload limit for a single photo (1–50) |
 | `TZ` | `UTC` | Time zone for dates and the "this year" statistic, for example `Europe/Amsterdam` |
-| `VKUSVILL_ENABLED` | `true` | «Собрать корзину во ВкусВилле». Set `false` to keep the server from contacting ВкусВилл at all; the search links still work |
 | `LOG_LEVEL` | `info` | `debug`, `info`, `warn` or `error` |
+| `LLM_API_KEY` | empty = off | Optional model key for [recipe import](#recipe-import). Treat it like the bot token |
+| `LLM_PROVIDER` | `gemini` | `gemini` (captions and videos), `anthropic` or `openai` (any OpenAI-compatible API) |
+| `LLM_MODEL` | per provider | `gemini-2.5-flash` or `claude-haiku-4-5` by default; required for `openai` |
+| `LLM_BASE_URL` | — | `openai` only: an OpenAI-compatible API, `https://api.openai.com/v1` by default |
 | `HTTP_PORT` | `8080` | Host port on `127.0.0.1` where the Mini App is also reachable |
 | `COMPOSE_PROFILES` | — | Profiles to run, e.g. `caddy` or `caddy,duckdns` |
 | `DOMAIN`, `ACME_EMAIL` | — | `caddy` profile: the domain and the e-mail for the certificate authority (both required) |
 | `DUCKDNS_SUBDOMAIN`, `DUCKDNS_TOKEN` | — | `duckdns` profile only |
 | `CLOUDFLARE_TUNNEL_TOKEN` | — | `tunnel` profile only |
+
+## Recipe import
+
+Import works without any key. The server reads the post the way a link preview does: one request for the post page, whose preview text is the full caption, plus the cover picture. Rules then pick out the title, the ingredients with amounts and units, the steps and the servings. Most recipe captions are read this way in about two seconds.
+
+Some posts need more, and an optional model key covers them:
+
+- **Captions the rules can't read** (prose, an unusual layout, another language) go to the model, which returns the same fields. Every value is checked like anything you type.
+- **Recipes that exist only in the video** (spoken, or shown as on-screen text) need a model that watches videos, which only Gemini does here. With `LLM_PROVIDER=gemini`, a reel whose caption has no usable recipe, or no steps, is downloaded from Instagram's CDN, sent to Gemini with the caption as context, and deleted from Google's storage right after. This takes up to 90 seconds; meanwhile the Mini App says «Смотрим видео…».
+
+**Recommended setup: Gemini.** One key covers captions and videos.
+
+1. Open [Google AI Studio](https://aistudio.google.com/apikey), sign in and create an API key.
+2. Put it into `.env`: `LLM_PROVIDER=gemini` and `LLM_API_KEY=<key>`, then `docker compose up -d`. The start-up log line shows `"llm":"gemini (captions and videos)"`.
+
+The free tier is enough for a couple: it is rate-limited, and Google may use what you send (captions and videos of public posts) to improve its products. On a paid plan Google doesn't, and a reel costs about a cent. The Gemini API is not offered in every country; the server's location is what counts.
+
+Limits: each person can have 20 videos read per day, and at most two videos are processed at once (a reel is up to 60 MB in memory). An import of the same post again returns the recipe you already have. When Instagram refuses to give a post, which happens now and then, paste the caption text instead.
 
 ## Bot commands
 
@@ -157,7 +180,7 @@ You can also send the bot plain text, a link, a photo or an album without any co
 
 ## Security model
 
-- **One root secret.** The bot token authenticates the bot. The Mini App login check and the image URL signatures use keys derived from it (each for a different purpose), so there are no other secrets to manage. The token never appears in logs: every log line passes through a redacting handler, and HTTP client errors, which contain the token in their URL, are scrubbed.
+- **One root secret.** The bot token authenticates the bot. The Mini App login check and the image URL signatures use keys derived from it (each for a different purpose), so the only other secret is the optional model key. Neither appears in logs: every log line passes through a redacting handler, and HTTP client errors, which contain the token in their URL, are scrubbed.
 - **Whitelist first.** Updates from users who aren't whitelisted are dropped without a reply and without an acknowledgement. Only the user ID is logged. Messages from groups and channels are ignored, and the bot leaves any group it gets added to.
 - **Mini App authentication.** Every API request carries Telegram's signed launch data (`Authorization: tma …`). The server checks:
   - the HMAC-SHA256 signature, in constant time;
@@ -167,7 +190,11 @@ You can also send the bot plain text, a link, a photo or an album without any co
 
   There are no cookies and no sessions.
 - **Images.** Uploads are size-limited. The format is checked from the file contents (JPEG, PNG or WebP only), and huge dimensions are rejected before decoding. Every image is re-encoded, which removes EXIF and GPS metadata. Files are stored under random server-generated names. They are served only through HMAC-signed URLs that expire.
-- **No fetching of user links.** Links are validated (http/https only) and shown to you, but the server never downloads them, so there is nothing to exploit with SSRF. The only outbound call the server makes, besides Telegram, goes to ВкусВилл's official MCP server for the cart. The address is fixed in the code, redirects are not followed, and replies are capped in size and time. Only product names from your shopping list are sent, never who you are. `VKUSVILL_ENABLED=false` turns it off.
+- **Few, fixed outbound calls.** Besides Telegram, the server calls only:
+  - **Instagram, for recipe import.** The post page and its embed page at `https://www.instagram.com/{p|reel|tv}/{code}/`, rebuilt from the parsed link (the text you paste is never fetched as it is), and the cover and video on Instagram's CDN (`*.cdninstagram.com`, `*.fbcdn.net`). Redirects to other hosts are refused, and every response is capped in size and time.
+  - **The model provider, only with `LLM_API_KEY` set:** `generativelanguage.googleapis.com`, `api.anthropic.com`, or your `LLM_BASE_URL` for `openai`. It gets the caption (with Gemini also the reel's video), never who you are. The caption is marked as untrusted data, and the answer is validated like user input. The key travels in a header, never in a URL.
+
+  Other links are validated (http/https only) and shown to you, but never downloaded, so there is nothing to exploit with SSRF.
 - **Web hardening.**
   - A strict Content-Security-Policy. The only external script is Telegram's `telegram-web-app.js`, and only `web.telegram.org` may frame the app.
   - `nosniff` and `no-referrer` headers.
@@ -231,6 +258,8 @@ BOT_TOKEN=... DEV_URL=http://localhost:5173/ bun run dev-url <your-telegram-id>
 - **The bot doesn't answer at all.** Check whether your ID is in `ALLOWED_USER_IDS`. The log shows each dropped update with the sender's ID: `docker compose logs bot | grep dropped`.
 - **`409 Conflict` in the logs.** Two copies of the bot are polling with the same token. Stop the other one.
 - **The container exits with "check BOT_TOKEN".** Telegram rejected the token. Get a new one with `/revoke` in @BotFather.
+- **Import says Instagram did not give the post.** Instagram sometimes refuses a server, especially right after many requests. Paste the caption text instead (the Mini App switches to the text field by itself), or try again later.
+- **Video recipes are not read.** Check that `LLM_PROVIDER=gemini` and the key are in `.env` and that the start-up log shows `"llm":"gemini (captions and videos)"`. An import report that says the daily limit is used up resets at midnight server time.
 - **The menu button doesn't open the app.** Make sure `WEBAPP_URL` is an `https://` address that you can reach from your phone. With the `quick` profile, the log line `quick tunnel hostname discovered` shows the current address.
 - **Caddy exits with "set DOMAIN and ACME_EMAIL".** Fill both in `.env`.
 - **No HTTPS certificate.** The domain must resolve to this server (`dig +short your.domain`), and ports 80 and 443 must be reachable from the internet. Caddy retries automatically; see `docker compose logs caddy`.

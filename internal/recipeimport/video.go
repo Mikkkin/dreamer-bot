@@ -57,22 +57,29 @@ func allowedVideoURL(u *url.URL) bool {
 	return u.Port() == "" && allowedImageURL(u)
 }
 
+// searchAgent is the search crawler Instagram serves a post's media data
+// to. The post page carries the video URL in it when the embed page leaves
+// the video out (some reels, e.g. with licensed music).
+const searchAgent = "Googlebot/2.1 (+http://www.google.com/bot.html)"
+
 // Video downloads the post's video and returns it with its media type.
-// It reads the video URL from the post's embed page (the only page it
-// requests besides the CDN) and downloads it from Instagram's CDN only,
-// within 60 s and 60 MiB. ErrNoVideo means the post has no video; any
-// other failure is ErrUnavailable.
+// It reads the video URL from the post's embed page or, when that page
+// says the post is a video but gives no URL, from the post page's media
+// data, and downloads it from Instagram's CDN only, within 60 s and
+// 60 MiB. ErrNoVideo means the post has no video; any other failure is
+// ErrUnavailable.
 func (f *Fetcher) Video(ctx context.Context, ref Ref) ([]byte, string, error) {
 	page, err := f.get(ctx, f.posts, ref.embedURL(), f.limits.postBytes, "text/html,application/xhtml+xml")
 	if err != nil {
 		return nil, "", err
 	}
 	raw, isVideo, ok := embedVideo(page)
+	if raw == "" && (isVideo || !ok) {
+		if raw, err = f.pageVideo(ctx, ref); err != nil {
+			return nil, "", err
+		}
+	}
 	switch {
-	case !ok:
-		return nil, "", fmt.Errorf("%w: unreadable embed data", ErrUnavailable)
-	case raw == "" && isVideo:
-		return nil, "", fmt.Errorf("%w: the embed page gives no video URL", ErrUnavailable)
 	case raw == "":
 		return nil, "", ErrNoVideo
 	case len(raw) > maxVideoURLBytes:
@@ -83,6 +90,64 @@ func (f *Fetcher) Video(ctx context.Context, ref Ref) ([]byte, string, error) {
 		return nil, "", fmt.Errorf("%w: video host not allowed", ErrUnavailable)
 	}
 	return f.download(ctx, u.String())
+}
+
+// pageVideo reads the video URL from the media data on the post page: the
+// first of the "video_versions" of the media object whose "code" is the
+// post's shortcode, in a JSON script of the page. Only that object counts,
+// and only through JSON keys: the caption is a string value in it and is
+// never parsed, so it cannot pose as the media data.
+func (f *Fetcher) pageVideo(ctx context.Context, ref Ref) (string, error) {
+	page, err := f.getAs(ctx, f.posts, ref.URL(), f.limits.postBytes, "text/html,application/xhtml+xml", searchAgent)
+	if err != nil {
+		return "", err
+	}
+	for _, script := range scripts(page) {
+		if !bytes.Contains(script, []byte(`"video_versions"`)) {
+			continue
+		}
+		var doc any
+		if json.Unmarshal(script, &doc) != nil {
+			continue
+		}
+		if u, found := mediaVideoURL(doc, ref.Shortcode, 0); found {
+			return u, nil
+		}
+	}
+	return "", fmt.Errorf("%w: the post gives no video URL", ErrUnavailable)
+}
+
+// mediaVideoURL finds the media object of the post (its "code" is the
+// shortcode) and returns the URL of its first video version. depth bounds
+// the walk.
+func mediaVideoURL(v any, code string, depth int) (string, bool) {
+	if depth > 64 {
+		return "", false
+	}
+	switch t := v.(type) {
+	case map[string]any:
+		if c, _ := t["code"].(string); c == code {
+			if versions, _ := t["video_versions"].([]any); len(versions) > 0 {
+				if first, _ := versions[0].(map[string]any); first != nil {
+					if u, _ := first["url"].(string); u != "" {
+						return u, true
+					}
+				}
+			}
+		}
+		for _, child := range t {
+			if u, found := mediaVideoURL(child, code, depth+1); found {
+				return u, true
+			}
+		}
+	case []any:
+		for _, child := range t {
+			if u, found := mediaVideoURL(child, code, depth+1); found {
+				return u, true
+			}
+		}
+	}
+	return "", false
 }
 
 // contextKey opens the post's data on the embed page: a JSON document

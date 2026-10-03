@@ -155,11 +155,16 @@ func (f *Fetcher) Image(ctx context.Context, imageURL string) ([]byte, error) {
 }
 
 func (f *Fetcher) get(ctx context.Context, client *http.Client, target string, limit int64, accept string) ([]byte, error) {
+	return f.getAs(ctx, client, target, limit, accept, userAgent)
+}
+
+// getAs is get with another User-Agent.
+func (f *Fetcher) getAs(ctx context.Context, client *http.Client, target string, limit int64, accept, agent string) ([]byte, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, target, nil)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrUnavailable, err)
 	}
-	req.Header.Set("User-Agent", userAgent)
+	req.Header.Set("User-Agent", agent)
 	req.Header.Set("Accept", accept)
 	req.Header.Set("Accept-Language", "en-US,en;q=0.8")
 	resp, err := client.Do(req)

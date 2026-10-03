@@ -422,3 +422,81 @@ func TestVideoQuota(t *testing.T) {
 		t.Error("perDay 0 must mean the default")
 	}
 }
+
+// postPageWithMedia lays out the post page as served to searchAgent: the
+// media data in a JSON script, with a caption that quotes fake media data
+// and an object of another post before the post's own one.
+func postPageWithMedia(t *testing.T, code, videoURL string) string {
+	t.Helper()
+	fake := `{"code":"` + code + `","video_versions":[{"url":"https://evil.fbcdn.net/fake.mp4"}]}`
+	doc := map[string]any{"require": []any{[]any{"ScheduledServerJS", "handle", nil, []any{map[string]any{
+		"__bbox": map[string]any{"result": map[string]any{"data": map[string]any{
+			"xdt_api__v1__media__shortcode__web_info": map[string]any{"items": []any{
+				map[string]any{"code": "OTHERPOST", "video_versions": []any{map[string]any{"type": 101, "url": "https://scontent.cdninstagram.com/other.mp4"}}},
+				map[string]any{
+					"code":           code,
+					"caption":        map[string]any{"text": "Рецепт в видео " + fake},
+					"video_versions": []any{map[string]any{"type": 101, "url": videoURL}},
+				},
+			}},
+		}}},
+	}}}}}
+	b, err := json.Marshal(doc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return `<html><body><div>Рецепт в видео ` + fake + `</div><script type="application/json" data-sjs>` + string(b) + `</script></body></html>`
+}
+
+func TestFetcherVideoFromThePostPage(t *testing.T) {
+	const cdn = "https://scontent-ams2-1.cdninstagram.com/o1/v/t2/f2/m86/AQPC.mp4?_nc_cat=106&efg=eyJ9"
+	vs := &videoServer{}
+	var pageUA string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		vs.record(r)
+		switch {
+		case r.Host == canonicalHost && strings.HasSuffix(r.URL.Path, "/embed/captioned/"):
+			// The embed page says «a video» but leaves the URL out.
+			_, _ = w.Write([]byte(`<script>{"contextJSON":"{\"context\":{\"is_video\":true}}"}</script>`))
+		case r.Host == canonicalHost && r.URL.Path == "/reel/DcjdkNGKlwS/":
+			pageUA = r.UserAgent()
+			_, _ = w.Write([]byte(postPageWithMedia(t, "DcjdkNGKlwS", cdn)))
+		case r.Host == canonicalHost && r.URL.Path == "/reel/NOMEDIA01/":
+			_, _ = w.Write([]byte(`<script type="application/json">{"require":[]}</script>`))
+		case r.Host == "scontent-ams2-1.cdninstagram.com" && r.URL.Path == "/o1/v/t2/f2/m86/AQPC.mp4":
+			w.Header().Set("Content-Type", "video/mp4")
+			_, _ = w.Write(fakeMP4)
+		default:
+			http.Error(w, "unexpected", http.StatusTeapot)
+		}
+	}))
+	defer srv.Close()
+	f := testFetcher(srv, nil)
+
+	video, mimeType, err := f.Video(context.Background(), Ref{"reel", "DcjdkNGKlwS"})
+	if err != nil || string(video) != string(fakeMP4) || mimeType != "video/mp4" {
+		t.Fatalf("Video = %d bytes %q, %v", len(video), mimeType, err)
+	}
+	if pageUA != searchAgent {
+		t.Errorf("post page fetched as %q, want %q", pageUA, searchAgent)
+	}
+	// No media data for the post: unavailable, not «no video».
+	if _, _, err := f.Video(context.Background(), Ref{"reel", "NOMEDIA01"}); !errors.Is(err, ErrUnavailable) || errors.Is(err, ErrNoVideo) {
+		t.Errorf("post page without media = %v, want ErrUnavailable", err)
+	}
+	srv.Close()
+	if len(vs.foreign) > 0 {
+		t.Errorf("requests left the allowed hosts (the caption's fake URL was used?): %v", vs.foreign)
+	}
+}
+
+func TestMediaVideoURL(t *testing.T) {
+	var doc any
+	_ = json.Unmarshal([]byte(`{"a":[{"code":"X1","video_versions":[{"url":"u-x1"}]},{"b":{"code":"Y2","video_versions":[]}},{"code":"Y2","caption":{"text":"{\"code\":\"Y2\",\"video_versions\":[{\"url\":\"evil\"}]}"},"video_versions":[{"url":"u-y2"},{"url":"u-y2-low"}]}]}`), &doc)
+	if u, ok := mediaVideoURL(doc, "Y2", 0); !ok || u != "u-y2" {
+		t.Errorf("Y2 = %q, %v; want the post's own first version", u, ok)
+	}
+	if _, ok := mediaVideoURL(doc, "Z3", 0); ok {
+		t.Error("an unknown post must have no video URL")
+	}
+}

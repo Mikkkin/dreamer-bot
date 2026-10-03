@@ -1,0 +1,23 @@
+dreamer-bot
+Copyright (C) 2026 Dmitry Khangildin (github.com/Mikkkin)
+
+This program is free software: you can redistribute it and/or modify it
+under the terms of the GNU Affero General Public License as published by the
+Free Software Foundation, version 3 (see LICENSE). It is distributed in the
+hope that it will be useful, but WITHOUT ANY WARRANTY; without even the
+implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+If you run a modified version for users over a network (for example as a
+Telegram bot or Mini App), the AGPL requires you to offer those users the
+corresponding source code of your version.
+
+Third-party material keeps its own terms and is not licensed under the AGPL
+by this project:
+  - the Go modules listed in go.mod and the packages listed in
+    web/package.json, under their respective licenses;
+  - internal/nutrition/data/foods.json, derived from USDA FoodData Central
+    (SR Legacy), which is in the public domain (CC0 1.0), and from typical
+    nutrition label values;
+  - the captions in internal/recipeimport/testdata/captions/, which are
+    public Instagram post texts by their authors, kept only as test data for
+    the recipe parser; they remain their authors' property.

@@ -66,7 +66,7 @@ func newGemini(key, model string, rt http.RoundTripper, limits geminiLimits) (*g
 		model = DefaultGeminiModel
 	}
 	if !geminiModelRe.MatchString(model) {
-		return nil, errors.New("recipeimport: a gemini model name looks like gemini-2.5-flash")
+		return nil, errors.New("recipeimport: a gemini model name looks like gemini-3.8-flash")
 	}
 	return &geminiClient{
 		key:   key,
@@ -198,9 +198,14 @@ func (c *geminiClient) generate(ctx context.Context, system string, parts []any)
 		"responseSchema":   geminiRecipeSchema,
 		"maxOutputTokens":  c.limits.maxTokens,
 	}
-	if strings.HasPrefix(c.model, "gemini-2.5-flash") {
-		// Extraction needs no reasoning: thinking would only add latency
-		// and tokens. Other models keep their default.
+	// Extraction needs little reasoning: more thinking only adds latency and
+	// output tokens. Gemini 3 takes a level («low» is valid on every Flash
+	// model; «minimal» is rejected by 3.7+), 2.5 Flash a budget; other
+	// models keep their default.
+	switch {
+	case strings.HasPrefix(c.model, "gemini-3"):
+		config["thinkingConfig"] = map[string]any{"thinkingLevel": "low"}
+	case strings.HasPrefix(c.model, "gemini-2.5-flash"):
 		config["thinkingConfig"] = map[string]any{"thinkingBudget": 0}
 	}
 	payload, err := json.Marshal(map[string]any{

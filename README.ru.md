@@ -137,7 +137,7 @@ HTTPS-сертификат Caddy получит сам. Сначала он пр
 | `LOG_LEVEL` | `info` | `debug`, `info`, `warn` или `error` |
 | `LLM_API_KEY` | пусто = выключено | Необязательный ключ модели для [импорта рецептов](#импорт-рецептов). Храните его так же бережно, как токен бота |
 | `LLM_PROVIDER` | `gemini` | `gemini` (подписи и видео), `anthropic` или `openai` (любой OpenAI-совместимый API) |
-| `LLM_MODEL` | своя у провайдера | По умолчанию `gemini-2.5-flash` или `claude-haiku-4-5`; для `openai` обязательна |
+| `LLM_MODEL` | своя у провайдера | По умолчанию `gemini-3.8-flash` или `claude-haiku-4-5`; для `openai` обязательна |
 | `LLM_BASE_URL` | — | Только для `openai`: адрес OpenAI-совместимого API, по умолчанию `https://api.openai.com/v1` |
 | `HTTP_PORT` | `8080` | Порт на `127.0.0.1`, по которому Mini App тоже доступна |
 | `COMPOSE_PROFILES` | — | Какие профили запускать, например `caddy` или `caddy,duckdns` |

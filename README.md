@@ -137,7 +137,7 @@ Every setting is an environment variable, read from `.env` by Docker Compose. [`
 | `LOG_LEVEL` | `info` | `debug`, `info`, `warn` or `error` |
 | `LLM_API_KEY` | empty = off | Optional model key for [recipe import](#recipe-import). Treat it like the bot token |
 | `LLM_PROVIDER` | `gemini` | `gemini` (captions and videos), `anthropic` or `openai` (any OpenAI-compatible API) |
-| `LLM_MODEL` | per provider | `gemini-2.5-flash` or `claude-haiku-4-5` by default; required for `openai` |
+| `LLM_MODEL` | per provider | `gemini-3.8-flash` or `claude-haiku-4-5` by default; required for `openai` |
 | `LLM_BASE_URL` | — | `openai` only: an OpenAI-compatible API, `https://api.openai.com/v1` by default |
 | `HTTP_PORT` | `8080` | Host port on `127.0.0.1` where the Mini App is also reachable |
 | `COMPOSE_PROFILES` | — | Profiles to run, e.g. `caddy` or `caddy,duckdns` |

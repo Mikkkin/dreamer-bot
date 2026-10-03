@@ -59,7 +59,7 @@ const (
 	ProviderGemini        = "gemini"
 	DefaultAnthropicModel = "claude-haiku-4-5"
 	DefaultOpenAIBaseURL  = "https://api.openai.com/v1"
-	DefaultGeminiModel    = "gemini-2.5-flash"
+	DefaultGeminiModel    = "gemini-3.8-flash"
 
 	anthropicEndpoint = "https://api.anthropic.com/v1/messages"
 	anthropicVersion  = "2023-06-01"

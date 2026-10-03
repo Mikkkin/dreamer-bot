@@ -22,4 +22,16 @@ t [ "$(stat -c %a "$e")" = 600 ]
 t [ "$(env_get DOMAIN)" = dreams.mooo.com ]
 FORCE_ENV=1 DOMAIN_MODE=none DOMAIN='' configure_env >/dev/null 2>&1
 t grep -qx "COMPOSE_PROFILES=" "$e"; t grep -qx "WEBAPP_URL=" "$e"
+# GitHub host keys: from the API, else the published ones (CI runners share
+# IPs and hit the unauthenticated rate limit).
+kh=$(mktemp)
+curl() { return 22; }
+github_known_hosts "$kh" 2>/dev/null
+t [ "$(wc -l < "$kh")" -eq 6 ]
+t grep -qx '\[ssh.github.com\]:443 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl' "$kh"
+curl() { printf '{"ssh_keys":["ssh-ed25519 AAAATESTKEY"]}'; }
+github_known_hosts "$kh"
+t [ "$(cat "$kh")" = "$(printf 'github.com ssh-ed25519 AAAATESTKEY\n[ssh.github.com]:443 ssh-ed25519 AAAATESTKEY')" ]
+unset -f curl
+
 report

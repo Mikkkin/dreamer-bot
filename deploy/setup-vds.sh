@@ -443,10 +443,21 @@ EOF
   ok "Docker запущен, $ADMIN_USER в группе docker"
 }
 
-github_known_hosts() { # pin GitHub's host keys from its HTTPS API (no TOFU)
-  local file=$1 keys key
-  keys=$(curl -fsS --max-time 15 https://api.github.com/meta | grep -oE '"(ssh-ed25519|ecdsa-sha2-nistp256|ssh-rsa) [A-Za-z0-9+/=]+"' | tr -d '"')
-  [[ -n $keys ]] || die "Не удалось получить ключи GitHub"
+# GitHub's published SSH host keys (fingerprints on docs.github.com, "GitHub's
+# SSH key fingerprints"): the fallback when api.github.com cannot be reached
+# or rate-limits unauthenticated requests (60 an hour per IP).
+GITHUB_HOST_KEYS='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl
+ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBEmKSENjQEezOmxkZMy7opKgwFB9nkt5YRrYMjNuG5N87uRgg6CLrbo5wAdT/y6v0mKV0U2w0WZ2YB/++Tpockg=
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCj7ndNxQowgcQnjshcLrqPEiiphnt+VTTvDP6mHBL9j1aNUkY4Ue1gvwnGLVlOhGeYrnZaMgRK6+PKCUXaDbC7qtbW8gIkhL7aGCsOr/C56SJMy/BCZfxd1nWzAOxSDPgVsmerOBYfNqltV9/hWCqBywINIR+5dIg6JTJ72pcEpEjcYgXkE2YEFXV1JHnsKgbLWNlhScqb2UmyRkQyytRLtL+38TGxkxCflmO+5Z8CSSNY7GidjMIZ7Q4zMjA2n1nGrlTDkzwDCsw+wqFPGQA179cnfGWOWRVruj16z6XyvxvjJwbz0wQZ75XK5tKSb7FNyeIEs4TT4jk+S4dhPeAUC5y+bDYirYgM4GC7uEnztnZyaVWQ7B381AK4Qdrwt51ZqExKbQpTUNn+EjqoTwvqNj4kqx5QUCI0ThS/YkOxJCXmPUWZbhjpCg56i+2aB6CmK2JGhn57K5mj0MNdBXA4/WnwH6XoPWJzK5Nyu2zB3nAZp+S5hpQs+p1vN1/wsjk='
+
+github_known_hosts() { # pin GitHub's host keys: from its HTTPS API, else the published ones (no TOFU)
+  local file=$1 meta keys key
+  meta=$(curl -fsS --max-time 15 --retry 2 https://api.github.com/meta 2>/dev/null) || meta=''
+  keys=$(grep -oE '"(ssh-ed25519|ecdsa-sha2-nistp256|ssh-rsa) [A-Za-z0-9+/=]+"' <<<"$meta" | tr -d '"') || keys=''
+  if [[ -z $keys ]]; then
+    warn "api.github.com не ответил — беру опубликованные ключи GitHub"
+    keys=$GITHUB_HOST_KEYS
+  fi
   # ssh.github.com:443 serves the same host keys and works where port 22 is blocked.
   while IFS= read -r key; do
     printf 'github.com %s\n[ssh.github.com]:443 %s\n' "$key" "$key"

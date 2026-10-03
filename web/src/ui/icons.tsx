@@ -268,3 +268,22 @@ export const IconChefHat = make(
     <path d="M6 17h12" />
   </>,
 )
+
+export const IconMinus = make(<path d="M5 12h14" />)
+
+/** Lucide "rotate-ccw": back to the recipe's own servings. */
+export const IconUndo = make(
+  <>
+    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+    <path d="M3 3v5h5" />
+  </>,
+)
+
+/** Lucide "clipboard-paste": a recipe from a link or pasted text. */
+export const IconPaste = make(
+  <>
+    <path d="M15 2H9a1 1 0 0 0-1 1v2c0 .6.4 1 1 1h6c.6 0 1-.4 1-1V3c0-.6-.4-1-1-1Z" />
+    <path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2M16 4h2a2 2 0 0 1 2 2v2M11 14h10" />
+    <path d="m17 10 4 4-4 4" />
+  </>,
+)

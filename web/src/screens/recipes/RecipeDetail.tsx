@@ -20,12 +20,22 @@ import { LoadState } from '../shared/LoadState'
 import { useEntity } from '../shared/useEntity'
 import { CookHistory } from './CookHistory'
 import { CookSheet, type CookSheetMode } from './CookSheet'
-import { AddToShoppingSheet, IngredientsSection } from './Ingredients'
-import { NutritionPanel } from './NutritionPanel'
+import { AddToShoppingSheet, IngredientsSection, type Portions } from './Ingredients'
+import { NutritionCard } from './NutritionCard'
 import { pickRandomRecipe } from './random'
 import { recipeLines } from './steps'
 
 type SheetState = { kind: 'none' } | { kind: 'cook' } | { kind: 'shopping' }
+
+/**
+ * The portions picked in the scaler. They start at the recipe's servings and
+ * follow them when the recipe changes; nothing is persisted.
+ */
+function usePortions(base: number | null): [Portions, (n: number) => void] {
+  const [pick, setPick] = useState<{ base: number | null; chosen: number | null }>({ base, chosen: base })
+  const chosen = pick.base === base ? pick.chosen : base
+  return [{ base, chosen }, (n: number) => setPick({ base, chosen: n })]
+}
 
 /** The cooking history of a recipe, refetched whenever its summary changes. */
 function useCooks(recipe: Recipe | null) {
@@ -81,6 +91,7 @@ export function RecipeDetail({ id, random = false }: { id: number; random?: bool
   const stillOnTop = useStillOnTop()
   const recipe = lookup.entity
   const history = useCooks(recipe)
+  const [portions, setPortions] = usePortions(recipe?.servings ?? recipe?.nutrition?.servings ?? null)
   const byId = useMemo(() => tagMap(data.tags), [data.tags])
 
   // The random pick lands with a light tap, together with the kicker's pop.
@@ -223,9 +234,18 @@ export function RecipeDetail({ id, random = false }: { id: number; random?: bool
 
       {recipe.link && <LinkCell url={recipe.link} title="Открыть рецепт" />}
 
-      {recipe.ingredients.length > 0 && <IngredientsSection recipe={recipe} onAdd={() => setSheet({ kind: 'shopping' })} />}
+      {recipe.ingredients.length > 0 && (
+        <IngredientsSection
+          recipe={recipe}
+          portions={portions}
+          max={me.limits.servings_max}
+          onPortions={setPortions}
+          onAskServings={edit}
+          onAdd={() => setSheet({ kind: 'shopping' })}
+        />
+      )}
 
-      {recipe.nutrition && <NutritionPanel nutrition={recipe.nutrition} />}
+      <NutritionCard nutrition={recipe.nutrition} auto={recipe.nutrition_auto} base={portions.base} chosen={portions.chosen} />
 
       {recipe.body && (
         <Section header="Как готовить">
@@ -288,7 +308,9 @@ export function RecipeDetail({ id, random = false }: { id: number; random?: bool
       </Section>
 
       <CookSheet open={sheet.kind === 'cook'} mode={cookMode} recipe={recipe} onClose={closeSheet} onDone={afterCook} />
-      {recipe.ingredients.length > 0 && <AddToShoppingSheet open={sheet.kind === 'shopping'} recipe={recipe} onClose={closeSheet} />}
+      {recipe.ingredients.length > 0 && (
+        <AddToShoppingSheet open={sheet.kind === 'shopping'} recipe={recipe} portions={portions} onClose={closeSheet} />
+      )}
     </article>
   )
 }

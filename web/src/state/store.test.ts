@@ -20,6 +20,7 @@ function recipe(id: number, patch: Partial<Recipe> = {}): Recipe {
     cuisine_id: null,
     course_ids: [],
     ingredients: [],
+    servings: null,
     nutrition: null,
     cooking: { count: 0, last_cooked_at: null, rating_avg: null, rating_count: 0 },
     author: me.user,
@@ -107,4 +108,9 @@ test('a failed refresh keeps the data and shows the error', () => {
 test('put-tag keeps tags ordered', () => {
   const s = reducer(loaded(), { type: 'put-tag', tag: tag(20, 'cuisine', 5) })
   expect(s.tags.map((t) => t.id)).toEqual([3, 20, 9, 11])
+})
+
+test('the shopping list is a plain checklist: no store state is kept', () => {
+  expect('stores' in initialState).toBe(false)
+  expect('stores' in loaded()).toBe(false)
 })

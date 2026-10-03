@@ -23,6 +23,7 @@ function recipe(id: number, patch: Partial<Recipe> = {}, cooking: Partial<Recipe
     cuisine_id: null,
     course_ids: [],
     ingredients: [],
+    servings: null,
     nutrition: null,
     cooking: { count: 0, last_cooked_at: null, rating_avg: null, rating_count: 0, ...cooking },
     author: { id: 1, name: 'Дима' },

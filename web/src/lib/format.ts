@@ -130,6 +130,13 @@ export const RECIPE_GENITIVE_FORMS: PluralForms = ['рецепта', 'рецеп
 
 export const TIMES_FORMS: PluralForms = ['раз', 'раза', 'раз']
 export const SERVING_FORMS: PluralForms = ['порция', 'порции', 'порций']
+/** After «на»: на 1 порцию, на 2 порции, на 5 порций. */
+export const SERVING_FOR_FORMS: PluralForms = ['порцию', 'порции', 'порций']
+
+/** «на 6 порций». */
+export function forServings(n: number): string {
+  return `на ${countOf(n, SERVING_FOR_FORMS)}`
+}
 export const ITEM_FORMS: PluralForms = ['позиция', 'позиции', 'позиций']
 export const INGREDIENT_FORMS: PluralForms = ['ингредиент', 'ингредиента', 'ингредиентов']
 

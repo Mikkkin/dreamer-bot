@@ -13,7 +13,7 @@ export interface IngredientRow {
 }
 
 export function ingredientRows(list: readonly Ingredient[]): IngredientRow[] {
-  return list.map((ing, i) => ({ key: i + 1, name: ing.name, amount: amountForEdit(ing.amount), unit: ing.unit ?? '' }))
+  return list.map((ing, i) => ({ key: i + 1, name: ing.name, amount: amountForEdit(ing.amount, ing.unit), unit: ing.unit ?? '' }))
 }
 
 export function emptyRow(rows: readonly IngredientRow[]): IngredientRow {

@@ -1,7 +1,7 @@
 import { createContext, use, useCallback, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react'
 import { ApiClient } from '../api/client'
 import { ApiError } from '../api/errors'
-import type { Category, Me, Person, Recipe, RecipeTag, ShoppingItem, Store, Wish } from '../api/types'
+import type { Category, Me, Person, Recipe, RecipeTag, ShoppingItem, Wish } from '../api/types'
 import { initialState, reducer, type State } from './store'
 
 // The whole dataset of a couple is small, so it is loaded once and filtered on
@@ -18,8 +18,6 @@ export interface Data extends State {
   refreshWish(id: number): Promise<boolean>
   /** Refetches one recipe (its cooking summary changed on the server). */
   refreshRecipe(id: number): Promise<void>
-  /** Loads the store links once; later calls reuse them. */
-  loadStores(): Promise<void>
   putWish(wish: Wish): void
   dropWish(id: number): void
   putRecipe(recipe: Recipe): void
@@ -31,7 +29,6 @@ export interface Data extends State {
   putShopping(items: ShoppingItem[]): void
   dropShopping(ids: number[]): void
   setShopping(items: ShoppingItem[]): void
-  setStores(stores: Store[]): void
 }
 
 const DataContext = createContext<Data | null>(null)
@@ -65,7 +62,6 @@ export function DataProvider({ initData, onFatal, watchActivation, children }: D
     () => new ApiClient(initData, (e) => onFatal(e.status === 403 ? 'forbidden' : 'unauthorized')),
   )
   const loadedAt = useRef(0)
-  const storesLoaded = useRef(false)
 
   const reload = useCallback(async () => {
     dispatch({ type: 'loading' })
@@ -138,17 +134,6 @@ export function DataProvider({ initData, onFatal, watchActivation, children }: D
     [api],
   )
 
-  const loadStores = useCallback(async () => {
-    if (storesLoaded.current) return
-    storesLoaded.current = true
-    try {
-      dispatch({ type: 'stores', stores: await api.stores() })
-    } catch {
-      // Store links are a convenience: without them the list still works.
-      storesLoaded.current = false
-    }
-  }, [api])
-
   useEffect(() => {
     void reload()
   }, [reload])
@@ -170,7 +155,6 @@ export function DataProvider({ initData, onFatal, watchActivation, children }: D
       refresh,
       refreshWish,
       refreshRecipe,
-      loadStores,
       putWish: (wish) => dispatch({ type: 'put-wish', wish }),
       dropWish: (id) => dispatch({ type: 'drop-wish', id }),
       putRecipe: (recipe) => dispatch({ type: 'put-recipe', recipe }),
@@ -182,9 +166,8 @@ export function DataProvider({ initData, onFatal, watchActivation, children }: D
       putShopping: (items) => dispatch({ type: 'put-shopping', items }),
       dropShopping: (ids) => dispatch({ type: 'drop-shopping', ids }),
       setShopping: (items) => dispatch({ type: 'shopping', items }),
-      setStores: (stores) => dispatch({ type: 'stores', stores }),
     }),
-    [state, api, reload, refresh, refreshWish, refreshRecipe, loadStores],
+    [state, api, reload, refresh, refreshWish, refreshRecipe],
   )
 
   return <DataContext value={value}>{children}</DataContext>

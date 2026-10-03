@@ -104,27 +104,25 @@ describe('new endpoints hit the documented paths', () => {
     reply.body = { removed: 3 }
     expect(await api.clearCheckedShopping()).toBe(3)
     expect(last()).toMatchObject({ method: 'POST', url: '/api/shopping/clear-checked' })
-    reply.body = { stores: [] }
-    await api.stores()
-    expect(last()).toMatchObject({ method: 'GET', url: '/api/stores' })
   })
 
-  test('ВкусВилл cart', async () => {
-    reply.body = { matches: [] }
-    await api.vkusvillMatch(null)
-    expect(last()).toMatchObject({ method: 'POST', url: '/api/shopping/vkusvill/match', body: {} })
-    await api.vkusvillMatch([31, 32])
-    expect(last()).toMatchObject({ body: { item_ids: [31, 32] } })
-    reply.body = { url: 'https://vkusvill.ru/?share_basket=1', estimated_total: null }
-    await api.vkusvillCart([{ xml_id: 173, quantity: '2' }])
-    expect(last()).toMatchObject({ method: 'POST', url: '/api/shopping/vkusvill/cart', body: { lines: [{ xml_id: 173, quantity: '2' }] } })
+  test('a scaled recipe goes to the list as plain items', async () => {
+    reply = { status: 201, body: { items: [] } }
+    await api.addShopping([
+      { name: 'Спагетти', amount: '480', unit: 'г' },
+      { name: 'Соль', amount: null, unit: 'по вкусу' },
+    ])
+    expect(last()).toMatchObject({
+      method: 'POST',
+      url: '/api/shopping',
+      body: { items: [{ name: 'Спагетти', amount: '480', unit: 'г' }, { name: 'Соль', amount: null, unit: 'по вкусу' }] },
+    })
   })
 
-  test('ВкусВилл being down is "unavailable"', async () => {
-    reply = { status: 503, body: { error: { code: 'unavailable', message: 'ВкусВилл не отвечает' } } }
-    const err = await api.vkusvillMatch(null).catch((e: unknown) => e)
-    expect((err as ApiError).code).toBe('unavailable')
-    expect(failures.some((f) => f.code === 'unavailable')).toBe(false)
+  test('no store endpoints are left', () => {
+    expect('stores' in api).toBe(false)
+    expect('vkusvillMatch' in api).toBe(false)
+    expect('vkusvillCart' in api).toBe(false)
   })
 
   test('every request carries the launch data', async () => {
@@ -156,7 +154,51 @@ test('an error envelope becomes an ApiError with the field', async () => {
   expect((err as ApiError).message).toBe('Копим в RUB — укажите сумму в этой валюте')
 })
 
-test('match item ids are validated too', async () => {
-  await expect(api.vkusvillMatch([31, 0])).rejects.toBeInstanceOf(ApiError)
-  expect(calls).toHaveLength(0)
+
+describe('import', () => {
+  const recipe = { id: 9, title: 'Паста', servings: 4 }
+  const report = { source: 'instagram', parser: 'rules', confidence: 0.9, image: true, warnings: [] }
+
+  test('a link', async () => {
+    reply = { status: 201, body: { recipe, import: report } }
+    const r = await api.importRecipe({ url: 'https://www.instagram.com/reel/Abcde12345/' })
+    expect(last()).toMatchObject({ method: 'POST', url: '/api/recipes/import', body: { url: 'https://www.instagram.com/reel/Abcde12345/' } })
+    expect(r.recipe.id).toBe(9)
+    expect(r.import.duplicate).toBeUndefined()
+  })
+
+  test('text, and only the field that was chosen', async () => {
+    reply = { status: 201, body: { recipe, import: { ...report, source: 'text' } } }
+    await api.importRecipe({ text: 'Паста\nСпагетти 200 г' })
+    expect(last().body).toEqual({ text: 'Паста\nСпагетти 200 г' })
+  })
+
+  test('the same post again returns the existing recipe (200, duplicate)', async () => {
+    reply = { status: 200, body: { recipe, import: { ...report, duplicate: true } } }
+    const r = await api.importRecipe({ url: 'https://www.instagram.com/p/Abcde12345/' })
+    expect(r.import.duplicate).toBe(true)
+  })
+
+  test('Instagram did not give the post: 503 unavailable, not an auth failure', async () => {
+    const message = 'Instagram не отдал пост. Скопируйте текст подписи и вставьте его сюда.'
+    reply = { status: 503, body: { error: { code: 'unavailable', message } } }
+    const err = await api.importRecipe({ url: 'https://www.instagram.com/p/Abcde12345/' }).catch((e: unknown) => e)
+    expect(err).toBeInstanceOf(ApiError)
+    expect((err as ApiError).code).toBe('unavailable')
+    expect((err as ApiError).message).toBe(message)
+    expect(failures.some((f) => f.code === 'unavailable')).toBe(false)
+  })
+
+  test('no recipe in the text: 422 not_a_recipe', async () => {
+    reply = { status: 422, body: { error: { code: 'not_a_recipe', message: 'не нашли в тексте рецепт — вставьте текст с ингредиентами' } } }
+    const err = (await api.importRecipe({ text: 'привет' }).catch((e: unknown) => e)) as ApiError
+    expect(err.code).toBe('not_a_recipe')
+    expect(err.message).toBe('Не нашли в тексте рецепт — вставьте текст с ингредиентами')
+  })
+
+  test('a field error', async () => {
+    reply = { status: 400, body: { error: { code: 'validation', message: 'нужна ссылка на пост Instagram', field: 'url' } } }
+    const err = (await api.importRecipe({ url: 'x' }).catch((e: unknown) => e)) as ApiError
+    expect(err.field).toBe('url')
+  })
 })

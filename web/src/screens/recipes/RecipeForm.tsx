@@ -1,10 +1,12 @@
-import { useMemo, useState } from 'react'
+import { useId, useMemo, useState } from 'react'
 import { ApiError } from '../../api/errors'
 import type { Recipe, RecipeInput, RecipeTag, TagKind } from '../../api/types'
+import { cx } from '../../lib/cx'
 import { checkIngredients, emptyRow, ingredientRows, type IngredientRow, type RowErrors } from '../../lib/ingredients'
 import { linkHost, normalizeLinkInput } from '../../lib/links'
 import { checkNutrition, nutritionDraft, type NutritionDraft, type NutritionErrors } from '../../lib/nutrition'
 import { tagMap, tagsOfKind, toggleCourse } from '../../lib/recipes'
+import { checkServings, stepServings } from '../../lib/servings'
 import { usePhotoDraft } from '../../media/usePhotoDraft'
 import { useData, useMe } from '../../state/data'
 import { useNav } from '../../state/nav'
@@ -13,7 +15,7 @@ import { useToast } from '../../state/toast'
 import { useMainButton, useTelegram } from '../../telegram/hooks'
 import { Chip, ChipGroup, SwitchRow } from '../../ui/controls'
 import { TextArea, TextField, charCount } from '../../ui/fields'
-import { IconClipboardList, IconFlame, IconLink, IconNotebook, IconPlus } from '../../ui/icons'
+import { IconClipboardList, IconFlame, IconLink, IconMinus, IconNotebook, IconPlus } from '../../ui/icons'
 import { IconTile, Section } from '../../ui/layout'
 import { PhotoEditor } from '../../ui/PhotoEditor'
 import { dismissKeyboard, uploadFailureText, useLeaveGuard, type FieldErrors } from '../shared/forms'
@@ -25,6 +27,8 @@ import { TagSheet } from './TagSheet'
 
 interface Fields {
   title: string
+  /** The recipe's servings as typed; '' is unknown. */
+  servings: string
   linkOn: boolean
   link: string
   bodyOn: boolean
@@ -37,10 +41,11 @@ interface Fields {
   nutrition: NutritionDraft
 }
 
-type FieldKey = 'title' | 'link' | 'body' | 'cuisine_id' | 'course_ids' | 'ingredients' | 'nutrition'
+type FieldKey = 'title' | 'servings' | 'link' | 'body' | 'cuisine_id' | 'course_ids' | 'ingredients' | 'nutrition'
 
 const ERROR_OF: Readonly<Record<keyof Fields, FieldKey>> = {
   title: 'title',
+  servings: 'servings',
   linkOn: 'link',
   link: 'link',
   bodyOn: 'body',
@@ -53,7 +58,7 @@ const ERROR_OF: Readonly<Record<keyof Fields, FieldKey>> = {
   nutrition: 'nutrition',
 }
 
-const NUTRITION_FIELDS = new Set(['nutrition', 'kcal', 'protein', 'fat', 'carbs', 'weight_g', 'servings'])
+const NUTRITION_FIELDS = new Set(['nutrition', 'kcal', 'protein', 'fat', 'carbs', 'weight_g'])
 const INGREDIENT_FIELDS = new Set(['ingredients', 'name', 'amount', 'unit'])
 
 /** Maps the server's error.field onto a block of the form. */
@@ -61,13 +66,17 @@ function blockOf(field: string | undefined): FieldKey | 'form' {
   if (field === undefined) return 'form'
   if (NUTRITION_FIELDS.has(field)) return 'nutrition'
   if (INGREDIENT_FIELDS.has(field)) return 'ingredients'
+  if (field === 'servings' || field === 'nutrition.servings') return 'servings'
   if (field === 'title' || field === 'link' || field === 'body' || field === 'cuisine_id' || field === 'course_ids') return field
   return 'form'
 }
 
 function initialFields(recipe: Recipe | null): Fields {
+  // An older server keeps the servings inside the КБЖУ only.
+  const servings = recipe ? (recipe.servings ?? recipe.nutrition?.servings ?? null) : null
   return {
     title: recipe?.title ?? '',
+    servings: servings ? String(servings) : '',
     linkOn: recipe?.link != null,
     link: recipe?.link ?? '',
     bodyOn: (recipe?.body ?? '') !== '',
@@ -81,15 +90,21 @@ function initialFields(recipe: Recipe | null): Fields {
   }
 }
 
-export function RecipeForm({ id }: { id?: number }) {
+interface RecipeFormProps {
+  id?: number
+  /** Set right after an import: the recipe is saved; the form asks to check it. */
+  imported?: { warnings: string[] }
+}
+
+export function RecipeForm({ id, imported }: RecipeFormProps) {
   const data = useData()
   const lookup = useEntity(data.recipes, id ?? null, (recipeId) => data.api.recipe(recipeId))
   if (id === undefined) return <RecipeFormBody recipe={null} />
   if (!lookup.entity) return <LoadState lookup={lookup} missingTitle="Рецепт не найден" missingText="Возможно, его уже удалили." />
-  return <RecipeFormBody recipe={lookup.entity} />
+  return <RecipeFormBody recipe={lookup.entity} imported={imported} />
 }
 
-function RecipeFormBody({ recipe }: { recipe: Recipe | null }) {
+function RecipeFormBody({ recipe, imported }: { recipe: Recipe | null; imported?: { warnings: string[] } }) {
   const data = useData()
   const me = useMe()
   const { limits } = me
@@ -134,6 +149,10 @@ function RecipeFormBody({ recipe }: { recipe: Recipe | null }) {
     if (title === '') errs.title = 'Название обязательно'
     else if (charCount(title) > limits.title_max) errs.title = `Не длиннее ${limits.title_max} символов`
 
+    const servingsCheck = checkServings(fields.servings, limits.servings_max)
+    const servings = servingsCheck.ok ? servingsCheck.value : null
+    if (!servingsCheck.ok) errs.servings = servingsCheck.message
+
     let link: string | null = null
     if (fields.linkOn) {
       const r = normalizeLinkInput(fields.link, limits.link_max)
@@ -158,14 +177,14 @@ function RecipeFormBody({ recipe }: { recipe: Recipe | null }) {
 
     let nutrition: RecipeInput['nutrition'] = null
     if (fields.nutritionOn) {
-      const r = checkNutrition(fields.nutrition, limits)
+      const r = checkNutrition(fields.nutrition, limits, { servings })
       setNutritionErrors(r.ok ? {} : r.errors)
       if (r.ok) nutrition = r.input
       else errs.nutrition = 'Проверьте КБЖУ'
     } else setNutritionErrors({})
 
     if (Object.keys(errs).length > 0) return { errors: errs }
-    return { input: { title, link, body, cuisine_id: cuisineId, course_ids: courseIds, ingredients, nutrition } }
+    return { input: { title, link, body, cuisine_id: cuisineId, course_ids: courseIds, ingredients, servings, nutrition } }
   }
 
   const save = async () => {
@@ -200,6 +219,9 @@ function RecipeFormBody({ recipe }: { recipe: Recipe | null }) {
 
   useMainButton({ text: 'Сохранить', active: fields.title.trim() !== '', progress: saving, onClick: () => void save() })
 
+  const servingsCheck = checkServings(fields.servings, limits.servings_max)
+  const servingsNow = servingsCheck.ok ? servingsCheck.value : null
+
   const linkCheck = fields.linkOn && fields.link.trim() !== '' ? normalizeLinkInput(fields.link, limits.link_max) : null
   const host = linkCheck?.ok ? linkHost(linkCheck.url) : ''
 
@@ -221,7 +243,25 @@ function RecipeFormBody({ recipe }: { recipe: Recipe | null }) {
 
   return (
     <form className="form" noValidate onSubmit={dismissKeyboard(tg)}>
-      <h1 className="form__title">{recipe ? 'Изменить рецепт' : 'Новый рецепт'}</h1>
+      <h1 className="form__title">{imported ? 'Проверьте рецепт' : recipe ? 'Изменить рецепт' : 'Новый рецепт'}</h1>
+
+      {imported && (
+        <div className="import-banner" role="status">
+          <span className="import-banner__icon" aria-hidden="true">
+            ✨
+          </span>
+          <div className="import-banner__text">
+            <p>Проверьте ингредиенты и шаги — партнёр увидит рецепт через пару минут</p>
+            {imported.warnings.length > 0 && (
+              <ul className="import-banner__warnings">
+                {imported.warnings.map((w, i) => (
+                  <li key={i}>{w}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
 
       <TextField
         label="Название"
@@ -235,6 +275,15 @@ function RecipeFormBody({ recipe }: { recipe: Recipe | null }) {
         autoComplete="off"
         enterKeyHint="done"
       />
+
+      <Section footer={errors.servings ?? 'Ингредиенты и КБЖУ — на все порции. В рецепте можно пересчитать на другое число.'}>
+        <ServingsField
+          value={fields.servings}
+          max={limits.servings_max}
+          invalid={errors.servings !== undefined}
+          onChange={(v) => set('servings', v)}
+        />
+      </Section>
 
       <Section header="Кухня" footer={errors.cuisine_id}>
         <div className="section__pad">
@@ -314,6 +363,7 @@ function RecipeFormBody({ recipe }: { recipe: Recipe | null }) {
           <IngredientsEditor
             rows={fields.ingredients}
             units={me.units}
+            forms={me.unit_forms}
             max={limits.ingredients_per_recipe}
             nameMax={limits.item_name_max}
             errors={rowErrors}
@@ -337,6 +387,7 @@ function RecipeFormBody({ recipe }: { recipe: Recipe | null }) {
           <NutritionEditor
             draft={fields.nutrition}
             limits={limits}
+            servings={servingsNow}
             errors={nutritionErrors}
             error={errors.nutrition}
             onChange={(draft) => {
@@ -413,3 +464,60 @@ function RecipeFormBody({ recipe }: { recipe: Recipe | null }) {
   )
 }
 
+interface ServingsFieldProps {
+  value: string
+  max: number
+  invalid: boolean
+  onChange: (value: string) => void
+}
+
+/** «Порций  [−] 4 [+]»: typed or stepped; empty means unknown. */
+function ServingsField({ value, max, invalid, onChange }: ServingsFieldProps) {
+  const tg = useTelegram()
+  const id = useId()
+  const typed = value.trim()
+  const n = /^\d{1,3}$/.test(typed) ? Number(typed) : null
+  const step = (delta: number) => {
+    tg.haptic.selection()
+    onChange(String(stepServings(n ?? 0, delta, max)))
+  }
+  return (
+    <div className={cx('servings-field', invalid && 'servings-field--error')}>
+      <label htmlFor={id} className="servings-field__label">
+        Порций
+      </label>
+      <div className="servings servings--field">
+        <button
+          type="button"
+          className="servings__btn"
+          aria-label="Меньше порций"
+          disabled={n === null || n <= 1}
+          onClick={() => step(-1)}
+        >
+          <IconMinus size={18} strokeWidth={2.6} />
+        </button>
+        <input
+          id={id}
+          className="servings__input num"
+          inputMode="numeric"
+          placeholder="—"
+          autoComplete="off"
+          enterKeyHint="done"
+          maxLength={3}
+          value={value}
+          aria-invalid={invalid || undefined}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        <button
+          type="button"
+          className="servings__btn"
+          aria-label="Больше порций"
+          disabled={n !== null && n >= max}
+          onClick={() => step(1)}
+        >
+          <IconPlus size={18} strokeWidth={2.6} />
+        </button>
+      </div>
+    </div>
+  )
+}

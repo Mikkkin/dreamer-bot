@@ -3,7 +3,7 @@
 // will compute. The API always stores per-100 g values; whole-dish input is
 // divided by weight / 100 before sending.
 
-import type { Macros as ApiMacros, Nutrition, NutritionInput } from '../api/types'
+import type { Macros as ApiMacros, Nutrition, NutritionAuto, NutritionAutoItem, NutritionCoverage, NutritionInput } from '../api/types'
 
 export type MacroKey = 'kcal' | 'protein' | 'fat' | 'carbs'
 export const MACRO_KEYS: readonly MacroKey[] = ['kcal', 'protein', 'fat', 'carbs']
@@ -115,15 +115,13 @@ export interface NutritionDraft {
   fat: string
   carbs: string
   weight: string
-  servings: string
 }
 
-export type NutritionField = MacroKey | 'weight_g' | 'servings'
+export type NutritionField = MacroKey | 'weight_g'
 export type NutritionErrors = Partial<Record<NutritionField, string>>
 
 export interface NutritionLimits {
   dish_weight_max_g: number
-  servings_max: number
 }
 
 export type NutritionCheck =
@@ -137,7 +135,7 @@ export type NutritionCheck =
     }
   | { ok: false; errors: NutritionErrors }
 
-export const EMPTY_NUTRITION: NutritionDraft = { mode: 'per100', kcal: '', protein: '', fat: '', carbs: '', weight: '', servings: '' }
+export const EMPTY_NUTRITION: NutritionDraft = { mode: 'per100', kcal: '', protein: '', fat: '', carbs: '', weight: '' }
 
 /** The form's starting values: the stored per-100 g numbers with a decimal comma. */
 export function nutritionDraft(n: Nutrition | null): NutritionDraft {
@@ -149,7 +147,6 @@ export function nutritionDraft(n: Nutrition | null): NutritionDraft {
     fat: formatApiDecimal(n.per_100g.fat),
     carbs: formatApiDecimal(n.per_100g.carbs),
     weight: n.weight_g ? String(n.weight_g) : '',
-    servings: n.servings ? String(n.servings) : '',
   }
 }
 
@@ -177,14 +174,17 @@ function rangeMessage(key: MacroKey, mode: NutritionMode): string {
  * Validates the draft like the server does and computes every view of it.
  * In whole-dish mode the weight is required, and the values are converted to
  * per 100 g before the range check. All four values are required, unless
- * allowBlank is set (converting a half-typed draft between modes).
+ * allowBlank is set (converting a half-typed draft between modes). The
+ * servings are the recipe's (a field of its own) and only feed the preview.
  */
-export function checkNutrition(d: NutritionDraft, limits: NutritionLimits, { allowBlank = false } = {}): NutritionCheck {
+export function checkNutrition(
+  d: NutritionDraft,
+  limits: NutritionLimits,
+  { allowBlank = false, servings = null }: { allowBlank?: boolean; servings?: number | null } = {},
+): NutritionCheck {
   const errors: NutritionErrors = {}
   const weight = parseCount(d.weight, limits.dish_weight_max_g, `Вес блюда от 1 до ${limits.dish_weight_max_g} г`)
   if (!weight.ok) errors.weight_g = weight.message
-  const servings = parseCount(d.servings, limits.servings_max, `Порций от 1 до ${limits.servings_max}`)
-  if (!servings.ok) errors.servings = servings.message
 
   const typed: Partial<Tenths> = {}
   let any = false
@@ -197,8 +197,8 @@ export function checkNutrition(d: NutritionDraft, limits: NutritionLimits, { all
     }
   }
   const weightG = weight.ok ? weight.value : null
-  const servingsN = servings.ok ? servings.value : null
-  if (!any && weightG === null && servingsN === null && Object.keys(errors).length === 0) {
+  const servingsN = servings !== null && servings > 0 ? servings : null
+  if (!any && weightG === null && Object.keys(errors).length === 0) {
     return { ok: true, input: null, per100: null, dish: null, serving: null }
   }
   if (d.mode === 'dish' && weightG === null && !errors.weight_g) errors.weight_g = 'Укажите вес блюда — по нему считаем на 100 г'
@@ -224,7 +224,6 @@ export function checkNutrition(d: NutritionDraft, limits: NutritionLimits, { all
       fat: decimalTenths(per100.fat),
       carbs: decimalTenths(per100.carbs),
       weight_g: weightG,
-      servings: servingsN,
     },
     per100,
     dish: weightG !== null ? perDish(per100, weightG) : null,
@@ -255,4 +254,152 @@ export function switchNutritionMode(d: NutritionDraft, mode: NutritionMode, limi
   const out = { ...d, mode }
   for (const key of typed) out[key] = formatTenths(values[key])
   return { ok: true, draft: out }
+}
+
+// ---------------------------------------------------------------- card --
+
+/** The daily reference intake for adults of ТР ТС 022/2011 (Appendix 2), in tenths. */
+export const DAILY_REFERENCE: Tenths = { kcal: 25000, protein: 750, fat: 830, carbs: 3650 }
+
+export type MacroPart = 'protein' | 'fat' | 'carbs'
+export const MACRO_PARTS: readonly MacroPart[] = ['protein', 'fat', 'carbs']
+const KCAL_PER_GRAM: Readonly<Record<MacroPart, number>> = { protein: 4, fat: 9, carbs: 4 }
+
+/** Whole-dish values for another number of portions: × chosen / base, rounded like the server. */
+export function scaleTenths(t: Tenths, chosen: number, base: number): Tenths {
+  if (base <= 0 || chosen === base) return t
+  return mapTenths(t, (v) => roundDiv(v * chosen, base))
+}
+
+/** Each macro's share of the calories it brings (protein × 4, fat × 9, carbs × 4); all 0 without any. */
+export function calorieShares(t: Tenths): Record<MacroPart, number> {
+  const kcal = { protein: t.protein * KCAL_PER_GRAM.protein, fat: t.fat * KCAL_PER_GRAM.fat, carbs: t.carbs * KCAL_PER_GRAM.carbs }
+  const total = kcal.protein + kcal.fat + kcal.carbs
+  if (total <= 0) return { protein: 0, fat: 0, carbs: 0 }
+  return { protein: kcal.protein / total, fat: kcal.fat / total, carbs: kcal.carbs / total }
+}
+
+/** Percent of the daily reference, rounded: 540 ккал → 22. */
+export function dailyPercent(t: Tenths, key: MacroKey): number {
+  return Math.round((t[key] / DAILY_REFERENCE[key]) * 100)
+}
+
+/** Calories for people: whole kilocalories. */
+export function formatKcal(tenths: number): string {
+  return String(roundDiv(tenths, TENTHS))
+}
+
+export interface DonutArc {
+  key: MacroPart
+  /** Where the arc starts along the circle, in px from 12 o'clock. */
+  start: number
+  /** The drawn length in px (round caps add stroke / 2 at each end). */
+  length: number
+}
+
+/**
+ * Lays the calorie shares around a ring of the given circumference, leaving
+ * a visible gap between arcs despite round caps. Arcs too short to draw
+ * become dots (length 0); a missing macro has no arc.
+ */
+export function donutArcs(shares: Record<MacroPart, number>, circumference: number, stroke: number, gap = 2): DonutArc[] {
+  const present = MACRO_PARTS.filter((k) => shares[k] > 0)
+  const out: DonutArc[] = []
+  let at = 0
+  for (const key of present) {
+    const span = shares[key] * circumference
+    const trim = present.length > 1 ? gap + stroke : 0
+    out.push({ key, start: at + trim / 2, length: Math.max(0, span - trim) })
+    at += span
+  }
+  return out
+}
+
+export interface NutritionSource {
+  kind: 'manual' | 'auto'
+  per100: Tenths
+  /** The whole recipe as stored; null without a weight. */
+  dish: Tenths | null
+  /** One portion; null without the recipe's servings. */
+  serving: Tenths | null
+  weightG: number | null
+  /** Only for values computed from the ingredients. */
+  coverage: NutritionCoverage | null
+  items: readonly NutritionAutoItem[]
+}
+
+/** What the КБЖУ card shows: the КБЖУ typed by hand wins; otherwise the estimate from the ingredients. */
+export function nutritionSource(manual: Nutrition | null, auto: NutritionAuto | null | undefined): NutritionSource | null {
+  const per100 = manual ? tenthsFromApi(manual.per_100g) : null
+  if (manual && per100) {
+    return {
+      kind: 'manual',
+      per100,
+      dish: manual.per_dish ? tenthsFromApi(manual.per_dish) : null,
+      serving: manual.per_serving ? tenthsFromApi(manual.per_serving) : null,
+      weightG: manual.weight_g,
+      coverage: null,
+      items: [],
+    }
+  }
+  const autoPer100 = auto ? tenthsFromApi(auto.per_100g) : null
+  if (!auto || !autoPer100) return null
+  return {
+    kind: 'auto',
+    per100: autoPer100,
+    dish: tenthsFromApi(auto.per_dish),
+    serving: auto.per_serving ? tenthsFromApi(auto.per_serving) : null,
+    weightG: auto.weight_g > 0 ? auto.weight_g : null,
+    coverage: auto.coverage,
+    items: auto.items,
+  }
+}
+
+export interface Contributor {
+  name: string
+  /** Share of the macro across the counted ingredients, 0..100. */
+  percent: number
+}
+
+/**
+ * The ingredients that bring most of a macro. When the server sends only
+ * calories per ingredient, they are ranked by calories (by: 'kcal').
+ */
+export function topContributors(
+  items: readonly NutritionAutoItem[],
+  key: MacroKey,
+  limit = 3,
+): { by: MacroKey; list: Contributor[] } {
+  const hasKey = key === 'kcal' || items.some((it) => typeof it[key] === 'string')
+  const by: MacroKey = hasKey ? key : 'kcal'
+  const values = items.map((it) => ({ name: it.name, value: apiTenths(String(it[by] ?? '')) ?? 0 }))
+  const total = values.reduce((sum, v) => sum + v.value, 0)
+  if (total <= 0) return { by, list: [] }
+  const list = values
+    .filter((v) => v.value > 0)
+    .sort((a, b) => b.value - a.value)
+    .slice(0, limit)
+    .map((v) => ({ name: v.name, percent: Math.round((v.value / total) * 100) }))
+  return { by, list }
+}
+
+const lowerFirst = (s: string) => s.charAt(0).toLocaleLowerCase('ru') + s.slice(1)
+
+/**
+ * «Посчитано по 5 из 6 · нет: Гуанчале · соль, перец не влияют». The names
+ * of what is missing are listed in full in the coverage sheet.
+ */
+export function coverageLine(c: NutritionCoverage, maxNames = 2): string {
+  const parts = [`Посчитано по ${c.counted} из ${c.total}`]
+  const absent = [...c.missing, ...c.no_amount]
+  if (absent.length > 0) {
+    const shown = absent.slice(0, maxNames).join(', ')
+    parts.push(absent.length > maxNames ? `нет: ${shown} и ещё ${absent.length - maxNames}` : `нет: ${shown}`)
+  }
+  if (c.skipped.length > 0) {
+    const names = c.skipped.slice(0, maxNames).map(lowerFirst).join(', ')
+    const more = c.skipped.length > maxNames ? ' и др.' : ''
+    parts.push(`${names}${more} ${c.skipped.length === 1 ? 'не влияет' : 'не влияют'}`)
+  }
+  return parts.join(' · ')
 }

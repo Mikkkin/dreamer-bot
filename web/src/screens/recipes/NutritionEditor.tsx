@@ -28,6 +28,8 @@ function line(t: Tenths): string {
 interface NutritionEditorProps {
   draft: NutritionDraft
   limits: NutritionLimits
+  /** The recipe's servings (a field of the form), for the per-portion preview. */
+  servings: number | null
   errors: NutritionErrors
   /** A message about КБЖУ as a whole (e.g. from the server). */
   error?: string
@@ -35,15 +37,16 @@ interface NutritionEditorProps {
 }
 
 /**
- * КБЖУ by hand: per 100 g or for the whole dish, plus the dish weight and
- * servings. The other values are previewed live with the server's rounding.
+ * КБЖУ by hand: per 100 g or for the whole dish, plus the dish weight. The
+ * other values (and one portion, when the recipe's servings are known) are
+ * previewed live with the server's rounding.
  */
-export function NutritionEditor({ draft, limits, errors, error, onChange }: NutritionEditorProps) {
+export function NutritionEditor({ draft, limits, servings, errors, error, onChange }: NutritionEditorProps) {
   const id = useId()
   const tg = useTelegram()
   const weightInput = useRef<HTMLInputElement>(null)
   const [modeHint, setModeHint] = useState<string | null>(null)
-  const check = checkNutrition(draft, limits)
+  const check = checkNutrition(draft, limits, { servings })
   const set = (patch: Partial<NutritionDraft>) => {
     setModeHint(null)
     onChange({ ...draft, ...patch })
@@ -104,9 +107,9 @@ export function NutritionEditor({ draft, limits, errors, error, onChange }: Nutr
     )
   }
 
-  const countField = (key: 'weight' | 'servings', label: string, unit: string, errorKey: 'weight_g' | 'servings') => {
-    const fieldId = `${id}-${key}`
-    const err = errors[errorKey]
+  const weightField = (label: string) => {
+    const fieldId = `${id}-weight`
+    const err = errors.weight_g
     return (
       <div className={cx('macro-input', 'macro-input--wide', err && 'macro-input--error')}>
         <label htmlFor={fieldId} className="macro-input__label">
@@ -114,23 +117,21 @@ export function NutritionEditor({ draft, limits, errors, error, onChange }: Nutr
         </label>
         <span className="macro-input__box">
           <input
-            ref={key === 'weight' ? weightInput : undefined}
+            ref={weightInput}
             id={fieldId}
             className="macro-input__value num"
             inputMode="numeric"
             placeholder="—"
             autoComplete="off"
             enterKeyHint="done"
-            value={draft[key]}
+            value={draft.weight}
             aria-invalid={err ? true : undefined}
             aria-describedby={err ? `${fieldId}-error` : undefined}
-            onChange={(e) => set({ [key]: e.target.value })}
+            onChange={(e) => set({ weight: e.target.value })}
           />
-          {unit && (
-            <span className="macro-input__unit" aria-hidden="true">
-              {unit}
-            </span>
-          )}
+          <span className="macro-input__unit" aria-hidden="true">
+            г
+          </span>
         </span>
         {err && (
           <span id={`${fieldId}-error`} className="macro-input__error">
@@ -150,10 +151,7 @@ export function NutritionEditor({ draft, limits, errors, error, onChange }: Nutr
         </p>
       )}
       <div className="macro-grid">{MACRO_KEYS.map(macroField)}</div>
-      <div className="macro-grid macro-grid--two">
-        {countField('weight', draft.mode === 'dish' ? 'Вес блюда (обязательно)' : 'Вес блюда', 'г', 'weight_g')}
-        {countField('servings', 'Порций', '', 'servings')}
-      </div>
+      <div className="macro-grid macro-grid--two">{weightField(draft.mode === 'dish' ? 'Вес блюда (обязательно)' : 'Вес блюда')}</div>
       {preview.length > 0 && (
         <div className="nutrition-preview" aria-live="polite">
           {preview.map((p) => (

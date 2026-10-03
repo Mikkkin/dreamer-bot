@@ -1,27 +1,23 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { ApiError } from '../../api/errors'
-import type { ShoppingItem, Store } from '../../api/types'
+import type { ShoppingItem } from '../../api/types'
 import { cx } from '../../lib/cx'
 import { ITEM_FORMS, countOf } from '../../lib/format'
-import { isSafeHttpUrl } from '../../lib/links'
 import { readPref, writePref } from '../../lib/prefs'
 import { formatQuantity, parseItemText } from '../../lib/quantity'
 import { LatestRequest, shoppingCounts } from '../../lib/shopping'
-import { pickStore, storeSearchUrl, usableStores } from '../../lib/stores'
 import { useData, useMe } from '../../state/data'
 import { useToast } from '../../state/toast'
 import { useMainButton, useTelegram } from '../../telegram/hooks'
-import { Chip, ChipGroup, RoundCheck } from '../../ui/controls'
+import { RoundCheck } from '../../ui/controls'
 import { charCount } from '../../ui/fields'
-import { IconChevron, IconChevronDown, IconPlus, IconSearch } from '../../ui/icons'
+import { IconChevronDown, IconPlus } from '../../ui/icons'
 import { EmptyState, Section } from '../../ui/layout'
 import { ItemSheet } from './ItemSheet'
-import { VkusvillSheet } from './VkusvillSheet'
 
-const STORE_PREF = 'store'
 const BOUGHT_PREF = 'shopping-bought-collapsed'
 
-/** «Покупки»: the couple's shared list with store search links. */
+/** «Покупки»: the couple's shared checklist. */
 export function ShoppingList() {
   const data = useData()
   const me = useMe()
@@ -31,24 +27,17 @@ export function ShoppingList() {
   const [text, setText] = useState('')
   const [adding, setAdding] = useState(false)
   const [clearing, setClearing] = useState(false)
-  const [storeId, setStoreId] = useState(() => readPref(STORE_PREF))
   const [collapsed, setCollapsed] = useState(() => readPref(BOUGHT_PREF) === '1')
   const [editing, setEditing] = useState<{ open: boolean; item: ShoppingItem | null }>({ open: false, item: null })
-  const [cartOpen, setCartOpen] = useState(false)
   const input = useRef<HTMLInputElement>(null)
   const toggles = useRef(new LatestRequest())
-  const { refresh, loadStores } = data
+  const { refresh } = data
 
-  // Pick up what the partner changed, and the store links.
+  // Pick up what the partner changed.
   useEffect(() => {
     void refresh('shopping')
-    void loadStores()
-  }, [refresh, loadStores])
+  }, [refresh])
 
-  const stores = useMemo(() => usableStores(data.stores ?? []), [data.stores])
-  const store = pickStore(stores, storeId)
-  // The one store with a real cart integration; its endpoints are ВкусВилл-specific.
-  const cartStore = stores.find((s) => s.cart)
   const recipeTitles = useMemo(() => new Map(data.recipes.map((r) => [r.id, r.title])), [data.recipes])
   const open = data.shopping.filter((it) => !it.checked)
   const bought = data.shopping.filter((it) => it.checked)
@@ -74,7 +63,7 @@ export function ShoppingList() {
   }
 
   useMainButton(
-    counts.checked > 0 && !editing.open && !cartOpen
+    counts.checked > 0 && !editing.open
       ? { text: `Очистить купленное (${counts.checked})`, progress: clearing, onClick: () => void clear() }
       : null,
   )
@@ -126,21 +115,6 @@ export function ShoppingList() {
     }
   }
 
-  const search = (item: ShoppingItem, where: Store) => {
-    const url = storeSearchUrl(where.search_url_template, item.name)
-    if (!url || !isSafeHttpUrl(url)) {
-      toast('Не получилось открыть магазин', { tone: 'error' })
-      return
-    }
-    tg.haptic.impact('light')
-    tg.openLink(url)
-  }
-
-  const chooseStore = (id: string) => {
-    setStoreId(id)
-    writePref(STORE_PREF, id)
-  }
-
   const toggleBought = () => {
     tg.haptic.selection()
     setCollapsed((c) => {
@@ -150,7 +124,7 @@ export function ShoppingList() {
   }
 
   const row = (item: ShoppingItem) => {
-    const qty = item.quantity ? item.quantity.formatted || formatQuantity(item.quantity.amount, item.quantity.unit) : ''
+    const qty = item.quantity ? formatQuantity(item.quantity.amount, item.quantity.unit, me.unit_forms) : ''
     const source = item.recipe_id !== null ? recipeTitles.get(item.recipe_id) : undefined
     return (
       <li key={item.id} className={cx('shop-row', item.checked && 'shop-row--checked')}>
@@ -167,16 +141,6 @@ export function ShoppingList() {
           {source && <span className="shop-row__source">из «{source}»</span>}
         </button>
         {qty && <span className="shop-row__qty num">{qty}</span>}
-        {store && !item.checked && (
-          <button
-            type="button"
-            className="shop-row__search"
-            aria-label={`Найти «${item.name}» в ${store.name}`}
-            onClick={() => search(item, store)}
-          >
-            <IconSearch size={18} strokeWidth={2.2} />
-          </button>
-        )}
       </li>
     )
   }
@@ -187,19 +151,6 @@ export function ShoppingList() {
       <p className="page__subtitle">
         {counts.open > 0 ? `Купить: ${countOf(counts.open, ITEM_FORMS)}` : data.shopping.length > 0 ? 'Всё куплено 🎉' : 'Список общий — видно вам обоим'}
       </p>
-
-      {stores.length > 0 && store && (
-        <div className="shopping__stores">
-          <p className="shopping__stores-label">Искать в магазине</p>
-          <ChipGroup label="Магазин для поиска">
-            {stores.map((s) => (
-              <Chip key={s.id} selected={s.id === store.id} emoji={s.emoji} onSelect={() => chooseStore(s.id)}>
-                {s.name}
-              </Chip>
-            ))}
-          </ChipGroup>
-        </div>
-      )}
 
       <form className="add-item" onSubmit={(e) => void add(e)}>
         <label className="add-item__box">
@@ -220,32 +171,10 @@ export function ShoppingList() {
         </label>
         {parsed && (parsed.amount !== null || parsed.unit !== null) && (
           <p className="add-item__hint">
-            Добавится: <b>{parsed.name}</b> · {formatQuantity(parsed.amount, parsed.unit)}
+            Добавится: <b>{parsed.name}</b> · {formatQuantity(parsed.amount, parsed.unit, me.unit_forms)}
           </p>
         )}
       </form>
-
-      {cartStore && open.length > 0 && (
-        <button
-          type="button"
-          className="cart-card"
-          onClick={() => {
-            tg.haptic.impact('medium')
-            setCartOpen(true)
-          }}
-        >
-          <span className="cart-card__icon" aria-hidden="true">
-            {cartStore.emoji}
-          </span>
-          <span className="cart-card__text">
-            <span className="cart-card__title">Собрать корзину во ВкусВилле</span>
-            <span className="cart-card__hint">Подберём товары и цены по списку</span>
-          </span>
-          <span className="cart-card__go" aria-hidden="true">
-            <IconChevron size={18} strokeWidth={2.4} />
-          </span>
-        </button>
-      )}
 
       {data.shopping.length === 0 ? (
         <EmptyState emoji="🛒" title="Список покупок пуст" text="Добавьте продукты сверху или из ингредиентов рецепта — список общий для вас двоих." />
@@ -278,7 +207,6 @@ export function ShoppingList() {
       )}
 
       <ItemSheet open={editing.open} item={editing.item} onClose={() => setEditing((s) => ({ ...s, open: false }))} />
-      {cartStore && <VkusvillSheet open={cartOpen} onClose={() => setCartOpen(false)} />}
     </div>
   )
 }

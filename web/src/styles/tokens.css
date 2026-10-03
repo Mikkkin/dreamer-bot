@@ -86,6 +86,12 @@
   --st-progress: var(--c-amber);
   --st-done: var(--c-gold);
 
+  /* КБЖУ: the К/Б/Ж/У colours of the tiles, the donut and the bars */
+  --macro-kcal: var(--c-flame);
+  --macro-protein: var(--c-rose-deep);
+  --macro-fat: var(--c-amber);
+  --macro-carbs: #30b651;
+
   /* Glass: the floating layer only */
   --glass-bar: color-mix(in srgb, var(--c-page) 76%, transparent);
   --glass-filter: blur(20px) saturate(180%);
@@ -185,6 +191,10 @@
   --warm-light: color-mix(in srgb, var(--c-rose) 12%, transparent);
   --c-fill: color-mix(in srgb, var(--c-text) 8%, transparent);
   --shadow-float: 0 10px 30px rgb(0 0 0 / 0.5);
+  --macro-kcal: #ff7d55;
+  --macro-protein: #ff5e8a;
+  --macro-fat: #ffb547;
+  --macro-carbs: #3fd06a;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -203,6 +213,10 @@
     --warm-light: color-mix(in srgb, var(--c-rose) 12%, transparent);
     --c-fill: color-mix(in srgb, var(--c-text) 8%, transparent);
     --shadow-float: 0 10px 30px rgb(0 0 0 / 0.5);
+    --macro-kcal: #ff7d55;
+    --macro-protein: #ff5e8a;
+    --macro-fat: #ffb547;
+    --macro-carbs: #3fd06a;
   }
 }
 

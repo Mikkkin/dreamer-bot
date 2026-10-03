@@ -9,6 +9,7 @@ export type ErrorCode =
   | 'too_large'
   | 'unsupported_media'
   | 'limit'
+  | 'not_a_recipe'
   | 'rate_limited'
   | 'internal'
   | 'unavailable'
@@ -23,6 +24,7 @@ const SERVER_CODES: ReadonlySet<string> = new Set<ErrorCode>([
   'too_large',
   'unsupported_media',
   'limit',
+  'not_a_recipe',
   'rate_limited',
   'internal',
   'unavailable',
@@ -37,6 +39,7 @@ const FALLBACK_MESSAGES: Record<ErrorCode, string> = {
   too_large: 'Файл слишком большой',
   unsupported_media: 'Этот формат не поддерживается',
   limit: 'Достигнут лимит',
+  not_a_recipe: 'Не нашли в тексте рецепт — вставьте текст с ингредиентами',
   rate_limited: 'Слишком много запросов, подождите немного',
   internal: 'Что-то пошло не так',
   unavailable: 'Сервис сейчас не отвечает, попробуйте позже',

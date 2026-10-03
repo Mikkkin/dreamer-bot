@@ -60,9 +60,17 @@ test('capitalize', () => {
 })
 
 test('an external service outage is its own retryable code', () => {
-  const e = parseErrorEnvelope(503, { error: { code: 'unavailable', message: 'ВкусВилл не отвечает' } })
+  const e = parseErrorEnvelope(503, { error: { code: 'unavailable', message: 'Instagram не отдал пост' } })
   expect(e.code).toBe('unavailable')
-  expect(e.message).toBe('ВкусВилл не отвечает')
+  expect(e.message).toBe('Instagram не отдал пост')
   expect(e.isRetryable).toBe(true)
   expect(e.isAuth).toBe(false)
+})
+
+test('«not a recipe» keeps its own code', () => {
+  const e = parseErrorEnvelope(422, { error: { code: 'not_a_recipe', message: 'не нашли в тексте рецепт' } })
+  expect(e.code).toBe('not_a_recipe')
+  expect(e.message).toBe('Не нашли в тексте рецепт')
+  expect(e.isRetryable).toBe(false)
+  expect(parseErrorEnvelope(422, null).code).toBe('limit')
 })

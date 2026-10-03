@@ -2251,7 +2251,9 @@ label.cell:active {
 }
 
 .unit-select select {
+  max-width: 100%;
   min-width: 76px;
+  text-overflow: ellipsis;
   height: 40px;
   padding: 0 28px 0 12px;
   border: 0;
@@ -2280,6 +2282,40 @@ label.cell:active {
   border-radius: var(--r-md);
 }
 
+/* [¼] [⅓] [½] [⅔] [¾]: join the whole part of an amount being typed. */
+.frac-chips {
+  display: flex;
+  gap: 6px;
+  animation: fade-in var(--d2) var(--effects);
+}
+
+.frac-chip {
+  display: grid;
+  flex: 1;
+  place-items: center;
+  max-width: 56px;
+  height: 36px;
+  border-radius: var(--r-sm);
+  background: var(--c-surface);
+  box-shadow: inset 0 0 0 0.5px var(--c-separator);
+  color: var(--c-text);
+  font: 600 18px/1 var(--font);
+  transition:
+    background-color var(--d2) var(--effects),
+    transform var(--d3) var(--spring-fast);
+}
+
+.frac-chip:active {
+  transform: scale(0.92);
+  transition-duration: 90ms;
+}
+
+.frac-chip[aria-pressed='true'] {
+  background: var(--c-accent-tint);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--c-accent) 72%, transparent);
+  color: var(--c-accent-text);
+}
+
 /* «＋ Ингредиент»: a dashed row that adds one more. */
 .add-row {
   display: flex;
@@ -2301,40 +2337,6 @@ label.cell:active {
   background: var(--c-accent-soft);
   transform: scale(0.98);
   transition-duration: 90ms;
-}
-
-/* − 1 + */
-.qty-stepper {
-  display: inline-flex;
-  align-items: center;
-  height: 36px;
-  border-radius: var(--r-pill);
-  background: var(--c-fill);
-}
-
-.qty-stepper__btn {
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 36px;
-  border-radius: var(--r-pill);
-  color: var(--c-accent-text);
-  font: 600 20px/1 var(--font);
-}
-
-.qty-stepper__btn:active {
-  background: var(--c-fill-strong);
-}
-
-.qty-stepper__value {
-  width: 48px;
-  padding: 0;
-  border: 0;
-  outline: none;
-  background: transparent;
-  color: var(--c-text);
-  font: 600 16px/20px var(--font);
-  text-align: center;
 }
 
 /* Recipe cards: «⭐ 4,5 · ×3» on the cover and the tag line below the title. */

@@ -1,5 +1,5 @@
 import type { ApiError } from '../api/errors'
-import type { Category, Me, Recipe, RecipeTag, ShoppingItem, Store, Wish } from '../api/types'
+import type { Category, Me, Recipe, RecipeTag, ShoppingItem, Wish } from '../api/types'
 import { sortTags, withoutTag } from '../lib/recipes'
 import { sortShopping, upsertShopping } from '../lib/shopping'
 
@@ -16,8 +16,6 @@ export interface State {
   tags: RecipeTag[]
   /** The shared shopping list: unchecked first, oldest first. */
   shopping: ShoppingItem[]
-  /** Store search links; loaded on first use of the shopping list. */
-  stores: Store[] | null
   /** A failed load or refresh that the user can retry from a banner. */
   error: ApiError | null
 }
@@ -40,7 +38,6 @@ export type Action =
   | { type: 'categories'; categories: Category[] }
   | { type: 'tags'; tags: RecipeTag[] }
   | { type: 'shopping'; items: ShoppingItem[] }
-  | { type: 'stores'; stores: Store[] }
   | { type: 'put-wish'; wish: Wish }
   | { type: 'drop-wish'; id: number }
   | { type: 'put-recipe'; recipe: Recipe }
@@ -60,7 +57,6 @@ export const initialState: State = {
   categories: [],
   tags: [],
   shopping: [],
-  stores: null,
   error: null,
 }
 
@@ -101,8 +97,6 @@ export function reducer(state: State, action: Action): State {
       return { ...state, tags: sortTags(action.tags), error: null }
     case 'shopping':
       return { ...state, shopping: sortShopping(action.items), error: null }
-    case 'stores':
-      return { ...state, stores: action.stores }
     case 'put-wish':
       return { ...state, wishes: upsert(state.wishes, action.wish) }
     case 'drop-wish':

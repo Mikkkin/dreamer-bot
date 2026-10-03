@@ -6,10 +6,10 @@ import { useData, useMe } from '../../state/data'
 import { useToast } from '../../state/toast'
 import { useMainButton, useTelegram } from '../../telegram/hooks'
 import { TextField, charCount } from '../../ui/fields'
-import { IconChevronDown } from '../../ui/icons'
 import { Cell, Section } from '../../ui/layout'
 import { Sheet } from '../../ui/Sheet'
 import { dismissKeyboard } from '../shared/forms'
+import { FractionChips, UnitSelect } from '../shared/QuantityControls'
 
 interface ItemSheetProps {
   open: boolean
@@ -40,7 +40,7 @@ function ItemEditor({ active, item, onClose }: { active: boolean; item: Shopping
   const toast = useToast()
   const max = me.limits.item_name_max
   const [name, setName] = useState(item.name)
-  const [amount, setAmount] = useState(amountForEdit(item.quantity?.amount ?? null))
+  const [amount, setAmount] = useState(amountForEdit(item.quantity?.amount ?? null, item.quantity?.unit ?? null))
   const [unit, setUnit] = useState(item.quantity?.unit ?? '')
   const [error, setError] = useState<{ field: 'name' | 'amount' | 'form'; message: string } | null>(null)
   const [shake, setShake] = useState(0)
@@ -120,7 +120,7 @@ function ItemEditor({ active, item, onClose }: { active: boolean; item: Shopping
         <TextField
           label="Количество"
           inputMode="decimal"
-          placeholder={toTaste ? '—' : 'Например, 1,5'}
+          placeholder={toTaste ? '—' : 'Например, 1½ или 0,5'}
           value={toTaste ? '' : amount}
           disabled={toTaste}
           onChange={(e) => {
@@ -132,27 +132,31 @@ function ItemEditor({ active, item, onClose }: { active: boolean; item: Shopping
           autoComplete="off"
           enterKeyHint="done"
         />
-        <span className="unit-select unit-select--field">
-          <select
-            aria-label="Единица"
-            value={unit}
-            onChange={(e) => {
-              tg.haptic.selection()
-              setUnit(e.target.value)
-              if (e.target.value === TO_TASTE) setAmount('')
-              if (error?.field === 'amount') setError(null)
-            }}
-          >
-            <option value="">ед.</option>
-            {me.units.map((u) => (
-              <option key={u} value={u}>
-                {u}
-              </option>
-            ))}
-          </select>
-          <IconChevronDown size={14} strokeWidth={2.4} />
-        </span>
+        <UnitSelect
+          field
+          label="Единица"
+          value={unit}
+          units={me.units}
+          amount={amount}
+          forms={me.unit_forms}
+          onChange={(next) => {
+            setUnit(next)
+            if (next === TO_TASTE) setAmount('')
+            if (error?.field === 'amount') setError(null)
+          }}
+        />
       </div>
+      {!toTaste && (
+        <FractionChips
+          className="item-editor__fractions"
+          label={name.trim() || 'покупка'}
+          value={amount}
+          onChange={(next) => {
+            setAmount(next)
+            if (error?.field === 'amount') setError(null)
+          }}
+        />
+      )}
       {error?.field === 'form' && (
         <p className="form__error" role="alert">
           {error.message}

@@ -1,13 +1,16 @@
-import { useEffect, useRef, type KeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type FocusEvent, type KeyboardEvent } from 'react'
 import { cx } from '../../lib/cx'
 import { emptyRow, type IngredientRow, type RowErrors } from '../../lib/ingredients'
-import { TO_TASTE } from '../../lib/quantity'
+import { TO_TASTE, type UnitFormsTable } from '../../lib/units'
 import { useTelegram } from '../../telegram/hooks'
-import { IconChevronDown, IconPlus, IconX } from '../../ui/icons'
+import { IconPlus, IconX } from '../../ui/icons'
+import { FractionChips, UnitSelect } from '../shared/QuantityControls'
 
 interface IngredientsEditorProps {
   rows: IngredientRow[]
   units: readonly string[]
+  /** Me.unit_forms: the picker shows words declined for the typed amount. */
+  forms?: UnitFormsTable | null
   max: number
   nameMax: number
   errors: RowErrors
@@ -16,13 +19,24 @@ interface IngredientsEditorProps {
   onChange: (rows: IngredientRow[]) => void
 }
 
-/** Structured ingredients: a name, an amount and a unit per row. */
-export function IngredientsEditor({ rows, units, max, nameMax, errors, error, onChange }: IngredientsEditorProps) {
+/**
+ * Structured ingredients: a name, an amount and a unit per row. While an
+ * amount is being typed, fraction chips appear under its row.
+ */
+export function IngredientsEditor({ rows, units, forms, max, nameMax, errors, error, onChange }: IngredientsEditorProps) {
   const tg = useTelegram()
   const names = useRef(new Map<number, HTMLInputElement>())
   const amounts = useRef(new Map<number, HTMLInputElement>())
   const focusKey = useRef<number | null>(null)
+  const [typing, setTyping] = useState<number | null>(null)
   const lastKey = rows.at(-1)?.key
+
+  // The chips stay while focus is anywhere in the row whose amount was focused.
+  const leaveRow = (key: number) => (e: FocusEvent<HTMLElement>) => {
+    const next = e.relatedTarget
+    if (next instanceof Node && e.currentTarget.contains(next)) return
+    setTyping((k) => (k === key ? null : k))
+  }
 
   // A freshly added row gets the keyboard.
   useEffect(() => {
@@ -62,7 +76,7 @@ export function IngredientsEditor({ rows, units, max, nameMax, errors, error, on
             const toTaste = row.unit === TO_TASTE
             const err = errors[row.key]
             return (
-              <li key={row.key} className={cx('ing-row', err && 'ing-row--error')}>
+              <li key={row.key} className={cx('ing-row', err && 'ing-row--error')} onBlur={leaveRow(row.key)}>
                 <input
                   ref={(el) => {
                     if (el) names.current.set(row.key, el)
@@ -92,6 +106,7 @@ export function IngredientsEditor({ rows, units, max, nameMax, errors, error, on
                     className="ing-row__amount num"
                     aria-label={`Количество: ${labelOf(row, i)}`}
                     placeholder={toTaste ? '—' : 'Кол-во'}
+                    onFocus={() => setTyping(row.key)}
                     inputMode="decimal"
                     value={toTaste ? '' : row.amount}
                     disabled={toTaste}
@@ -100,25 +115,14 @@ export function IngredientsEditor({ rows, units, max, nameMax, errors, error, on
                     onChange={(e) => update(row.key, { amount: e.target.value })}
                     onKeyDown={(e) => onAmountEnter(e, i)}
                   />
-                  <span className="unit-select">
-                    <select
-                      aria-label={`Единица: ${labelOf(row, i)}`}
-                      value={row.unit}
-                      onChange={(e) => {
-                        tg.haptic.selection()
-                        const unit = e.target.value
-                        update(row.key, unit === TO_TASTE ? { unit, amount: '' } : { unit })
-                      }}
-                    >
-                      <option value="">ед.</option>
-                      {units.map((u) => (
-                        <option key={u} value={u}>
-                          {u}
-                        </option>
-                      ))}
-                    </select>
-                    <IconChevronDown size={14} strokeWidth={2.4} />
-                  </span>
+                  <UnitSelect
+                    label={`Единица: ${labelOf(row, i)}`}
+                    value={row.unit}
+                    units={units}
+                    amount={row.amount}
+                    forms={forms}
+                    onChange={(unit) => update(row.key, unit === TO_TASTE ? { unit, amount: '' } : { unit })}
+                  />
                   <button
                     type="button"
                     className="ing-row__remove"
@@ -131,6 +135,14 @@ export function IngredientsEditor({ rows, units, max, nameMax, errors, error, on
                     <IconX size={16} strokeWidth={2.4} />
                   </button>
                 </div>
+                {typing === row.key && !toTaste && (
+                  <FractionChips
+                    className="ing-row__fractions"
+                    label={labelOf(row, i)}
+                    value={row.amount}
+                    onChange={(amount) => update(row.key, { amount })}
+                  />
+                )}
                 {err && <p className="ing-row__error">{err}</p>}
               </li>
             )

@@ -37,9 +37,23 @@ describe('checkIngredients', () => {
       errors: {
         1: 'Укажите название',
         2: 'Для «по вкусу» количество не указывается',
-        3: 'Количество — число, например 1,5',
+        3: 'Укажите дробь вида 1/2, 1/3, 1/4 или десятичную, например 0,5',
         4: 'Название не длиннее 80 символов',
       },
+    })
+  })
+
+  test('fractions and words are sent as canonical decimals', () => {
+    expect(
+      checkIngredients([row(1, 'Мука', '1 1/2', 'кг'), row(2, 'Сахар', '½', 'шт'), row(3, 'Масло', 'пол', 'кг'), row(4, 'Вода', 'полторы', 'кг')], UNITS, limits),
+    ).toEqual({
+      ok: true,
+      ingredients: [
+        { name: 'Мука', amount: '1.5', unit: 'кг' },
+        { name: 'Сахар', amount: '0.5', unit: 'шт' },
+        { name: 'Масло', amount: '0.5', unit: 'кг' },
+        { name: 'Вода', amount: '1.5', unit: 'кг' },
+      ],
     })
   })
 
@@ -55,12 +69,21 @@ describe('checkIngredients', () => {
 
 test('ingredientRows and emptyRow', () => {
   const rows = ingredientRows([
-    { name: 'Мука', amount: '0.5', unit: 'кг', formatted: '0,5 кг' },
+    { name: 'Мука', amount: '0.5', unit: 'кг', formatted: '½ кг' },
     { name: 'Соль', amount: null, unit: 'по вкусу', formatted: 'по вкусу' },
     { name: 'Лимон', amount: '1', unit: null, formatted: '1' },
+    { name: 'Сливки', amount: '0.33', unit: 'стакан', formatted: '⅓ стакана' },
+    { name: 'Масло', amount: '12.5', unit: 'г', formatted: '12,5 г' },
   ])
-  expect(rows).toEqual([row(1, 'Мука', '0,5', 'кг'), row(2, 'Соль', '', 'по вкусу'), row(3, 'Лимон', '1', '')])
-  expect(emptyRow(rows).key).toBe(4)
+  // Fraction-friendly units come back as fractions, grams keep the comma.
+  expect(rows).toEqual([
+    row(1, 'Мука', '½', 'кг'),
+    row(2, 'Соль', '', 'по вкусу'),
+    row(3, 'Лимон', '1', ''),
+    row(4, 'Сливки', '⅓', 'стакан'),
+    row(5, 'Масло', '12,5', 'г'),
+  ])
+  expect(emptyRow(rows).key).toBe(6)
   expect(emptyRow([]).key).toBe(1)
   expect(emptyRow([row(7, 'x'), row(2, 'y')]).key).toBe(8)
 })

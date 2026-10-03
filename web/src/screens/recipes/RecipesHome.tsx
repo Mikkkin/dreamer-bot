@@ -25,6 +25,7 @@ import { Chip, ChipGroup, ChoicePills, SearchField } from '../../ui/controls'
 import { IconShuffle } from '../../ui/icons'
 import { EmptyState } from '../../ui/layout'
 import { useStuck } from '../../ui/useStuck'
+import { AddRecipeSheet } from './AddRecipeSheet'
 import { RecipeCard } from './RecipeCard'
 import { pickRandomRecipe } from './random'
 
@@ -69,6 +70,7 @@ export function RecipesHome({ active }: { active: boolean }) {
   const [rawCuisine, setCuisine] = useState<TagFilter>('all')
   const [rawCourse, setCourse] = useState<TagFilter>('all')
   const [sort, setSort] = useState<RecipeSort>(initialSort)
+  const [adding, setAdding] = useState(false)
 
   useEffect(() => () => window.clearInterval(timer.current), [])
 
@@ -101,8 +103,18 @@ export function RecipesHome({ active }: { active: boolean }) {
     setQuery('')
   }
 
+  // «+»: write a recipe or import one from Instagram. The sheet owns the button while it is up.
   useMainButton(
-    active ? { text: 'Добавить рецепт', shine: recipes.length === 0, onClick: () => nav.push({ name: 'recipe-form' }) } : null,
+    active && !adding
+      ? {
+          text: 'Добавить рецепт',
+          shine: recipes.length === 0,
+          onClick: () => {
+            tg.haptic.impact('light')
+            setAdding(true)
+          },
+        }
+      : null,
   )
 
   /** A slot-machine reel through local titles while the server picks. */
@@ -158,6 +170,7 @@ export function RecipesHome({ active }: { active: boolean }) {
   const n = recipes.length
   return (
     <>
+      <AddRecipeSheet open={adding} onClose={() => setAdding(false)} />
       <button
         type="button"
         className={cx('dice-card', rolling && 'dice-card--rolling')}
@@ -235,7 +248,11 @@ export function RecipesHome({ active }: { active: boolean }) {
       )}
 
       {n === 0 ? (
-        <EmptyState emoji="🍳" title="Рецептов пока нет" text="Сохраните ссылку, скриншот или запишите рецепт своими словами." />
+        <EmptyState
+          emoji="🍳"
+          title="Рецептов пока нет"
+          text="Запишите рецепт своими словами или вставьте ссылку на пост в Instagram — ингредиенты разложим сами."
+        />
       ) : visible.length === 0 ? (
         <EmptyState
           emoji="🔍"

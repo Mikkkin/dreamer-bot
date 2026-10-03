@@ -60,10 +60,13 @@ export interface Category {
 
 export interface Ingredient {
   name: string
-  /** A canonical decimal such as "1.5", or null when not given. */
+  /** A canonical decimal such as "1.5" or "0.33" (thirds are stored rounded), or null when not given. */
   amount: string | null
-  /** One of Me.units, or null. */
+  /** A unit code from Me.units, or null. */
   unit: string | null
+  /** The unit's word declined for the amount («чайные ложки»), or null without a unit. */
+  unit_label?: string | null
+  /** «1½ чайной ложки»: amount and label joined by a no-break space. */
   formatted: string
 }
 
@@ -78,11 +81,48 @@ export interface Macros {
 export interface Nutrition {
   per_100g: Macros
   weight_g: number | null
+  /** Mirrors Recipe.servings (kept for older clients). */
   servings: number | null
   /** null without weight_g. */
   per_dish: Macros | null
   /** null without both weight_g and servings. */
   per_serving: Macros | null
+}
+
+/** One ingredient counted into the automatic КБЖУ, for the whole recipe. */
+export interface NutritionAutoItem {
+  name: string
+  /** The food-table entry it matched, e.g. «Макароны сухие». */
+  food: string
+  grams: number
+  kcal: string
+  protein?: string
+  fat?: string
+  carbs?: string
+}
+
+export interface NutritionCoverage {
+  /** Ingredients that went into the total. */
+  counted: number
+  /** All ingredients except the skipped ones («по вкусу»). */
+  total: number
+  /** Not found in the food table. */
+  missing: string[]
+  /** Found, but without an amount or a gram measure for its unit. */
+  no_amount: string[]
+  /** «по вкусу»: never counted and never missing. */
+  skipped: string[]
+}
+
+/** КБЖУ estimated by the server from the ingredients and its food table; shown with «≈». */
+export interface NutritionAuto {
+  per_100g: Macros
+  weight_g: number
+  per_dish: Macros
+  /** null without the recipe's servings. */
+  per_serving: Macros | null
+  coverage: NutritionCoverage
+  items: NutritionAutoItem[]
 }
 
 export interface CookingSummary {
@@ -101,7 +141,12 @@ export interface Recipe {
   cuisine_id: number | null
   course_ids: number[]
   ingredients: Ingredient[]
+  /** How many portions the recipe yields (1–50); null when unknown. Amounts and КБЖУ are for all of them. */
+  servings: number | null
+  /** КБЖУ typed by hand; wins over nutrition_auto in the UI. */
   nutrition: Nutrition | null
+  /** null when nothing could be counted; absent from older servers. */
+  nutrition_auto?: NutritionAuto | null
   cooking: CookingSummary
   author: Person
   images: ApiImage[]
@@ -147,6 +192,7 @@ export interface Saving {
 export interface Quantity {
   amount: string | null
   unit: string | null
+  unit_label?: string | null
   formatted: string
 }
 
@@ -159,49 +205,6 @@ export interface ShoppingItem {
   added_by: Person
   created_at: string
   updated_at: string
-}
-
-export interface Store {
-  id: string
-  name: string
-  emoji: string
-  /** An https URL with a {q} placeholder; fixed on the server. */
-  search_url_template: string
-  /** A hint: whether iOS opens the store app for such links. */
-  opens_app: boolean
-  /** The one store with a real cart integration (ВкусВилл). */
-  cart: boolean
-}
-
-/** A ВкусВилл product offered for a shopping-list item. */
-export interface VkusvillCandidate {
-  xml_id: number
-  name: string
-  price: Price | null
-  /** How it is sold, e.g. "шт" or "кг"; null when unknown. */
-  unit: string | null
-  /** Net weight of one piece, e.g. "900 г"; null for loose goods or when unknown. */
-  weight: string | null
-}
-
-export interface VkusvillMatch {
-  item_id: number
-  query: string
-  /** Up to 3 products, best first; may be empty. */
-  candidates: VkusvillCandidate[]
-}
-
-export interface VkusvillCartLine {
-  xml_id: number
-  /** A decimal string, 0.01–40. */
-  quantity: string
-}
-
-export interface VkusvillCart {
-  /** A shared basket on https://vkusvill.ru/… */
-  url: string
-  /** Approximate; null when a price is missing. */
-  estimated_total: Price | null
 }
 
 export interface CurrencyInfo {
@@ -234,8 +237,18 @@ export interface Me {
   currencies: CurrencyInfo[]
   default_currency: string
   limits: Limits
-  /** Kitchen units in display order, e.g. "г", "шт", "по вкусу". */
+  /** Kitchen unit codes in picker order, e.g. "г", "ч. л.", "по вкусу". */
   units: string[]
+  /** The words of every unit code; absent from older servers (units.ts has the same table built in). */
+  unit_forms?: Record<string, UnitFormsJSON>
+}
+
+/** «1 чайная ложка», «2 чайные ложки», «5 чайных ложек», «½ чайной ложки»; invariant units repeat the code. */
+export interface UnitFormsJSON {
+  one: string
+  few: string
+  many: string
+  fraction: string
 }
 
 export interface MoneySum {
@@ -287,14 +300,16 @@ export interface IngredientInput {
   unit: string | null
 }
 
-/** Always per-100 g values (decimal strings); the client converts whole-dish input before sending. */
+/**
+ * Always per-100 g values (decimal strings); the client converts whole-dish
+ * input before sending. The servings travel as RecipeInput.servings.
+ */
 export interface NutritionInput {
   kcal: string
   protein: string
   fat: string
   carbs: string
   weight_g: number | null
-  servings: number | null
 }
 
 export interface RecipeInput {
@@ -304,7 +319,31 @@ export interface RecipeInput {
   cuisine_id: number | null
   course_ids: number[]
   ingredients: IngredientInput[]
+  /** 1–50, or null for unknown. */
+  servings: number | null
   nutrition: NutritionInput | null
+}
+
+/** POST /api/recipes/import: exactly one of the two. */
+export type ImportInput = { url: string } | { text: string }
+
+export interface ImportReport {
+  source: 'instagram' | 'text'
+  /** '' on a duplicate: nothing was parsed. */
+  parser: 'rules' | 'llm' | 'video' | ''
+  /** 0..1 */
+  confidence: number
+  /** Whether the cover image was attached. */
+  image: boolean
+  /** Lines the parser could not read, ranges it shortened, … — in Russian, for people. */
+  warnings: string[]
+  /** The same post was imported before: the recipe is the existing one (HTTP 200). */
+  duplicate?: boolean
+}
+
+export interface RecipeImport {
+  recipe: Recipe
+  import: ImportReport
 }
 
 export interface CategoryInput {

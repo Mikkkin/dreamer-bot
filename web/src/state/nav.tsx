@@ -13,7 +13,8 @@ export type Route =
   | { name: 'wish'; id: number }
   | { name: 'wish-form'; id?: number; categoryId?: number | null }
   | { name: 'recipe'; id: number; random?: boolean }
-  | { name: 'recipe-form'; id?: number }
+  /** imported: the recipe was just imported and saved; the form asks to check it. */
+  | { name: 'recipe-form'; id?: number; imported?: { warnings: string[] } }
   | { name: 'viewer'; images: ApiImage[]; start: number; title: string }
   | { name: 'stats' }
   | { name: 'categories' }

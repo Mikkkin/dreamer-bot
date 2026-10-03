@@ -97,7 +97,7 @@ function renderRoute(route: Route): ReactNode {
     case 'recipe':
       return <RecipeDetail id={route.id} random={route.random} />
     case 'recipe-form':
-      return <RecipeForm id={route.id} />
+      return <RecipeForm id={route.id} imported={route.imported} />
     case 'viewer':
       return <Viewer images={route.images} start={route.start} title={route.title} />
     case 'stats':

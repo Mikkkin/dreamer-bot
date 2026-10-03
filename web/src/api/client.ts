@@ -5,9 +5,11 @@ import type {
   CategoryInput,
   Cook,
   ImageOwner,
+  ImportInput,
   Me,
   RatingInput,
   Recipe,
+  RecipeImport,
   RecipeInput,
   RecipeTag,
   RecipeTagInput,
@@ -18,15 +20,17 @@ import type {
   ShoppingPatch,
   Stats,
   Status,
-  Store,
-  VkusvillCart,
-  VkusvillCartLine,
-  VkusvillMatch,
   Wish,
   WishInput,
 } from './types'
 
 const JSON_TIMEOUT_MS = 20_000
+/**
+ * An import fetches the post, may ask the LLM or have it watch the reel's
+ * video (up to ~90 s), and downloads the cover. The server gives up after
+ * 120 s and still answers, so this waits a little longer.
+ */
+const IMPORT_TIMEOUT_MS = 130_000
 const UPLOAD_TIMEOUT_MS = 180_000
 
 export type AuthFailureHandler = (error: ApiError) => void
@@ -113,6 +117,18 @@ export class ApiClient {
     return this.#json('DELETE', `/api/recipes/${seg(id)}`)
   }
 
+  /**
+   * Imports a recipe from an Instagram post link or a pasted caption. The
+   * recipe is saved right away; `import.duplicate` means the same post was
+   * imported before and the existing recipe came back. 503 "unavailable":
+   * Instagram did not give the post (paste the text instead); 422
+   * "not_a_recipe": no recipe in the text.
+   */
+  importRecipe(input: ImportInput): Promise<RecipeImport> {
+    const body = 'url' in input ? { url: input.url } : { text: input.text }
+    return this.#json('POST', '/api/recipes/import', body, IMPORT_TIMEOUT_MS)
+  }
+
   async savings(wishId: number): Promise<Saving[]> {
     return (await this.#json<{ savings: Saving[] }>('GET', `/api/wishes/${seg(wishId)}/savings`)).savings
   }
@@ -189,21 +205,6 @@ export class ApiClient {
     return (await this.#json<{ removed: number }>('POST', '/api/shopping/clear-checked')).removed
   }
 
-  async stores(): Promise<Store[]> {
-    return (await this.#json<{ stores: Store[] }>('GET', '/api/stores')).stores
-  }
-
-  /** Candidate ВкусВилл products for unchecked items (null = all unchecked, at most 30). 503 "unavailable" when ВкусВилл is down. */
-  async vkusvillMatch(itemIds: readonly number[] | null): Promise<VkusvillMatch[]> {
-    const body = itemIds === null ? {} : { item_ids: itemIds.map((id) => Number(seg(id))) }
-    return (await this.#json<{ matches: VkusvillMatch[] }>('POST', '/api/shopping/vkusvill/match', body)).matches
-  }
-
-  /** Creates a shared ВкусВилл basket and returns its link. */
-  vkusvillCart(lines: readonly VkusvillCartLine[]): Promise<VkusvillCart> {
-    return this.#json('POST', '/api/shopping/vkusvill/cart', { lines })
-  }
-
   stats(): Promise<Stats> {
     return this.#json('GET', '/api/stats')
   }
@@ -235,7 +236,7 @@ export class ApiClient {
     })
   }
 
-  async #json<T>(method: string, path: string, body?: unknown): Promise<T> {
+  async #json<T>(method: string, path: string, body?: unknown, timeoutMs = JSON_TIMEOUT_MS): Promise<T> {
     const headers: Record<string, string> = { Authorization: this.#authorization, Accept: 'application/json' }
     if (body !== undefined) headers['Content-Type'] = 'application/json'
     let res: Response
@@ -246,7 +247,7 @@ export class ApiClient {
         body: body === undefined ? undefined : JSON.stringify(body),
         cache: 'no-store',
         credentials: 'omit',
-        signal: AbortSignal.timeout(JSON_TIMEOUT_MS),
+        signal: AbortSignal.timeout(timeoutMs),
       })
     } catch {
       throw this.#fail(networkError())

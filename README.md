@@ -1,279 +1,281 @@
 # dreamer-bot
 
-**A private Telegram bot and Mini App for two people:** a shared wish list with savings, recipes with Instagram import and calorie/macro (КБЖУ) estimates, and a shared shopping list. Only the Telegram accounts you whitelist can use it — everyone else gets no reply at all.
+<p align="center"><img src="docs/banner-ru.webp" alt="Мечты — Telegram-бот и мини-приложение для двоих: желания и копилка, рецепты из Instagram с КБЖУ, общий список покупок"></p>
+
+**Личный Telegram-бот и мини-приложение для двоих:** общий список желаний с копилкой, рецепты с импортом из Instagram и подсчётом КБЖУ, общий список покупок. Пользоваться могут только те, кого вы впишете — остальным бот просто не отвечает.
 
 [![CI](https://github.com/Mikkkin/dreamer-bot/actions/workflows/ci.yml/badge.svg)](https://github.com/Mikkkin/dreamer-bot/actions/workflows/ci.yml)
 [![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
 
-🇷🇺 [Русская версия](README.ru.md) — the app itself speaks Russian.
+🇬🇧 [English version](README.en.md)
 
 <p align="center">
-  <img src="docs/screenshots/wishes.webp" width="250" alt="Wishes: want, saving up, came true, and the total planned">
-  <img src="docs/screenshots/scaler.webp" width="250" alt="A recipe scaled to 4 servings, with amounts recalculated and units declined">
-  <img src="docs/screenshots/kbju-dark.webp" width="250" alt="Calories and macros: a share donut and daily-value bars in the dark theme">
+  <img src="docs/screenshots/wishes.webp" width="250" alt="Мечты: Хотим, Копим, Сбылось и сумма в планах">
+  <img src="docs/screenshots/scaler.webp" width="250" alt="Рецепт на 4 порции: количества пересчитаны, единицы склоняются">
+  <img src="docs/screenshots/kbju-dark.webp" width="250" alt="КБЖУ: кольцо долей и полосы суточной нормы в тёмной теме">
 </p>
 
-## Features
+## Что умеет
 
-- 🎁 **Wishes** — *want → saving up → came true*, photos and links, a piggy bank that shows how much of the price is saved.
-- 📥 **Recipes from an Instagram link** — send the bot a reel: title, ingredients, steps and photo are filled in. With a Gemini key, even when the recipe is only in the video.
-- 🍽 **Servings and macros** — «− 4 порции +» rescales the whole recipe; calories and macros are estimated from the ingredients and drawn as a chart.
-- 🥄 **Units that read right** — «½ чайной ложки», «2 столовые ложки»; type `1/2`, `1 1/2`, `0,5` or «полторы».
-- 🛒 **Shared shopping list** — a recipe's ingredients in one tap; the same product adds up: 200 мл + 0,5 л = 700 мл.
-- ⭐ **Cooking history** — «Приготовили», both partners' ratings, and «Что приготовить?» for a random pick.
-- 🔔 **Partner notifications** about new wishes, recipes, savings and dreams that came true.
+- 🎁 **Желания** — «Хотим → Копим → Сбылось», фото и ссылки, копилка с процентом накопленного.
+- 📥 **Рецепт из Instagram одной ссылкой** — пришлите боту рилс: название, ингредиенты, шаги и фото заполнятся сами. С ключом Gemini — даже если рецепт только в видео.
+- 🍽 **Порции и КБЖУ** — «− 4 порции +» пересчитывает весь рецепт, КБЖУ считается по ингредиентам и показано графиком.
+- 🥄 **Нормальные единицы** — «½ чайной ложки», «2 столовые ложки»; вводить можно `1/2`, `1 1/2`, `0,5`, «полторы».
+- 🛒 **Общий список покупок** — ингредиенты рецепта одним нажатием, одинаковое складывается: 200 мл + 0,5 л = 700 мл.
+- ⭐ **История готовки** — «Приготовили», оценки обоих, «Что приготовить?» наугад.
+- 🔔 **Уведомления партнёру** о новых желаниях, рецептах, накоплениях и сбывшихся мечтах.
 
-## Install in 3 commands
+## Установка за 3 команды
 
-**You need**
-- a fresh Ubuntu or Debian server (amd64 or arm64, 1 GB RAM or more — the script adds swap on small ones) with root login;
-- `git` and `ssh` on your computer (built into macOS and Linux; on Windows use Git Bash or WSL);
-- a bot token: [@BotFather](https://t.me/BotFather) → `/newbot`;
-- a domain for the Mini App — a free one works: a [FreeDNS](https://freedns.afraid.org) or [DuckDNS](https://www.duckdns.org) subdomain. **Create the A record pointing at the server first** — the script checks DNS and waits until it resolves. Without a domain only the chat bot works.
+**Понадобится**
+- чистый сервер с Ubuntu или Debian (amd64 или arm64, от 1 ГБ RAM — на маленьких скрипт сам добавит swap) и вход на него под root;
+- на своём компьютере — `git` и `ssh` (в macOS и Linux уже есть, в Windows — Git Bash или WSL);
+- токен бота: [@BotFather](https://t.me/BotFather) → `/newbot`;
+- домен для мини-приложения — подойдёт бесплатный: поддомен на [FreeDNS](https://freedns.afraid.org) или [DuckDNS](https://www.duckdns.org). **A-запись на IP сервера создайте заранее** — скрипт проверит DNS и подождёт, пока она заработает. Без домена работает только чат-бот.
 
-**0. If you log in to the server with a password**, put your SSH key there first — password login is turned off by the install:
+**0. Если на сервер входите по паролю**, сначала положите туда свой SSH-ключ — после установки вход по паролю закроется:
 
 ```bash
-ls ~/.ssh/id_ed25519.pub || ssh-keygen -t ed25519   # create a key if you have none
-ssh-copy-id root@SERVER_IP
+ls ~/.ssh/id_ed25519.pub || ssh-keygen -t ed25519   # создать ключ, если его ещё нет
+ssh-copy-id root@IP_СЕРВЕРА
 ```
 
-**1–3. Install** — on your computer:
+**1–3. Установка** — на своём компьютере:
 
 ```bash
 git clone https://github.com/Mikkkin/dreamer-bot.git && cd dreamer-bot
-scp deploy/setup-vds.sh root@SERVER_IP:
-ssh -t root@SERVER_IP 'bash setup-vds.sh'
+scp deploy/setup-vds.sh root@IP_СЕРВЕРА:
+ssh -t root@IP_СЕРВЕРА 'bash setup-vds.sh'
 ```
 
-[`deploy/setup-vds.sh`](deploy/setup-vds.sh) asks its questions and does the rest: updates the system, creates your user, turns off password and root login, sets up the firewall and fail2ban, installs Docker, builds the bot on the server, gets an HTTPS certificate and starts everything — usually within a few minutes. The script speaks Russian; its questions, in order:
+Скрипт [`deploy/setup-vds.sh`](deploy/setup-vds.sh) задаст вопросы и сделает остальное сам: обновит систему, создаст вам пользователя, закроет вход по паролю и под root, включит firewall и fail2ban, поставит Docker, соберёт бота прямо на сервере, получит HTTPS-сертификат и запустит всё — обычно за несколько минут. Вопросы — по порядку:
 
-| # | It asks | What to answer |
+| # | Спросит | Что ответить |
 |:-:|---|---|
-| 1 | Обновить пакеты системы? (upgrade packages) | Enter — yes |
-| 2 | Имя пользователя для SSH (SSH user) | Enter for `deploy`, or your own |
-| 3 | A password for sudo | make one up: it is for `sudo` only, SSH won't accept it |
-| 4 | Публичный ключ (public key) — *only if root has no keys* | `cat ~/.ssh/id_ed25519.pub` on your computer |
-| 5 | **Вход под deploy по ключу работает? (does key login work?)** | ⚠️ Keep this window open and run `ssh deploy@SERVER_IP` in a **new** terminal. If it logs you in, answer `y`. Enter (= no) rolls the SSH changes back and stops the script |
-| 6 | `BOT_TOKEN` | from @BotFather, input hidden |
-| 7 | `ALLOWED_USER_IDS` | Enter if you don't know them — the bot tells you |
-| 8 | How to open the Mini App: 1, 2 or 3 | `1` your domain or FreeDNS, `2` DuckDNS (asks for the subdomain and token), `3` no domain |
-| 9 | E-mail для Let's Encrypt | any e-mail of yours |
-| 10 | Currency and time zone | Enter for `EUR` and `Europe/Amsterdam`, or e.g. `USD` and `America/New_York` |
-| 11 | A Gemini key — optional | [aistudio.google.com/apikey](https://aistudio.google.com/apikey), free; Enter skips it |
+| 1 | Обновить пакеты системы? | Enter — да |
+| 2 | Имя пользователя для SSH | Enter — `deploy`, или своё |
+| 3 | Пароль для sudo | придумайте: он нужен для `sudo`, по SSH с ним не войти |
+| 4 | Публичный ключ — *только если у root нет ключей* | `cat ~/.ssh/id_ed25519.pub` на своём компьютере |
+| 5 | **Вход под deploy по ключу работает?** | ⚠️ Не закрывая окно, в **новом** терминале выполните `ssh deploy@IP_СЕРВЕРА`. Вошли — `y`. Enter (= нет) откатит настройки SSH и остановит скрипт |
+| 6 | `BOT_TOKEN` | от @BotFather, ввод скрыт |
+| 7 | `ALLOWED_USER_IDS` | Enter, если не знаете, — бот пришлёт ID сам |
+| 8 | Как открывать Mini App: 1, 2 или 3 | `1` — свой домен или FreeDNS, `2` — DuckDNS (спросит поддомен и токен), `3` — без домена |
+| 9 | E-mail для Let's Encrypt | любой ваш |
+| 10 | Валюта и часовой пояс | Enter — `EUR` и `Europe/Amsterdam`, или например `RUB` и `Europe/Moscow` |
+| 11 | Ключ Gemini — необязательно | [aistudio.google.com/apikey](https://aistudio.google.com/apikey), бесплатно; Enter — пропустить |
 
-<sub>Installing from your own private fork: `REPO_URL=https://github.com/you/fork.git REPO_SSH=git@github.com:you/fork.git REPO_SETTINGS_KEYS=https://github.com/you/fork/settings/keys bash setup-vds.sh` — the script shows a deploy key for *Settings → Deploy keys* (no write access).</sub>
+<sub>Поставить из своего приватного форка: `REPO_URL=https://github.com/вы/форк.git REPO_SSH=git@github.com:вы/форк.git REPO_SETTINGS_KEYS=https://github.com/вы/форк/settings/keys bash setup-vds.sh` — скрипт покажет deploy key для *Settings → Deploy keys* (без write access).</sub>
 
-## After the install
+## После установки
 
-Root login is closed now — log in as your user:
+Под root вход теперь закрыт — заходите под своим пользователем:
 
-1. Send `/start` to the bot — it replies with your Telegram ID. Your partner does the same.
-2. On the server:
+1. Напишите боту `/start` — он пришлёт ваш Telegram ID. Пусть партнёр сделает то же.
+2. На сервере:
    ```bash
-   ssh deploy@SERVER_IP
-   sudo dreamer-vds ids        # asks for the sudo password; paste both IDs separated by a comma
+   ssh deploy@IP_СЕРВЕРА
+   sudo dreamer-vds ids        # спросит пароль sudo, вставьте оба ID через запятую
    ```
-3. `/start` again — the **✨ Мечты** button opens the app.
+3. Снова `/start` — кнопка **✨ Мечты** откроет приложение.
 
-## Updating
+## Обновление
 
 ```bash
-ssh deploy@SERVER_IP
+ssh deploy@IP_СЕРВЕРА
 sudo dreamer-vds update
 ```
 
-It pulls the new version, builds it while the old one keeps running, archives the data to `/var/backups/dreamer/`, and restarts the bot. The data (database and photos) lives in a Docker volume: updates never delete it, and the archive is taken before the new version's first start, which may migrate the database.
+Скачает новую версию, соберёт её, пока работает старая, сохранит копию данных в `/var/backups/dreamer/` и перезапустит бота. Данные (база и фото) живут в Docker-томе: обновление их не удаляет, а копию снимает до первого запуска новой версии — она может обновить схему базы.
 
-Other commands: `sudo dreamer-vds status | ids | env | backup | restore`. `env` asks every settings question again; to change one line, `nano /opt/dreamer-bot/.env` and then `cd /opt/dreamer-bot && docker compose up -d` is quicker.
+Другие команды: `sudo dreamer-vds status | ids | env | backup | restore`. `env` заново задаёт все вопросы о настройках; чтобы поменять одну строку, проще `nano /opt/dreamer-bot/.env`, затем `cd /opt/dreamer-bot && docker compose up -d`.
 
-## Using it
+## Как пользоваться
 
-Most things happen in the Mini App: the **✨ Мечты** button in the bot chat. You can also just send the bot:
+Всё основное — в мини-приложении: кнопка **✨ Мечты** в чате с ботом. А ещё боту можно просто прислать:
 
-- **an Instagram post or reel link** — it becomes a recipe;
-- **text, a link or photos** — it becomes a draft wish or recipe with buttons.
+- **ссылку на пост или рилс Instagram** — получится рецепт;
+- **текст, ссылку или фото** — получится черновик желания или рецепта с кнопками.
 
-| Command | What it does |
+| Команда | Что делает |
 |---|---|
-| `/list` | Wishes by status |
-| `/recipes` · `/cook` | All recipes · a random one for today |
-| `/shop` | The shopping list: tick off what you bought |
-| `/stats` | Totals per category and currency |
-| `/start` · `/help` · `/cancel` | The app button · help · cancel the current input |
+| `/list` | Желания по статусам |
+| `/recipes` · `/cook` | Все рецепты · случайный на сегодня |
+| `/shop` | Список покупок: отметить купленное |
+| `/stats` | Итоги по категориям и валютам |
+| `/start` · `/help` · `/cancel` | Кнопка приложения · справка · отменить ввод |
 
-## Screenshots
+## Скриншоты
 
 | | | |
 |:---:|:---:|:---:|
-| <img src="docs/screenshots/recipes.webp" width="230" alt="Recipes by cuisine and course, with a random pick"> | <img src="docs/screenshots/import.webp" width="230" alt="Importing a recipe from an Instagram link"> | <img src="docs/screenshots/review.webp" width="230" alt="Checking an imported recipe before the partner sees it"> |
-| Recipes by cuisine and course | Import from Instagram | Review after import |
-| <img src="docs/screenshots/shopping.webp" width="230" alt="Shared shopping list"> | <img src="docs/screenshots/piggy.webp" width="230" alt="A wish's piggy bank: 36 % saved"> | <img src="docs/screenshots/stats-dark.webp" width="230" alt="Statistics in the dark theme"> |
-| Shopping list | Piggy bank | Statistics |
+| <img src="docs/screenshots/recipes.webp" width="230" alt="Рецепты: кухни, типы блюд, случайный рецепт"> | <img src="docs/screenshots/import.webp" width="230" alt="Импорт рецепта по ссылке на Instagram"> | <img src="docs/screenshots/review.webp" width="230" alt="Проверка импортированного рецепта перед тем, как его увидит партнёр"> |
+| Рецепты по кухням и типам | Импорт из Instagram | Проверка после импорта |
+| <img src="docs/screenshots/shopping.webp" width="230" alt="Общий список покупок"> | <img src="docs/screenshots/piggy.webp" width="230" alt="Копилка желания: накоплено 36 %"> | <img src="docs/screenshots/stats-dark.webp" width="230" alt="Статистика в тёмной теме"> |
+| Список покупок | Копилка | Статистика |
 
-## Details
+## Подробности
 
 <details>
-<summary><b>Recipe import and the Gemini key</b></summary>
+<summary><b>Импорт рецептов и ключ Gemini</b></summary>
 
-Import works without any key. The server reads the post the way a link preview does — the caption and the cover — and rules pick out the title, the ingredients with amounts, the steps and the servings, usually in a couple of seconds.
+Импорт работает и без ключей. Сервер читает пост так же, как превью ссылки: подпись и обложку. Правила выделяют название, ингредиенты с количествами, шаги и порции — обычно за пару секунд.
 
-A model key helps in two cases:
-- **captions without a clear structure** (prose, another language) are parsed by the model;
-- **recipes that exist only in the video** (spoken or shown on screen) are read by Gemini from the reel. That takes up to 90 seconds, and the video is deleted from Google's storage afterwards.
+Ключ модели нужен для двух случаев:
+- **подпись без понятной структуры** (сплошной текст, другой язык) — её разберёт модель;
+- **рецепт только в видео** (голосом или текстом на экране) — ролик посмотрит Gemini. Это до 90 секунд, видео потом удаляется из хранилища Google.
 
-The setup script asks for the key. To add or change it later, edit the line `LLM_API_KEY=…` in `/opt/dreamer-bot/.env`, then run `cd /opt/dreamer-bot && docker compose up -d`. The default model is `gemini-3.8-flash`. To check: the output of `docker compose logs bot | grep llm` should contain `(captions and videos)`.
+Ключ спрашивает скрипт установки. Добавить или сменить его позже: строка `LLM_API_KEY=…` в `/opt/dreamer-bot/.env`, затем `cd /opt/dreamer-bot && docker compose up -d`. Модель по умолчанию — `gemini-3.8-flash`. Проверка: в выводе `docker compose logs bot | grep llm` должно быть `(captions and videos)`.
 
-Gemini's free tier is enough for a couple. On it Google may use what you send (captions and videos of public posts) to improve its products; on a paid plan it doesn't, and a reel costs about a cent. Limits: 20 videos a day per person (the count resets at midnight in `TZ` and when the bot restarts), two at a time, and a burst of 5 imports, then one every 20 seconds. Sending the same post again returns the recipe you already have.
+Бесплатного тарифа Gemini паре хватает. Учтите, что на нём Google может использовать отправленное (подписи и видео публичных постов) для улучшения своих продуктов; на платном — нет, и рилс стоит около цента. Лимиты: 20 видео в день на человека (счётчик обнуляется в полночь по `TZ` и при перезапуске бота), не больше двух одновременно, не больше 5 импортов подряд (дальше — раз в 20 секунд). Повторная ссылка на тот же пост возвращает уже сохранённый рецепт.
 
 </details>
 
 <details>
-<summary><b>Backups and rollback</b></summary>
+<summary><b>Резервные копии и откат</b></summary>
 
 ```bash
-sudo dreamer-vds backup                                  # an archive right now
-sudo dreamer-vds restore                                 # list the archives
-sudo dreamer-vds restore /var/backups/dreamer/<file>     # restore one (the current data is archived first)
+sudo dreamer-vds backup                                  # архив прямо сейчас
+sudo dreamer-vds restore                                 # список архивов
+sudo dreamer-vds restore /var/backups/dreamer/<файл>     # восстановить (текущие данные сначала архивируются)
 ```
 
-`update` archives the data before starting a new version, keeps the last 10 archives, and prints the rollback commands. Restore checks the archive, unpacks it next to the data and puts the previous data back if the bot does not start on the restored one. Never run `docker compose down -v`: `-v` deletes the data volume.
+`update` сам делает копию перед запуском новой версии, хранятся последние 10 архивов, и печатает команды отката. Восстановление проверяет архив, распаковывает его рядом с данными и возвращает прежние, если бот на восстановленных не запустился. Не запускайте `docker compose down -v`: флаг `-v` удаляет том с данными.
 
 </details>
 
 <details>
-<summary><b>Manual install with Docker Compose</b></summary>
+<summary><b>Ручная установка через Docker Compose</b></summary>
 
-You need Docker with Compose v2 and open ports 80 and 443.
+Нужны Docker с Compose v2 и открытые порты 80 и 443.
 
 ```bash
 git clone https://github.com/Mikkkin/dreamer-bot.git && cd dreamer-bot
 cp .env.example .env && chmod 600 .env
 ```
 
-Fill in `.env`:
+Заполните `.env`:
 
 ```dotenv
-BOT_TOKEN=123456789:AA...            # from @BotFather
-DOMAIN=dreams.mooo.com               # your (free) domain
+BOT_TOKEN=123456789:AA...            # от @BotFather
+DOMAIN=dreams.mooo.com               # ваш (бесплатный) домен
 WEBAPP_URL=https://dreams.mooo.com/
-ACME_EMAIL=you@example.com           # for the certificate authority
+ACME_EMAIL=you@example.com           # e-mail для центра сертификации
 COMPOSE_PROFILES=caddy
-LLM_API_KEY=                         # optional: a Gemini key
+LLM_API_KEY=                         # необязательно: ключ Gemini
 ```
 
 ```bash
 docker compose up -d --build
 ```
 
-Caddy gets the certificate by itself (Let's Encrypt, or ZeroSSL if Let's Encrypt's limits are used up). Then `/start` the bot, put both IDs into `ALLOWED_USER_IDS` and run `docker compose up -d`. After editing `.env`, use `up -d`: `restart` does not pick up new values.
+Caddy сам получит сертификат (Let's Encrypt, при исчерпании лимитов — ZeroSSL). Затем `/start` боту, ID обоих в `ALLOWED_USER_IDS` и `docker compose up -d`. После правки `.env` нужен именно `up -d`: `restart` новые значения не подхватывает.
 
 </details>
 
 <details>
-<summary><b>Other setups: DuckDNS, Cloudflare Tunnel, no domain</b></summary>
+<summary><b>Другие варианты: DuckDNS, Cloudflare Tunnel, без домена</b></summary>
 
-The chat bot needs no domain: it connects out to Telegram (long polling) and accepts no incoming connections. Telegram opens the Mini App only from a public `https://` address with a valid certificate. The image is built on your server; CI checks that it builds for **linux/amd64 and linux/arm64**.
+Чат-боту домен не нужен: он сам ходит в Telegram (long polling), входящие соединения не требуются. Mini App Telegram открывает только по публичному `https://` с настоящим сертификатом. Образ собирается на вашем сервере; сборка под **linux/amd64 и linux/arm64** проверяется в CI.
 
-| Profiles | When | What you need | `.env` |
+| Профили | Когда | Что нужно | В `.env` |
 |---|---|---|---|
-| `caddy` | Server with a static public IP | a domain with an A/AAAA record; ports 80 and 443 | `DOMAIN`, `WEBAPP_URL`, `ACME_EMAIL` |
-| `caddy,duckdns` | Home server with a changing IP | a DuckDNS subdomain; 80 and 443 forwarded; a real public IP | + `DUCKDNS_SUBDOMAIN`, `DUCKDNS_TOKEN` |
-| `tunnel` | No open ports at all | a domain on Cloudflare | `CLOUDFLARE_TUNNEL_TOKEN`, `WEBAPP_URL` |
-| `quick` | A try-out without a domain | a network that allows Cloudflare tunnels | leave `WEBAPP_URL` empty |
-| *(none)* | Behind your own reverse proxy | HTTPS proxied to `127.0.0.1:8080` | `WEBAPP_URL` |
+| `caddy` | Сервер со статическим «белым» IP | домен с A/AAAA-записью на сервер; порты 80 и 443 | `DOMAIN`, `WEBAPP_URL`, `ACME_EMAIL` |
+| `caddy,duckdns` | Домашний сервер с меняющимся IP | поддомен DuckDNS; проброшенные 80 и 443; «белый» IP | + `DUCKDNS_SUBDOMAIN`, `DUCKDNS_TOKEN` |
+| `tunnel` | Открыть порты нельзя | домен в Cloudflare | `CLOUDFLARE_TUNNEL_TOKEN`, `WEBAPP_URL` |
+| `quick` | Попробовать без домена | сеть без блокировки туннелей Cloudflare | `WEBAPP_URL` пустой |
+| *(без профиля)* | Свой reverse proxy | прокси с HTTPS на `127.0.0.1:8080` | `WEBAPP_URL` |
 
-- **DuckDNS:** create a subdomain on duckdns.org and set `DOMAIN=name.duckdns.org`, `WEBAPP_URL=https://name.duckdns.org/`, `DUCKDNS_SUBDOMAIN`, `DUCKDNS_TOKEN` and `COMPOSE_PROFILES=caddy,duckdns`. The IP is updated every 5 minutes.
-- **Cloudflare Tunnel:** Zero Trust → *Networks → Tunnels* → a tunnel with the Docker connector and a public hostname → `HTTP` → `bot:8080`; set `CLOUDFLARE_TUNNEL_TOKEN`, `WEBAPP_URL` and `COMPOSE_PROFILES=tunnel`.
-- **Quick tunnel:** a temporary `https://*.trycloudflare.com` address that changes on every restart — for trying things out only.
+- **DuckDNS:** создайте поддомен на duckdns.org, укажите `DOMAIN=имя.duckdns.org`, `WEBAPP_URL=https://имя.duckdns.org/`, `DUCKDNS_SUBDOMAIN`, `DUCKDNS_TOKEN` и `COMPOSE_PROFILES=caddy,duckdns`. IP обновляется раз в 5 минут.
+- **Cloudflare Tunnel:** Zero Trust → *Networks → Tunnels* → туннель с Docker-коннектором, публичный хостнейм → `HTTP` → `bot:8080`; в `.env` — `CLOUDFLARE_TUNNEL_TOKEN`, `WEBAPP_URL`, `COMPOSE_PROFILES=tunnel`.
+- **Quick tunnel:** временный адрес `https://*.trycloudflare.com`, меняется при каждом перезапуске — только чтобы попробовать.
 
 </details>
 
 <details>
-<summary><b>All <code>.env</code> settings</b></summary>
+<summary><b>Все настройки <code>.env</code></b></summary>
 
-Each variable is documented in [`.env.example`](.env.example).
+Каждая переменная описана в [`.env.example`](.env.example).
 
-| Variable | Default | Meaning |
+| Переменная | По умолчанию | Назначение |
 |---|---|---|
-| `BOT_TOKEN` | — (required) | Token from @BotFather |
-| `ALLOWED_USER_IDS` | empty = setup mode | Comma-separated Telegram IDs |
-| `WEBAPP_URL` | empty | Public HTTPS address of the Mini App |
-| `DEFAULT_CURRENCY` | `EUR` | `EUR`, `USD`, `RUB` or `GBP` |
-| `TZ` | `Europe/Amsterdam` (`UTC` if the line is missing) | Time zone, e.g. `Europe/Moscow` |
-| `LLM_API_KEY` | empty = off | Model key for recipe import; treat it like the bot token |
-| `LLM_PROVIDER` | `gemini` | `gemini` (captions and videos), `anthropic` or `openai` (any OpenAI-compatible API) |
-| `LLM_MODEL` | `gemini-3.8-flash` | `claude-haiku-4-5` for `anthropic`; required for `openai` |
-| `LLM_BASE_URL` | — | `openai` only, `https://api.openai.com/v1` by default |
-| `INITDATA_MAX_AGE` | `24h` | How long one Mini App launch stays valid (`1m`–`168h`) |
-| `MAX_IMAGE_MB` | `10` | Upload limit for one photo (1–50) |
+| `BOT_TOKEN` | — (обязательно) | Токен от @BotFather |
+| `ALLOWED_USER_IDS` | пусто = режим настройки | Telegram ID через запятую |
+| `WEBAPP_URL` | пусто | Публичный HTTPS-адрес Mini App |
+| `DEFAULT_CURRENCY` | `EUR` | `EUR`, `USD`, `RUB` или `GBP` |
+| `TZ` | `Europe/Amsterdam` (без строки — `UTC`) | Часовой пояс, например `Europe/Moscow` |
+| `LLM_API_KEY` | пусто = выключено | Ключ модели для импорта рецептов; храните как токен бота |
+| `LLM_PROVIDER` | `gemini` | `gemini` (подписи и видео), `anthropic` или `openai` (любой OpenAI-совместимый API) |
+| `LLM_MODEL` | `gemini-3.8-flash` | Для `anthropic` — `claude-haiku-4-5`; для `openai` обязательна |
+| `LLM_BASE_URL` | — | Только для `openai`, по умолчанию `https://api.openai.com/v1` |
+| `INITDATA_MAX_AGE` | `24h` | Сколько действует один запуск Mini App (`1m`–`168h`) |
+| `MAX_IMAGE_MB` | `10` | Предел размера одного фото (1–50) |
 | `LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
-| `HTTP_PORT` | `8080` | Host port on `127.0.0.1` |
-| `HTTP_ADDR`, `DATA_DIR` | `:8080`, `./data` (`/data` in the container) | Only when running without Docker |
-| `COMPOSE_PROFILES` | — | e.g. `caddy` or `caddy,duckdns` |
-| `DOMAIN`, `ACME_EMAIL` | — | `caddy` profile |
-| `DUCKDNS_SUBDOMAIN`, `DUCKDNS_TOKEN` | — | `duckdns` profile |
-| `CLOUDFLARE_TUNNEL_TOKEN` | — | `tunnel` profile |
-| `QUICK_TUNNEL_METRICS_URL` | `http://quicktunnel:20241` | Where the `quick` profile reads its address; empty turns the lookup off |
+| `HTTP_PORT` | `8080` | Порт на `127.0.0.1` |
+| `HTTP_ADDR`, `DATA_DIR` | `:8080`, `./data` (в контейнере `/data`) | Только для запуска без Docker |
+| `COMPOSE_PROFILES` | — | Например `caddy` или `caddy,duckdns` |
+| `DOMAIN`, `ACME_EMAIL` | — | Профиль `caddy` |
+| `DUCKDNS_SUBDOMAIN`, `DUCKDNS_TOKEN` | — | Профиль `duckdns` |
+| `CLOUDFLARE_TUNNEL_TOKEN` | — | Профиль `tunnel` |
+| `QUICK_TUNNEL_METRICS_URL` | `http://quicktunnel:20241` | Откуда профиль `quick` берёт адрес; пусто — не искать |
 
 </details>
 
 <details>
-<summary><b>Security</b></summary>
+<summary><b>Безопасность</b></summary>
 
-- **Whitelist.** Messages from strangers are dropped without a reply; only the sender's ID is logged. The bot leaves any group or channel it is added to.
-- **Mini App login** uses Telegram's signed launch data: HMAC-SHA256 checked in constant time, an age limit, rejection of duplicated parameters, and the whitelist. No cookies, no sessions.
-- **Secrets.** The bot token is the only root secret (plus the optional model key). The login and image-link keys are derived from it. Neither ever reaches the logs.
-- **Images** are checked by content (JPEG, PNG, WebP), re-encoded without EXIF or GPS, and served only through signed, expiring links.
-- **Outbound calls** go only to Telegram, Instagram and its CDN (the post address is rebuilt from the link; redirects to other hosts are refused) and, with a key, to the model provider. The key travels in a header only. A post's caption is untrusted data for the model, and its answer is validated like user input.
-- **Web and container.** A strict CSP, rate limits, long polling instead of a webhook; a distroless image without a shell, a non-root user, a read-only filesystem, all capabilities dropped.
-- **Server** after `setup-vds.sh`: key-only SSH without root, UFW (SSH, 80, 443), fail2ban, automatic security updates.
+- **Белый список.** Сообщения от чужих отбрасываются без ответа, в лог пишется только ID. Из групп и каналов бот выходит.
+- **Вход в Mini App** — по подписанным Telegram данным запуска: HMAC-SHA256 за постоянное время, срок действия, отказ при повторяющихся параметрах, проверка белого списка. Ни кук, ни сессий.
+- **Секреты.** Токен бота — единственный корневой секрет (плюс необязательный ключ модели). Ключи для входа и подписи ссылок на картинки выводятся из токена. В логи ни то ни другое не попадает.
+- **Картинки** проверяются по содержимому (JPEG, PNG, WebP), перекодируются без EXIF и GPS и отдаются только по подписанным ссылкам с истекающим сроком.
+- **Исходящие запросы** — только в Telegram, Instagram и его CDN (адрес поста собирается заново из ссылки, перенаправления на чужие хосты отклоняются) и, если задан ключ, к провайдеру модели. Ключ — только в заголовке. Подпись поста для модели — недоверенные данные, ответ проверяется как ввод пользователя.
+- **Веб и контейнер.** Строгая CSP, лимиты запросов, long polling без вебхука; distroless-образ без shell, не root, ФС только для чтения, capabilities сброшены.
+- **Сервер** после `setup-vds.sh`: вход только по ключу, без root, UFW (SSH, 80, 443), fail2ban, автоматические обновления безопасности.
 
-Found a vulnerability? Please report it through a [private security advisory](https://github.com/Mikkkin/dreamer-bot/security/advisories/new), not a public issue.
+Нашли уязвимость? Напишите через [приватный security advisory](https://github.com/Mikkkin/dreamer-bot/security/advisories/new), а не в открытом issue.
 
 </details>
 
 <details>
-<summary><b>How it is built, and development</b></summary>
+<summary><b>Как устроено и разработка</b></summary>
 
 ```
-Telegram ──long polling──▶ bot (go-telegram/bot) ─┐
-                                                  ├─▶ services ─▶ SQLite (WAL) + image store
+Telegram ──long polling──▶ бот (go-telegram/bot) ─┐
+                                                  ├─▶ сервисы ─▶ SQLite (WAL) + хранилище картинок
 Mini App ──HTTPS /api───▶ HTTP API (net/http) ────┘
-   ▲ React 19 + Vite, embedded into the Go binary
+   ▲ React 19 + Vite, вшит в бинарник Go
 ```
 
-- **Backend:** Go 1.27, go-telegram/bot, `modernc.org/sqlite` (pure Go, a static binary). `internal/domain` holds the rules, `internal/service` the use cases, `internal/recipeimport` the Instagram import, `internal/nutrition` the macro estimates from a food table (USDA data and typical label values). The HTTP contract is in [`docs/API.md`](docs/API.md).
-- **Frontend:** React 19, Vite, TypeScript, bun; custom components on Telegram theme variables.
+- **Бэкенд:** Go 1.27, go-telegram/bot, `modernc.org/sqlite` (чистый Go, статический бинарник). `internal/domain` — правила, `internal/service` — сценарии, `internal/recipeimport` — импорт из Instagram, `internal/nutrition` — КБЖУ по таблице продуктов (USDA и типовая маркировка). Контракт HTTP API — в [`docs/API.md`](docs/API.md).
+- **Фронтенд:** React 19, Vite, TypeScript, bun; свои компоненты на переменных темы Telegram.
 
-You need Go ≥ 1.27 and bun. The Makefile runs what CI runs:
+Понадобятся Go ≥ 1.27 и bun. Makefile запускает то же, что CI:
 
 ```bash
-make web           # bun install and build the Mini App (needed before check)
-make check         # gofmt, vet, staticcheck, go test -race, govulncheck, frontend typecheck and tests
-make build run     # embed the Mini App, run the binary with ./data and your .env
-make test-setup    # shellcheck and container tests for the setup script (needs Docker)
+make web           # bun install и сборка Mini App (нужно до check)
+make check         # gofmt, vet, staticcheck, go test -race, govulncheck, проверка типов и тесты фронтенда
+make build run     # вшить Mini App в бинарник и запустить с ./data и вашим .env
+make test-setup    # shellcheck и тесты скрипта установки в контейнерах (нужен Docker)
 ```
 
 </details>
 
 <details>
-<summary><b>Troubleshooting</b></summary>
+<summary><b>Если что-то не работает</b></summary>
 
-Run the `docker compose` commands from the bot's folder on the server: `cd /opt/dreamer-bot`.
+Команды `docker compose` — из папки бота на сервере: `cd /opt/dreamer-bot`.
 
-- **The bot doesn't answer.** Check your ID in `ALLOWED_USER_IDS`: `docker compose logs bot | grep dropped`.
-- **`409 Conflict` in the logs.** Two copies of the bot use the same token — stop the other one.
-- **"check BOT_TOKEN".** Telegram rejected the token — get a new one with `/revoke` in @BotFather.
-- **The menu button doesn't open the app.** `WEBAPP_URL` must be an `https://` address that opens on your phone.
-- **No certificate.** The domain must point at the server (`dig +short your.domain`) and ports 80 and 443 must be open. Details: `docker compose logs caddy`.
-- **Instagram didn't give the post.** It happens now and then — paste the caption text (the Mini App switches to the text field by itself) or try later.
-- **Video recipes aren't read.** `docker compose logs bot | grep llm` must contain `(captions and videos)`; `"llm":"off"` means there is no key in `.env`. The daily video limit resets at midnight in `TZ` and when the bot restarts.
+- **Бот не отвечает.** Проверьте свой ID в `ALLOWED_USER_IDS`: `docker compose logs bot | grep dropped`.
+- **`409 Conflict` в логах.** С этим токеном работают две копии бота — остановите лишнюю.
+- **«check BOT_TOKEN».** Telegram не принял токен — новый через `/revoke` в @BotFather.
+- **Кнопка не открывает приложение.** `WEBAPP_URL` должен быть `https://` и открываться с телефона.
+- **Нет сертификата.** Домен должен указывать на сервер (`dig +short ваш.домен`), порты 80 и 443 — открыты. Подробности: `docker compose logs caddy`.
+- **Instagram не отдал пост.** Так иногда бывает — вставьте текст подписи (Mini App сама переключится на поле для текста) или попробуйте позже.
+- **Рецепты из видео не разбираются.** В `docker compose logs bot | grep llm` должно быть `(captions and videos)`; если `"llm":"off"` — ключа нет в `.env`. Дневной лимит видео обнуляется в полночь по `TZ` и при перезапуске бота.
 
-Still stuck? [Open an issue](https://github.com/Mikkkin/dreamer-bot/issues) with the output of `sudo dreamer-vds status` (it contains no tokens or keys).
+Не помогло — [откройте issue](https://github.com/Mikkkin/dreamer-bot/issues) с выводом `sudo dreamer-vds status` (токенов и ключей в нём нет).
 
 </details>
 
-## License
+## Лицензия
 
-[GNU AGPL-3.0](LICENSE) © 2026 Dmitry Khangildin. You may use, copy and change it, but derived versions stay under the AGPL-3.0 and keep the attribution. If you run a modified version for other people (as a bot or Mini App), offer them its source code. Third-party data and libraries keep their own terms — see [NOTICE](NOTICE).
+[GNU AGPL-3.0](LICENSE) © 2026 Dmitry Khangildin. Пользоваться, копировать и менять можно, но производные версии — тоже под AGPL-3.0 и с сохранением авторства. Если запускаете изменённую версию для других людей (как бота или Mini App), откройте им её исходный код. Сторонние данные и библиотеки — на своих условиях, см. [NOTICE](NOTICE).

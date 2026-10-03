@@ -27,9 +27,12 @@ type Recipe struct {
 	CuisineID   *RecipeTagID  // at most one cuisine
 	CourseIDs   []RecipeTagID // meals / courses, any number up to MaxCoursesPerRecipe
 	Ingredients []Ingredient
-	Nutrition   *Nutrition // nil = КБЖУ not specified
-	AuthorID    UserID
-	Images      []Image
+	// Servings is how many portions the recipe yields (1..MaxServings), nil
+	// when unknown. The ingredient amounts are for all of them.
+	Servings  *int
+	Nutrition *Nutrition // nil = КБЖУ not specified
+	AuthorID  UserID
+	Images    []Image
 	// Cooking is filled by storage from the cooking history; it is never
 	// set by callers and survives edits.
 	Cooking   CookingSummary
@@ -37,7 +40,9 @@ type Recipe struct {
 	UpdatedAt time.Time
 }
 
-// RecipeDraft is the input for a new recipe. Only Title is required.
+// RecipeDraft is the input for a new recipe. Only Title is required. When
+// Servings is nil, the servings of Nutrition (if any) are used, as clients
+// that predate recipe-level servings send them there.
 type RecipeDraft struct {
 	Title       string
 	Link        *string
@@ -45,6 +50,7 @@ type RecipeDraft struct {
 	CuisineID   *RecipeTagID
 	CourseIDs   []RecipeTagID
 	Ingredients []Ingredient
+	Servings    *int
 	Nutrition   *Nutrition
 }
 
@@ -74,6 +80,13 @@ func NewRecipe(d RecipeDraft, author UserID, now time.Time) (Recipe, error) {
 	if err != nil {
 		return Recipe{}, err
 	}
+	servings := d.Servings
+	if servings == nil && nutrition != nil && nutrition.Servings > 0 {
+		servings = &nutrition.Servings
+	}
+	if servings, err = normalizeServings(servings); err != nil {
+		return Recipe{}, err
+	}
 	now = now.UTC()
 	return Recipe{
 		Title:       title,
@@ -82,14 +95,17 @@ func NewRecipe(d RecipeDraft, author UserID, now time.Time) (Recipe, error) {
 		CuisineID:   d.CuisineID,
 		CourseIDs:   courses,
 		Ingredients: ingredients,
-		Nutrition:   nutrition,
+		Servings:    servings,
+		Nutrition:   withServings(nutrition, servings),
 		AuthorID:    author,
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}, nil
 }
 
-// RecipePatch is a partial update; only fields with Set=true change.
+// RecipePatch is a partial update; only fields with Set=true change. A
+// Nutrition patch without servings keeps the recipe's servings; with
+// servings and no Servings patch, it sets them (see RecipeDraft).
 type RecipePatch struct {
 	Title       Optional[string]
 	Link        Optional[*string]
@@ -97,6 +113,7 @@ type RecipePatch struct {
 	CuisineID   Optional[*RecipeTagID]
 	CourseIDs   Optional[[]RecipeTagID]
 	Ingredients Optional[[]Ingredient]
+	Servings    Optional[*int]
 	Nutrition   Optional[*Nutrition]
 }
 
@@ -141,13 +158,25 @@ func (r *Recipe) Apply(p RecipePatch, now time.Time) error {
 		}
 		next.Ingredients = ingredients
 	}
+	servings := p.Servings
 	if p.Nutrition.Set {
 		nutrition, err := validateOptionalNutrition(p.Nutrition.Value)
 		if err != nil {
 			return err
 		}
 		next.Nutrition = nutrition
+		if !servings.Set && nutrition != nil && nutrition.Servings > 0 {
+			servings = Some(&nutrition.Servings)
+		}
 	}
+	if servings.Set {
+		s, err := normalizeServings(servings.Value)
+		if err != nil {
+			return err
+		}
+		next.Servings = s
+	}
+	next.Nutrition = withServings(next.Nutrition, next.Servings)
 	next.UpdatedAt = now.UTC()
 	*r = next
 	return nil
@@ -172,6 +201,32 @@ type RecipeFilter struct {
 	Query     string
 	CuisineID RecipeTagID
 	CourseID  RecipeTagID
+}
+
+// normalizeServings validates the optional number of servings and copies
+// it, so a recipe never shares it with its input.
+func normalizeServings(s *int) (*int, error) {
+	if s == nil {
+		return nil, nil
+	}
+	if *s < 1 || *s > MaxServings {
+		return nil, invalid("servings", "порций от 1 до 50")
+	}
+	v := *s
+	return &v, nil
+}
+
+// withServings returns a copy of n whose servings mirror the recipe's.
+func withServings(n *Nutrition, servings *int) *Nutrition {
+	if n == nil {
+		return nil
+	}
+	v := *n
+	v.Servings = 0
+	if servings != nil {
+		v.Servings = *servings
+	}
+	return &v
 }
 
 func validateOptionalNutrition(n *Nutrition) (*Nutrition, error) {

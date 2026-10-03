@@ -158,15 +158,18 @@ func TestRecipeFieldsRoundTrip(t *testing.T) {
 	}) {
 		t.Errorf("ingredients = %+v, want %+v", got.Ingredients, ingredients)
 	}
-	if got.Nutrition == nil || *got.Nutrition != nutrition {
-		t.Errorf("nutrition = %+v, want %+v", got.Nutrition, nutrition)
+	if got.Nutrition == nil || *got.Nutrition != nutrition || got.Servings == nil || *got.Servings != 4 {
+		t.Errorf("nutrition = %+v, servings %v; want %+v and 4", got.Nutrition, got.Servings, nutrition)
 	}
 	if got.Cooking != (domain.CookingSummary{}) {
 		t.Errorf("new recipe has cooking %+v", got.Cooking)
 	}
 
-	// КБЖУ without weight and servings keeps them unknown.
+	// КБЖУ without weight keeps it unknown; without servings it keeps the
+	// recipe's servings, which the КБЖУ mirrors.
 	per100, _ := domain.NewNutrition("0", "0", "0", "0", 0, 0)
+	mirrored := per100
+	mirrored.Servings = 4
 	updated, err := db.ModifyRecipe(ctx, r.ID, func(r *domain.Recipe) error {
 		return r.Apply(domain.RecipePatch{
 			CuisineID:   domain.Some[*domain.RecipeTagID](nil),
@@ -181,8 +184,8 @@ func TestRecipeFieldsRoundTrip(t *testing.T) {
 	stored, _ := db.GetRecipe(ctx, r.ID)
 	for _, x := range []domain.Recipe{updated, stored} {
 		if x.CuisineID != nil || !slices.Equal(x.CourseIDs, []domain.RecipeTagID{courses[1].ID}) || len(x.Ingredients) != 1 ||
-			x.Nutrition == nil || *x.Nutrition != per100 {
-			t.Errorf("after replacing = %+v", x)
+			x.Nutrition == nil || *x.Nutrition != mirrored || x.Servings == nil || *x.Servings != 4 {
+			t.Errorf("after replacing = %+v, nutrition %+v", x, x.Nutrition)
 		}
 	}
 
@@ -198,8 +201,9 @@ func TestRecipeFieldsRoundTrip(t *testing.T) {
 	}
 	stored, _ = db.GetRecipe(ctx, r.ID)
 	for _, x := range []domain.Recipe{cleared, stored} {
-		if x.CourseIDs == nil || len(x.CourseIDs) != 0 || x.Ingredients == nil || len(x.Ingredients) != 0 || x.Nutrition != nil {
-			t.Errorf("after clearing = %+v (lists must be empty, not nil)", x)
+		if x.CourseIDs == nil || len(x.CourseIDs) != 0 || x.Ingredients == nil || len(x.Ingredients) != 0 || x.Nutrition != nil ||
+			x.Servings == nil || *x.Servings != 4 {
+			t.Errorf("after clearing = %+v (lists must be empty, not nil; servings outlive the КБЖУ)", x)
 		}
 	}
 	if n := countRows(t, db, "recipe_ingredients") + countRows(t, db, "recipe_courses"); n != 0 {

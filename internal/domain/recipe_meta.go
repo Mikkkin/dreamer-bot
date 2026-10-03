@@ -172,7 +172,9 @@ type Ingredient struct {
 	Quantity *Quantity // nil = not specified
 }
 
-// NormalizeIngredients validates the list, keeping its order.
+// NormalizeIngredients validates the list, keeping its order. Units are
+// brought to their codes («чайные ложки» becomes «ч. л.»), and the
+// quantities are copied, so the result never shares them with the input.
 func NormalizeIngredients(in []Ingredient) ([]Ingredient, error) {
 	if len(in) > MaxIngredientsPerRecipe {
 		return nil, invalid("ingredients", "не больше 50 ингредиентов")
@@ -183,18 +185,20 @@ func NormalizeIngredients(in []Ingredient) ([]Ingredient, error) {
 		if err != nil {
 			return nil, invalid("ingredients", "у каждого ингредиента должно быть название (до 80 символов)")
 		}
+		var qty *Quantity
 		if q := ing.Quantity; q != nil {
-			if q.Hundredths < 0 || q.Hundredths > MaxQuantityHundredths || (q.Unit == UnitToTaste && q.Hundredths != 0) {
-				return nil, invalid("ingredients", "неверное количество у «"+name+"»")
-			}
-			if _, err := ParseUnit(string(q.Unit)); err != nil {
+			unit, err := ParseUnit(string(q.Unit))
+			if err != nil {
 				return nil, invalid("ingredients", "неизвестная единица у «"+name+"»")
 			}
-			if q.Hundredths == 0 && q.Unit == "" {
-				ing.Quantity = nil
+			if q.Hundredths < 0 || q.Hundredths > MaxQuantityHundredths || (unit == UnitToTaste && q.Hundredths != 0) {
+				return nil, invalid("ingredients", "неверное количество у «"+name+"»")
+			}
+			if q.Hundredths != 0 || unit != "" {
+				qty = &Quantity{Hundredths: q.Hundredths, Unit: unit}
 			}
 		}
-		out = append(out, Ingredient{Name: name, Quantity: ing.Quantity})
+		out = append(out, Ingredient{Name: name, Quantity: qty})
 	}
 	return out, nil
 }
@@ -213,13 +217,14 @@ const (
 // Nutrition is the КБЖУ of a recipe: calories and protein/fat/carbs per
 // 100 g (in tenths), plus the optional weight of the whole cooked dish and
 // the number of servings, from which per-dish and per-serving values follow.
+// Inside a Recipe, Servings always mirrors Recipe.Servings.
 type Nutrition struct {
 	KcalPer100    int // tenths of kcal
 	ProteinPer100 int // tenths of a gram
 	FatPer100     int
 	CarbsPer100   int
 	WeightGrams   int // 0 = unknown
-	Servings      int // 0 = unknown
+	Servings      int // 0 = unknown; inside a Recipe, a copy of Recipe.Servings
 }
 
 // ParseTenths parses a non-negative decimal with at most one decimal place

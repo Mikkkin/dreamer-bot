@@ -20,6 +20,10 @@ var (
 	ErrImageTooLarge = errors.New("image too large")
 	// ErrImageUnsupported is returned for payloads that are not JPEG, PNG or WebP.
 	ErrImageUnsupported = errors.New("unsupported image format")
+	// ErrExternalUnavailable is returned when an external service the server
+	// calls on a user's request (e.g. Instagram for a recipe import) fails,
+	// refuses or does not answer in time.
+	ErrExternalUnavailable = errors.New("external service unavailable")
 )
 
 // ValidationError describes invalid user input. Message is written in

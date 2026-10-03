@@ -17,22 +17,55 @@ const (
 )
 
 // cleanText trims the string and removes control characters except newlines
-// (when allowed). It never changes printable content.
+// (when allowed) and invisible format characters (Unicode Cf): bidi marks,
+// embeddings, overrides and isolates (U+200E/F, U+202A–U+202E,
+// U+2066–U+2069), which could reorder how a stranger's text and the text
+// around it are shown, zero-width spaces, soft hyphens and the like. A
+// zero-width joiner (U+200D) inside an emoji sequence such as «woman,
+// joiner, laptop» and the tag characters of a subdivision flag are kept.
+// It never changes printable content.
 func cleanText(raw string, keepNewlines bool) string {
-	s := strings.Map(func(r rune) rune {
+	runes := []rune(raw)
+	var b strings.Builder
+	b.Grow(len(raw))
+	prev := rune(-1) // the last rune kept
+	for i, r := range runes {
 		switch {
 		case r == '\n' && keepNewlines:
-			return r
 		case r == '\t':
-			return ' '
+			r = ' '
 		case unicode.IsControl(r), r == utf8.RuneError:
-			return -1
-		default:
-			return r
+			continue
+		case r == zeroWidthJoiner:
+			if i+1 >= len(runes) || !emojiBefore(prev) || !unicode.Is(unicode.So, runes[i+1]) {
+				continue
+			}
+		case isTag(r):
+			if prev != blackFlag && !isTag(prev) {
+				continue
+			}
+		case unicode.Is(unicode.Cf, r):
+			continue
 		}
-	}, raw)
-	return strings.TrimSpace(s)
+		b.WriteRune(r)
+		prev = r
+	}
+	return strings.TrimSpace(b.String())
 }
+
+const (
+	zeroWidthJoiner = '\u200d'
+	blackFlag       = '\U0001F3F4' // the base of the subdivision flags
+)
+
+// emojiBefore reports a rune that may precede a joiner in an emoji
+// sequence: a pictograph, a skin tone or the emoji variation selector.
+func emojiBefore(r rune) bool {
+	return unicode.Is(unicode.So, r) || unicode.Is(unicode.Sk, r) || r == '\ufe0f'
+}
+
+// isTag reports a tag character (U+E0020–U+E007F) of a flag sequence.
+func isTag(r rune) bool { return r >= 0xE0020 && r <= 0xE007F }
 
 // NormalizeTitle validates a wish title.
 func NormalizeTitle(raw string) (string, error) {

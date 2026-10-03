@@ -12,9 +12,9 @@ func TestParseQuantity(t *testing.T) {
 	cases := []struct {
 		amount, unit, wantAmount, wantFormat string
 	}{
-		{"1,5", "кг", "1.5", "1,5 кг"},
+		{"1,5", "кг", "1.5", "1½\u00a0кг"},
 		{"200", "г", "200", "200 г"},
-		{"0.25", "л", "0.25", "0,25 л"},
+		{"0.25", "л", "0.25", "¼\u00a0л"},
 		{"3", "", "3", "3"},
 		{"", "по вкусу", "", "по вкусу"},
 	}
@@ -160,8 +160,8 @@ func TestShoppingMerge(t *testing.T) {
 	if !it.MergeInto(g250, now) || it.Quantity.Format() != "750 мл" {
 		t.Fatalf("same unit must merge, got %v", it.Quantity)
 	}
-	if !it.MergeInto(l1, now) || it.Quantity.Format() != "1,75 л" {
-		t.Fatalf("750 мл + 1 л = %v, want 1,75 л", it.Quantity)
+	if !it.MergeInto(l1, now) || it.Quantity.Format() != "1¾\u00a0л" {
+		t.Fatalf("750 мл + 1 л = %v, want 1¾ л", it.Quantity)
 	}
 	if !it.MergeInto(g250, now) || it.Quantity.Format() != "2 л" {
 		t.Fatalf("an exact sum of at least 1 л must be shown in л, got %v", it.Quantity)

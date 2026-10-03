@@ -55,6 +55,10 @@ func scanRecipe(s scanner) (domain.Recipe, error) {
 	if cuisine.Valid {
 		r.CuisineID = &cuisine.V
 	}
+	// The servings belong to the recipe; the КБЖУ mirrors them.
+	if servings.Valid {
+		r.Servings = &servings.V
+	}
 	// The schema sets the four values together; kcal stands for all of them.
 	if kcal.Valid {
 		r.Nutrition = &domain.Nutrition{
@@ -75,14 +79,19 @@ func scanRecipe(s scanner) (domain.Recipe, error) {
 // recipeArgs returns the values of the mutable columns in the order
 // title, title_key, link, body, body_key, cuisine_id, kcal_tenths,
 // protein_tenths, fat_tenths, carbs_tenths, weight_g, servings, updated_at.
+// servings is the recipe's, with or without КБЖУ; weight_g belongs to the
+// КБЖУ.
 func recipeArgs(r domain.Recipe) []any {
 	var cuisine, kcal, protein, fat, carbs, weight, servings any
 	if r.CuisineID != nil {
 		cuisine = int64(*r.CuisineID)
 	}
+	if r.Servings != nil {
+		servings = int64(*r.Servings)
+	}
 	if n := r.Nutrition; n != nil {
 		kcal, protein, fat, carbs = int64(n.KcalPer100), int64(n.ProteinPer100), int64(n.FatPer100), int64(n.CarbsPer100)
-		weight, servings = nullableInt(n.WeightGrams), nullableInt(n.Servings)
+		weight = nullableInt(n.WeightGrams)
 	}
 	return []any{
 		r.Title, searchKey(r.Title), nullableString(r.Link), r.Body, searchKey(r.Body),

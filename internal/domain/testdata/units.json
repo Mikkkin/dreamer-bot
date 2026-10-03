@@ -1,0 +1,82 @@
+[
+  {"amount": "1", "unit": "ч. л.", "label": "чайная ложка", "formatted": "1\u00a0чайная ложка"},
+  {"amount": "2", "unit": "ч. л.", "label": "чайные ложки", "formatted": "2\u00a0чайные ложки"},
+  {"amount": "5", "unit": "ч. л.", "label": "чайных ложек", "formatted": "5\u00a0чайных ложек"},
+  {"amount": "11", "unit": "ч. л.", "label": "чайных ложек", "formatted": "11\u00a0чайных ложек"},
+  {"amount": "21", "unit": "ч. л.", "label": "чайная ложка", "formatted": "21\u00a0чайная ложка"},
+  {"amount": "101", "unit": "ч. л.", "label": "чайная ложка", "formatted": "101\u00a0чайная ложка"},
+  {"amount": "111", "unit": "ч. л.", "label": "чайных ложек", "formatted": "111\u00a0чайных ложек"},
+  {"amount": "0.5", "unit": "ч. л.", "label": "чайной ложки", "formatted": "½\u00a0чайной ложки"},
+  {"amount": "1.5", "unit": "ч. л.", "label": "чайной ложки", "formatted": "1½\u00a0чайной ложки"},
+  {"amount": "0.25", "unit": "ч. л.", "label": "чайной ложки", "formatted": "¼\u00a0чайной ложки"},
+  {"amount": "0.1", "unit": "ч. л.", "label": "чайной ложки", "formatted": "0,1\u00a0чайной ложки"},
+
+  {"amount": "1", "unit": "ст. л.", "label": "столовая ложка", "formatted": "1\u00a0столовая ложка"},
+  {"amount": "3", "unit": "ст. л.", "label": "столовые ложки", "formatted": "3\u00a0столовые ложки"},
+  {"amount": "12", "unit": "ст. л.", "label": "столовых ложек", "formatted": "12\u00a0столовых ложек"},
+  {"amount": "22", "unit": "ст. л.", "label": "столовые ложки", "formatted": "22\u00a0столовые ложки"},
+  {"amount": "0.75", "unit": "ст. л.", "label": "столовой ложки", "formatted": "¾\u00a0столовой ложки"},
+  {"amount": "2.5", "unit": "ст. л.", "label": "столовой ложки", "formatted": "2½\u00a0столовой ложки"},
+
+  {"amount": "1", "unit": "стакан", "label": "стакан", "formatted": "1\u00a0стакан"},
+  {"amount": "3", "unit": "стакан", "label": "стакана", "formatted": "3\u00a0стакана"},
+  {"amount": "11", "unit": "стакан", "label": "стаканов", "formatted": "11\u00a0стаканов"},
+  {"amount": "104", "unit": "стакан", "label": "стакана", "formatted": "104\u00a0стакана"},
+  {"amount": "0.33", "unit": "стакан", "label": "стакана", "formatted": "⅓\u00a0стакана"},
+  {"amount": "0.67", "unit": "стакан", "label": "стакана", "formatted": "⅔\u00a0стакана"},
+  {"amount": "1.5", "unit": "стакан", "label": "стакана", "formatted": "1½\u00a0стакана"},
+  {"amount": "2.5", "unit": "стакан", "label": "стакана", "formatted": "2½\u00a0стакана"},
+  {"amount": "1.2", "unit": "стакан", "label": "стакана", "formatted": "1,2\u00a0стакана"},
+
+  {"amount": "1", "unit": "щепотка", "label": "щепотка", "formatted": "1\u00a0щепотка"},
+  {"amount": "2", "unit": "щепотка", "label": "щепотки", "formatted": "2\u00a0щепотки"},
+  {"amount": "5", "unit": "щепотка", "label": "щепоток", "formatted": "5\u00a0щепоток"},
+  {"amount": "0.5", "unit": "щепотка", "label": "щепотки", "formatted": "½\u00a0щепотки"},
+
+  {"amount": "1", "unit": "зубчик", "label": "зубчик", "formatted": "1\u00a0зубчик"},
+  {"amount": "3", "unit": "зубчик", "label": "зубчика", "formatted": "3\u00a0зубчика"},
+  {"amount": "5", "unit": "зубчик", "label": "зубчиков", "formatted": "5\u00a0зубчиков"},
+  {"amount": "13", "unit": "зубчик", "label": "зубчиков", "formatted": "13\u00a0зубчиков"},
+  {"amount": "0.5", "unit": "зубчик", "label": "зубчика", "formatted": "½\u00a0зубчика"},
+
+  {"amount": "1", "unit": "пучок", "label": "пучок", "formatted": "1\u00a0пучок"},
+  {"amount": "2", "unit": "пучок", "label": "пучка", "formatted": "2\u00a0пучка"},
+  {"amount": "14", "unit": "пучок", "label": "пучков", "formatted": "14\u00a0пучков"},
+  {"amount": "0.5", "unit": "пучок", "label": "пучка", "formatted": "½\u00a0пучка"},
+
+  {"amount": "1", "unit": "упаковка", "label": "упаковка", "formatted": "1\u00a0упаковка"},
+  {"amount": "4", "unit": "упаковка", "label": "упаковки", "formatted": "4\u00a0упаковки"},
+  {"amount": "10", "unit": "упаковка", "label": "упаковок", "formatted": "10\u00a0упаковок"},
+  {"amount": "1.5", "unit": "упаковка", "label": "упаковки", "formatted": "1½\u00a0упаковки"},
+
+  {"amount": "0.5", "unit": "кг", "label": "кг", "formatted": "½\u00a0кг"},
+  {"amount": "1.25", "unit": "кг", "label": "кг", "formatted": "1¼\u00a0кг"},
+  {"amount": "2", "unit": "кг", "label": "кг", "formatted": "2\u00a0кг"},
+  {"amount": "0.3", "unit": "кг", "label": "кг", "formatted": "0,3\u00a0кг"},
+
+  {"amount": "0.3", "unit": "л", "label": "л", "formatted": "0,3\u00a0л"},
+  {"amount": "1.5", "unit": "л", "label": "л", "formatted": "1½\u00a0л"},
+  {"amount": "0.75", "unit": "л", "label": "л", "formatted": "¾\u00a0л"},
+
+  {"amount": "250", "unit": "г", "label": "г", "formatted": "250\u00a0г"},
+  {"amount": "1.5", "unit": "г", "label": "г", "formatted": "1,5\u00a0г"},
+  {"amount": "0.5", "unit": "г", "label": "г", "formatted": "0,5\u00a0г"},
+  {"amount": "21", "unit": "г", "label": "г", "formatted": "21\u00a0г"},
+
+  {"amount": "750", "unit": "мл", "label": "мл", "formatted": "750\u00a0мл"},
+  {"amount": "0.25", "unit": "мл", "label": "мл", "formatted": "0,25\u00a0мл"},
+  {"amount": "12.5", "unit": "мл", "label": "мл", "formatted": "12,5\u00a0мл"},
+
+  {"amount": "0.5", "unit": "шт", "label": "шт", "formatted": "½\u00a0шт"},
+  {"amount": "3", "unit": "шт", "label": "шт", "formatted": "3\u00a0шт"},
+  {"amount": "1.33", "unit": "шт", "label": "шт", "formatted": "1⅓\u00a0шт"},
+  {"amount": "2.1", "unit": "шт", "label": "шт", "formatted": "2,1\u00a0шт"},
+
+  {"amount": "2", "unit": "", "label": "", "formatted": "2"},
+  {"amount": "0.5", "unit": "", "label": "", "formatted": "½"},
+  {"amount": "1.75", "unit": "", "label": "", "formatted": "1¾"},
+  {"amount": "2.67", "unit": "", "label": "", "formatted": "2⅔"},
+  {"amount": "0.3", "unit": "", "label": "", "formatted": "0,3"},
+
+  {"amount": "", "unit": "по вкусу", "label": "по вкусу", "formatted": "по вкусу"}
+]
